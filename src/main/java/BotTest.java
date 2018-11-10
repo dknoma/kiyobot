@@ -29,8 +29,9 @@ import java.net.URL;
  */
 public class BotTest {
 
-    private static final String GET_URL = "https://discordapp.com/gateway";
-    private static final String kiyoGeneral = "510555588414144554";
+    private static final double VERSION = 0.1;
+    private static final String GET_URL = "https://www.discordapp.com/api/gateway";
+    private static final String KIYO_GENERAL = "510555588414144554";
     private static final Logger LOGGER = LogManager.getLogger();
 
     public BotTest() {
@@ -40,41 +41,25 @@ public class BotTest {
     public static void main(String[] args) {
         ConfigArgParser parser = new ConfigArgParser();
         parser.parseConfig();
-        String postURL = String.format("https://discordapp.com/api/channels/%s/messages", kiyoGeneral);
-
-        LOGGER.info(postURL);
-
-        String headers = String.format("{\"Authorization\": \"Bot %1$s\", " +
-                "\"Host\": \"www.discordapp.com\"" +
-                "\"User-Agent\": \"kiyobot (http://some.url, v0.1)\", " +
-                "\"Content-Type\": \"application/json\"}", parser.getAuthTok());
 
         try {
-
             URL url = new URL(GET_URL);
             HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
-            connection.setRequestMethod("GET");
-            connection.addRequestProperty("Host", "www.discordapp.com");
-            connection.addRequestProperty("User-Agent", "kiyobot (http://some.url, v0.1)");
-            connection.addRequestProperty("Content-Type", "application/json");
-
-            connection.setDoOutput(true);
             connection.setDoInput(true);
 
-            connection.connect();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", String.format("kiyobot (v%s)", VERSION));
+            connection.setRequestProperty("Content-Type", "application/json");
 
-//            OutputStream outstream = connection.getOutputStream();
-//            outstream.write(headers.getBytes());
+            InputStream instream = connection.getInputStream();
 
+            LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
             BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
                 LOGGER.debug(line);
             }
-//            outstream.write(bytes);
-//            outstream.flush();
-
         } catch (MalformedURLException mue) {
             LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
         } catch (IOException ioe) {
