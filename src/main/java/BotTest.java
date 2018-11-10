@@ -41,8 +41,11 @@ public class BotTest {
         ConfigArgParser parser = new ConfigArgParser();
         parser.parseConfig();
         String postURL = String.format("https://discordapp.com/api/channels/%s/messages", kiyoGeneral);
-        System.out.println(postURL);
+
+        LOGGER.info(postURL);
+
         String headers = String.format("{\"Authorization\": \"Bot %1$s\", " +
+                "\"Host\": \"www.discordapp.com\"" +
                 "\"User-Agent\": \"kiyobot (http://some.url, v0.1)\", " +
                 "\"Content-Type\": \"application/json\"}", parser.getAuthTok());
 
@@ -52,10 +55,18 @@ public class BotTest {
             HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
             connection.setRequestMethod("GET");
+            connection.addRequestProperty("Host", "www.discordapp.com");
+            connection.addRequestProperty("User-Agent", "kiyobot (http://some.url, v0.1)");
+            connection.addRequestProperty("Content-Type", "application/json");
+
             connection.setDoOutput(true);
             connection.setDoInput(true);
-            OutputStream outstream = connection.getOutputStream();
-            outstream.write(headers.getBytes());
+
+            connection.connect();
+
+//            OutputStream outstream = connection.getOutputStream();
+//            outstream.write(headers.getBytes());
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
