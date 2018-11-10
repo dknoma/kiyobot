@@ -1,4 +1,5 @@
 import kiyobot.util.ConfigArgParser;
+import kiyobot.util.DiscordConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,8 +30,6 @@ import java.net.URL;
  */
 public class BotTest {
 
-    private static final double VERSION = 0.1;
-    private static final String GET_URL = "https://www.discordapp.com/api/gateway";
     private static final String KIYO_GENERAL = "510555588414144554";
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -41,29 +40,7 @@ public class BotTest {
     public static void main(String[] args) {
         ConfigArgParser parser = new ConfigArgParser();
         parser.parseConfig();
-
-        try {
-            URL url = new URL(GET_URL);
-            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
-
-            connection.setDoInput(true);
-
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("User-Agent", String.format("kiyobot (v%s)", VERSION));
-            connection.setRequestProperty("Content-Type", "application/json");
-
-            InputStream instream = connection.getInputStream();
-
-            LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                LOGGER.debug(line);
-            }
-        } catch (MalformedURLException mue) {
-            LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
-        } catch (IOException ioe) {
-            LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-        }
+        DiscordConnection connection = new DiscordConnection();
+        connection.getWss();
     }
 }
