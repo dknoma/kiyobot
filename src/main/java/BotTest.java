@@ -30,17 +30,18 @@ import java.net.URL;
  */
 public class BotTest {
 
-    private static final String KIYO_GENERAL = "510555588414144554";
-    private static final Logger LOGGER = LogManager.getLogger();
+	private static final String KIYO_GENERAL = "510555588414144554";
+	private static final Logger LOGGER = LogManager.getLogger();
 
-    public BotTest() {
+	public BotTest() {
 
-    }
+	}
 
-    public static void main(String[] args) {
-        ConfigArgParser parser = new ConfigArgParser();
-        parser.parseConfig();
-        DiscordConnection connection = new DiscordConnection();
-        connection.getWss();
-    }
+	public static void main(String[] args) {
+		ConfigArgParser parser = new ConfigArgParser();
+		parser.parseConfig();
+		DiscordConnection connection = new DiscordConnection();
+		connection.getWss();
+		connection.connect();
+	}
 }
