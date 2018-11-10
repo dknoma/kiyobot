@@ -23,6 +23,9 @@ public class ConfigArgParser {
         this.gson = new Gson();
     }
 
+    /**
+     * Parse config file
+     */
     public void parseConfig() {
         try(BufferedReader br = Files.newBufferedReader(Paths.get(CONFIG_FILE),
                 java.nio.charset.StandardCharsets.ISO_8859_1)) {
@@ -35,7 +38,22 @@ public class ConfigArgParser {
         }
     }
 
+    /**
+     * Helper method to parse a json file
+     * @param line
+     */
     private void parseJson(String line) {
         JsonObject obj = gson.fromJson(line, JsonObject.class);
+        if(obj.has("authTok")) {
+            this.authTok = obj.get("authTok").getAsString();
+        }
+    }
+
+    /**
+     * Get authorization token
+     * @return this.authTok
+     */
+    public String getAuthTok() {
+        return  this.authTok;
     }
 }
