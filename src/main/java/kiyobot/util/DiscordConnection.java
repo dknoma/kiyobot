@@ -2,6 +2,8 @@ package kiyobot.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.neovisionaries.ws.client.WebSocket;
+import com.neovisionaries.ws.client.WebSocketFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 public class DiscordConnection {
@@ -74,24 +78,25 @@ public class DiscordConnection {
 	public void connect() {
 		String websocket = String.format("%1$s/v=%2$s&encoding=%3$s", this.wss, GATEWAY_VERSION, ENCODING);
         try {
-            URL url = new URL(websocket);
-            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+        	// Create a WebSocketFactory instance.
+			WebSocketFactory factory = new WebSocketFactory();
+			URI uri = new URI(websocket);
+			LOGGER.debug("URI: {}", uri);
+			WebSocket webSocket = factory.createSocket(uri);
+			webSocket.connect();
 
-//            WebSocketClient client = new WebSocketClient();
-
-            connection.setDoInput(true);
-            connection.connect();
-//            connection.setRequestMethod("GET");
-//            connection.setRequestProperty("User-Agent", String.format("kiyobot (v%s)", VERSION));
-//            connection.setRequestProperty("Content-Type", "application/json");
-			LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
-            InputStream instream = connection.getInputStream();
-
-            LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
-        } catch (MalformedURLException mue) {
-            LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
-        } catch (IOException ioe) {
+//			LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
+//            InputStream instream = connection.getInputStream();
+//
+//            LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
+//        } catch (MalformedURLException mue) {
+//            LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
+        } catch (URISyntaxException use) {
+			LOGGER.fatal("Error has occured in URI creation, {},\n{}", use.getMessage(), use.getStackTrace());
+		} catch (IOException ioe) {
             LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-        }
+        } catch (Exception e) {
+			LOGGER.fatal("Error has occured starting WebSocketClient, {},\n{}", e.getMessage(), e.getStackTrace());
+		}
 	}
 }
