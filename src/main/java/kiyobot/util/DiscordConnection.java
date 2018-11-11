@@ -1,8 +1,10 @@
 package kiyobot.util;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.neovisionaries.ws.client.WebSocket;
+import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +23,7 @@ public class DiscordConnection {
 
 	private String wss;
 	private Gson gson;
+	private String hbPayload;
 
 	private static final int GATEWAY_VERSION = 6;
 	private static final String ENCODING = "json";
@@ -31,6 +34,7 @@ public class DiscordConnection {
 	public DiscordConnection() {
 		this.wss = "";
 		this.gson = new Gson();
+		this.hbPayload = "";
 	}
 
 	public void getWss() {
@@ -82,15 +86,41 @@ public class DiscordConnection {
 			WebSocketFactory factory = new WebSocketFactory();
 			URI uri = new URI(websocket);
 			LOGGER.debug("URI: {}", uri);
-			WebSocket webSocket = factory.createSocket(uri);
-			webSocket.connect();
+			WebSocket ws = factory.createSocket(uri);
 
-//			LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
-//            InputStream instream = connection.getInputStream();
-//
-//            LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
-//        } catch (MalformedURLException mue) {
-//            LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
+			// Register a listener to receive WebSocket events.
+			WebSocketAdapter adapter = new WebSocketAdapter() {
+				@Override
+				public void onTextMessage(WebSocket websocket, String message) throws Exception {
+					LOGGER.info("MESSAGE: {}", message);
+
+					JsonObject obj = gson.fromJson(message, JsonObject.class);
+
+					String op = obj.get("op").getAsString();
+
+					switch(op) {
+						case "10":
+							JsonElement s = obj.get("s");
+							LOGGER.debug("s is null: {}", s.isJsonNull());
+							String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
+
+							String heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsString();
+							LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
+
+							String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
+							LOGGER.info("heartbeat: {}", heartbeat);
+
+							websocket.sendText(heartbeat);
+							break;
+						case "11":
+							LOGGER.info("Received 11");
+//							websocket.disconnect();
+							break;
+					}
+				}
+			};
+			ws.addListener(adapter);
+			ws.connect();
         } catch (URISyntaxException use) {
 			LOGGER.fatal("Error has occured in URI creation, {},\n{}", use.getMessage(), use.getStackTrace());
 		} catch (IOException ioe) {
