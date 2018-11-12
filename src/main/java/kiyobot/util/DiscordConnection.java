@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,12 +19,16 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DiscordConnection {
 
 	private String wss;
 	private Gson gson;
 	private String hbPayload;
+
+	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
 
 	private static final int GATEWAY_VERSION = 6;
 	private static final String ENCODING = "json";
@@ -80,13 +85,21 @@ public class DiscordConnection {
      * Connect to the cached websocket
      */
 	public void connect() {
-		String websocket = String.format("%1$s/v=%2$s&encoding=%3$s", this.wss, GATEWAY_VERSION, ENCODING);
+		String wssUri = String.format("%1$s/?v=%2$s&encoding=%3$s", this.wss, GATEWAY_VERSION, ENCODING);
         try {
         	// Create a WebSocketFactory instance.
 			WebSocketFactory factory = new WebSocketFactory();
-			URI uri = new URI(websocket);
+			try {
+				factory.setSSLContext(SSLContext.getDefault());
+			} catch (NoSuchAlgorithmException e) {
+				LOGGER.warn("An error occurred while setting ssl context", e);
+			}
+			URI uri = new URI(wssUri);
 			LOGGER.debug("URI: {}", uri);
 			WebSocket ws = factory.createSocket(uri);
+
+			this.websocket.set(ws);
+
 
 			// Register a listener to receive WebSocket events.
 			WebSocketAdapter adapter = new WebSocketAdapter() {
