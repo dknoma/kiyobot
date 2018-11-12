@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
+import kiyobot.logger.WebsocketLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +23,12 @@ import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class DiscordConnection {
+/**
+ * An extension of a Websocket adapter for Discord API connections.
+ *
+ * @author dk
+ */
+public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 	private String wss;
 	private Gson gson;
@@ -36,7 +42,7 @@ public class DiscordConnection {
 	private static final String GET_URL = "https://www.discordapp.com/api/gateway";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public DiscordConnection() {
+	public DiscordWebsocketAdapter() {
 		this.wss = "";
 		this.gson = new Gson();
 		this.hbPayload = "";
@@ -97,42 +103,11 @@ public class DiscordConnection {
 			URI uri = new URI(wssUri);
 			LOGGER.debug("URI: {}", uri);
 			WebSocket ws = factory.createSocket(uri);
-
 			this.websocket.set(ws);
-
-
 			// Register a listener to receive WebSocket events.
-			WebSocketAdapter adapter = new WebSocketAdapter() {
-				@Override
-				public void onTextMessage(WebSocket websocket, String message) throws Exception {
-					LOGGER.info("MESSAGE: {}", message);
+			ws.addListener(this);
+			ws.addListener(new WebsocketLogger());
 
-					JsonObject obj = gson.fromJson(message, JsonObject.class);
-
-					String op = obj.get("op").getAsString();
-
-					switch(op) {
-						case "10":
-							JsonElement s = obj.get("s");
-							LOGGER.debug("s is null: {}", s.isJsonNull());
-							String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
-
-							String heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsString();
-							LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
-
-							String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
-							LOGGER.info("heartbeat: {}", heartbeat);
-
-							websocket.sendText(heartbeat);
-							break;
-						case "11":
-							LOGGER.info("Received 11");
-//							websocket.disconnect();
-							break;
-					}
-				}
-			};
-			ws.addListener(adapter);
 			ws.connect();
         } catch (URISyntaxException use) {
 			LOGGER.fatal("Error has occured in URI creation, {},\n{}", use.getMessage(), use.getStackTrace());
@@ -140,6 +115,35 @@ public class DiscordConnection {
             LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
         } catch (Exception e) {
 			LOGGER.fatal("Error has occured starting WebSocketClient, {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+	}
+
+	@Override
+	public void onTextMessage(WebSocket websocket, String message) throws Exception {
+		LOGGER.info("MESSAGE: {}", message);
+
+		JsonObject obj = gson.fromJson(message, JsonObject.class);
+
+		String op = obj.get("op").getAsString();
+
+		switch(op) {
+			case "10":
+				JsonElement s = obj.get("s");
+				LOGGER.debug("s is null: {}", s.isJsonNull());
+				String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
+
+				String heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsString();
+				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
+
+				String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
+				LOGGER.info("heartbeat: {}", heartbeat);
+
+				websocket.sendText(heartbeat);
+				break;
+			case "11":
+				LOGGER.info("Received 11");
+//							websocket.disconnect();
+				break;
 		}
 	}
 }

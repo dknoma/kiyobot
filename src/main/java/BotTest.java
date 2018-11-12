@@ -1,5 +1,6 @@
 import kiyobot.util.ConfigArgParser;
-import kiyobot.util.DiscordConnection;
+import kiyobot.util.DiscordWebsocketAdapter;
+import kiyobot.util.DiscordWebsocketAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,7 +43,7 @@ public class BotTest {
 	public static void main(String[] args) {
 		ConfigArgParser parser = new ConfigArgParser();
 		parser.parseConfig();
-		DiscordConnection connection = new DiscordConnection();
+		DiscordWebsocketAdapter connection = new DiscordWebsocketAdapter();
 		connection.getWss();
 		connection.connect();
 	}
