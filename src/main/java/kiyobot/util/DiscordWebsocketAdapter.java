@@ -7,6 +7,7 @@ import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import kiyobot.logger.WebsocketLogger;
+import kiyobot.util.gateway.GatewayOpcode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +33,9 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 	private String wss;
 	private Gson gson;
-	private String hbPayload;
+
+	private volatile int lastSeq = -1;
+	private volatile boolean heartbeatAckReceived;
 
 	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
 
@@ -45,7 +48,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	public DiscordWebsocketAdapter() {
 		this.wss = "";
 		this.gson = new Gson();
-		this.hbPayload = "";
+		this.heartbeatAckReceived = false;
 	}
 
 	public void getWss() {
@@ -68,7 +71,8 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		} catch (MalformedURLException mue) {
 			LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
 		} catch (IOException ioe) {
-			LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+			LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(),
+					ioe.getStackTrace());
 		}
 	}
 
@@ -112,7 +116,8 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
         } catch (URISyntaxException use) {
 			LOGGER.fatal("Error has occured in URI creation, {},\n{}", use.getMessage(), use.getStackTrace());
 		} catch (IOException ioe) {
-            LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+            LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(),
+					ioe.getStackTrace());
         } catch (Exception e) {
 			LOGGER.fatal("Error has occured starting WebSocketClient, {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -124,25 +129,45 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 		JsonObject obj = gson.fromJson(message, JsonObject.class);
 
-		String op = obj.get("op").getAsString();
+		int op;
+		//TODO: throws exception, so the upstream method call should handle this.
+		try {
+			op = obj.get("op").getAsInt();
+		} catch(NumberFormatException nfe) {
+			LOGGER.info("Received an unknown payload. The value at \"op\" was not a number or does not exist. {}",
+					nfe.getMessage());
+			op = -1;
+		}
 
-		switch(op) {
-			case "10":
+		GatewayOpcode gatewayOpcode = GatewayOpcode.fromOpcode(op);
+		System.out.println("GATEWAY: " + gatewayOpcode);
+
+		if(gatewayOpcode == null) {
+			LOGGER.error("Received an unknown payload. \"op\"={} does not exist.", op);
+			return;
+		}
+
+		switch(gatewayOpcode) {
+			case HELLO:
 				JsonElement s = obj.get("s");
 				LOGGER.debug("s is null: {}", s.isJsonNull());
 				String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
 
-				String heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsString();
+				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
 				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
 
 				String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
 				LOGGER.info("heartbeat: {}", heartbeat);
 
-				websocket.sendText(heartbeat);
+				//need to have scheduled heartbeat
+//				websocket.sendText(heartbeat);
 				break;
-			case "11":
-				LOGGER.info("Received 11");
-//							websocket.disconnect();
+			case HEARTBEAT_ACK:
+				LOGGER.info("Received heartbeat ack");
+				this.heartbeatAckReceived = true;
+				break;
+			default:
+				LOGGER.error("Received an unknown payload. {\"op\": {}}.", op);
 				break;
 		}
 	}
