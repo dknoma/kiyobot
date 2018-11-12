@@ -157,20 +157,13 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		}
 
 		//TODO: need to put more cases for ALL opcodes
+		/*
+		 * If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should
+		 * immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.
+		 */
 		switch(gatewayOpcode.getObject()) {
 			case HELLO:
-				JsonElement s = obj.get("s");
-				LOGGER.debug("s is null: {}", s.isJsonNull());
-				String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
-
-				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
-				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
-
-				String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
-				LOGGER.info("heartbeat: {}", heartbeat);
-
-				//need to have scheduled heartbeat
-//				websocket.sendText(heartbeat);
+				sendHeartbeat(obj);
 				break;
 			case HEARTBEAT_ACK:
 				LOGGER.info("Received heartbeat ack");
@@ -180,5 +173,24 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 				LOGGER.error("Received an unknown payload. {\"op\": {}}.", op);
 				break;
 		}
+	}
+
+	/**
+	 * Sends a heartbeat back to the websocket
+	 * @param obj - JsonObject representing the payload
+	 */
+	private void sendHeartbeat(JsonObject obj) {
+		JsonElement s = obj.get("s");
+		LOGGER.debug("s is null: {}", s.isJsonNull());
+		String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
+
+		int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
+		LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
+
+		String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
+		LOGGER.info("heartbeat: {}", heartbeat);
+
+		//need to have scheduled heartbeat
+//				websocket.sendText(heartbeat);
 	}
 }

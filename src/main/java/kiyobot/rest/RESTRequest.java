@@ -26,7 +26,7 @@ public class RESTRequest {
 	
 	/**
 	 * Returns the request's method
-	 * @return
+	 * @return method
 	 */
 	public String getMethod() {
 		return this.method;
@@ -34,7 +34,7 @@ public class RESTRequest {
 	
 	/**
 	 * Returns the request's uri
-	 * @return
+	 * @return uri
 	 */
 	public String getUri() {
 		return this.uri;
@@ -42,7 +42,7 @@ public class RESTRequest {
 	
 	/**
 	 * Returns the requests http protocol version
-	 * @return
+	 * @return httpProtocol
 	 */
 	public String getHttpProtocol() {
 		return this.httpProtocol;
@@ -50,12 +50,11 @@ public class RESTRequest {
 	
 	/**
 	 * Returns the value of the given key if it exists
-	 * @param key
-	 * @return
+	 * @param key - key
+	 * @return value connected to the key
 	 */
 	public String getFromBody(String key) {
-		String value = this.body.get(key);
-		return value;
+		return this.body.get(key);
 	}
 	
 	/**
@@ -63,11 +62,11 @@ public class RESTRequest {
 	 */
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.method + " ");
-		sb.append(this.uri + " ");
-		sb.append(this.httpProtocol + "\r\n");
+		sb.append(String.format("%s ", this.method));
+		sb.append(String.format("%s ", this.uri));
+		sb.append(String.format("%s\r\n", this.httpProtocol));
 		for(String header : this.headers.keySet()) {
-			sb.append(header + ": " + this.headers.get(header));
+			sb.append(String.format("%1$s: %2$s", header, this.headers.get(header)));
 			sb.append("\r\n");
 		}
 		sb.append("\r\n");
