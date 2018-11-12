@@ -36,6 +36,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 	private volatile int lastSeq = -1;
 	private volatile boolean heartbeatAckReceived;
+	private volatile boolean reconnect;
 
 	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
 
@@ -49,8 +50,16 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		this.wss = "";
 		this.gson = new Gson();
 		this.heartbeatAckReceived = false;
+		this.reconnect = true;
 	}
 
+	/**
+	 * Gets the secure websocket from the first connection to the Discord api gateway
+	 * GET /api/gateway
+	 * TODO: maybe make a REST classes for convenience? Will make making requests and method calls easier.
+	 * TODO: rather than coding calls each time, should have a class to format calls/requests for us
+	 * TODO: packet class, to send formatted responses back to API
+	 */
 	public void getWss() {
 		try {
 			URL url = new URL(GET_URL);
@@ -139,15 +148,16 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			op = -1;
 		}
 
-		GatewayOpcode gatewayOpcode = GatewayOpcode.fromOpcode(op);
-		System.out.println("GATEWAY: " + gatewayOpcode);
+		ObjectContainer<GatewayOpcode> gatewayOpcode = GatewayOpcode.fromOpcode(op);
+		System.out.println("GATEWAY: " + gatewayOpcode.getObject());
 
-		if(gatewayOpcode == null) {
+		if(gatewayOpcode.objectIsPresent()) {
 			LOGGER.error("Received an unknown payload. \"op\"={} does not exist.", op);
 			return;
 		}
 
-		switch(gatewayOpcode) {
+		//TODO: need to put more cases for ALL opcodes
+		switch(gatewayOpcode.getObject()) {
 			case HELLO:
 				JsonElement s = obj.get("s");
 				LOGGER.debug("s is null: {}", s.isJsonNull());

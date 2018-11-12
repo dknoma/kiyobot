@@ -1,13 +1,8 @@
 import kiyobot.util.ConfigArgParser;
 import kiyobot.util.DiscordWebsocketAdapter;
-import kiyobot.util.DiscordWebsocketAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 
 /**

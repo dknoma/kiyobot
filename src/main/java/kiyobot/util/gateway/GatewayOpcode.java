@@ -1,5 +1,7 @@
 package kiyobot.util.gateway;
 
+import kiyobot.util.ObjectContainer;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +44,11 @@ public enum GatewayOpcode {
     private final int opcode;
 
     /*
-     * Static block that puts all instances of this enum into a Map<Integer, GatewayOpcode>
+     * This static block that puts all instances of this enum into a Map<Integer, GatewayOpcode>
+     *
+     * This gets called after all instances have been created, as by virtue of being an enum;
+     *      enum values MUST be put before any static call, therefor will ALWAYS come before
+     *      any static calls/blocks
      */
     static {
         Arrays.asList(GatewayOpcode.values())
@@ -65,7 +71,7 @@ public enum GatewayOpcode {
 	 * @param opcode - opcode of the response
 	 * @return GatewayOpcode
 	 */
-	public static GatewayOpcode fromOpcode(int opcode) {
-        return INSTANCE_BY_OPCODE.get(opcode);
+	public static ObjectContainer<GatewayOpcode> fromOpcode(int opcode) {
+        return new ObjectContainer<>(INSTANCE_BY_OPCODE.get(opcode));
     }
 }
