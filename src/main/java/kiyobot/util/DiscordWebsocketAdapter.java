@@ -120,7 +120,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 	@Override
 	public void onTextMessage(WebSocket websocket, String message) throws Exception {
-		LOGGER.info("MESSAGE: {}", message);
+		LOGGER.info("onTextMessage: message={}", message);
 
 		JsonObject obj = gson.fromJson(message, JsonObject.class);
 
