@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.BufferedReader;
@@ -12,14 +11,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class ConfigArgParser {
+public class JsonConfigArgParser {
 
 	private String authTok;
 	private Gson gson;
 	private static final String CONFIG_FILE = "./config/config.json";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public ConfigArgParser() {
+	public JsonConfigArgParser() {
 		this.gson = new Gson();
 	}
 

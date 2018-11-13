@@ -1,5 +1,7 @@
-import kiyobot.util.ConfigArgParser;
-import kiyobot.util.DiscordWebsocketAdapter;
+import kiyobot.util.JsonConfigArgParser;
+import kiyobot.util.JsonPacket;
+import kiyobot.util.gateway.GatewayOpcode;
+import kiyobot.ws.DiscordWebsocketAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,7 +38,14 @@ public class BotTest {
 	}
 
 	public static void main(String[] args) {
-		ConfigArgParser parser = new ConfigArgParser();
+		//testing JsonPacket
+//		JsonPacket packet = new JsonPacket();
+//		packet.put("op", GatewayOpcode.HEARTBEAT.getOpcode());
+//		packet.put("d", "STRING");
+//		packet.put("asfasfa", true);
+//		System.out.println(packet.toString());
+		//testing app
+		JsonConfigArgParser parser = new JsonConfigArgParser();
 		parser.parseConfig();
 		DiscordWebsocketAdapter connection = new DiscordWebsocketAdapter();
 		connection.getWss();

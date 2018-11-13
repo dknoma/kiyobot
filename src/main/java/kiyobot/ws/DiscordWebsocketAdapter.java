@@ -1,12 +1,11 @@
-package kiyobot.util;
+package kiyobot.ws;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketAdapter;
-import com.neovisionaries.ws.client.WebSocketFactory;
+import com.neovisionaries.ws.client.*;
 import kiyobot.logger.WebsocketLogger;
+import kiyobot.util.JsonPacket;
+import kiyobot.util.ObjectContainer;
 import kiyobot.util.gateway.GatewayOpcode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,10 +21,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An extension of a Websocket adapter for Discord API connections.
+ *
+ * Clients are limited to 1000 IDENTIFY calls to the websocket in a 24-hour period. This limit is global and across all
+ * shards, but does not include RESUME calls. Upon hitting this limit, all active sessions for the bot will be
+ * terminated, the bot's token will be reset, and the owner will receive an email notification. It's up to the owner to
+ * update their application with the new token.
  *
  * @author dk
  */
@@ -33,6 +41,8 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 	private String wss;
 	private Gson gson;
+	private ScheduledExecutorService threadpool;
+	private AtomicReference<WebSocketFrame> nextHeartbeatFrame = new AtomicReference<>();
 
 	private volatile int lastSeq = -1;
 	private volatile boolean heartbeatAckReceived;
@@ -49,6 +59,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	public DiscordWebsocketAdapter() {
 		this.wss = "";
 		this.gson = new Gson();
+		this.threadpool = Executors.newScheduledThreadPool(1);
 		this.heartbeatAckReceived = false;
 		this.reconnect = true;
 	}
@@ -133,6 +144,12 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	}
 
 	@Override
+	public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame,
+							   boolean closedByServer) throws Exception {
+		//TODO: do something on disconnect
+	}
+
+	@Override
 	public void onTextMessage(WebSocket websocket, String message) throws Exception {
 		LOGGER.info("onTextMessage: message={}", message);
 
@@ -149,21 +166,55 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		}
 
 		ObjectContainer<GatewayOpcode> gatewayOpcode = GatewayOpcode.fromOpcode(op);
-		System.out.println("GATEWAY: " + gatewayOpcode.getObject());
 
-		if(gatewayOpcode.objectIsPresent()) {
+		/*
+		 * Must have gotten an illegal opcode
+		 */
+		if(!gatewayOpcode.objectIsPresent()) {
 			LOGGER.error("Received an unknown payload. \"op\"={} does not exist.", op);
 			return;
 		}
 
-		//TODO: need to put more cases for ALL opcodes
 		/*
 		 * If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should
 		 * immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.
 		 */
 		switch(gatewayOpcode.getObject()) {
+			case DISPATCH:
+				LOGGER.debug("Received dispatch");
+				break;
+			case HEARTBEAT:
+				LOGGER.debug("Received heartbeat");
+				sendHeartbeat(websocket);
+				break;
+			case IDENTIFY:
+				LOGGER.debug("Received identify");
+				break;
+			case STATUS_UPDATE:
+				LOGGER.debug("Received status update");
+				break;
+			case VOICE_STATE_UPDATE:
+				LOGGER.debug("Received voice status update");
+				break;
+			case VOICE_SERVER_PING:
+				LOGGER.debug("Received voice server ping");
+				break;
+			case RESUME:
+				LOGGER.debug("Received resume");
+				break;
+			case RECONNECT:
+				LOGGER.debug("Received reconnect");
+				break;
+			case REQUEST_GUILD_MEMBERS:
+				LOGGER.debug("Received request guild members");
+				break;
+			case INVALID_SESSION:
+				LOGGER.debug("Received invalid session");
+				break;
 			case HELLO:
-				sendHeartbeat(obj);
+				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
+				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
+				startHeartbeat(websocket, heartbeatInterval);
 				break;
 			case HEARTBEAT_ACK:
 				LOGGER.info("Received heartbeat ack");
@@ -176,21 +227,36 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	}
 
 	/**
-	 * Sends a heartbeat back to the websocket
-	 * @param obj - JsonObject representing the payload
+	 * Schedules heartbeats to send back to the gateway
+	 * @param websocket - the websocket
+	 * @param heartbeatInterval - delay between heartbeats
+	 * @return ScheduledFuture
 	 */
-	private void sendHeartbeat(JsonObject obj) {
-		JsonElement s = obj.get("s");
-		LOGGER.debug("s is null: {}", s.isJsonNull());
-		String seq = (!s.isJsonNull()) ? s.getAsString() : "null";
+	private ScheduledFuture<?> startHeartbeat(final WebSocket websocket, final int heartbeatInterval) {
+		this.heartbeatAckReceived = true;
+		//returns some scheduled future from sending this heartbeat after delay
+		return threadpool.scheduleAtFixedRate(() -> {
+			if(this.heartbeatAckReceived) {
+				this.heartbeatAckReceived = false;
+				sendHeartbeat(websocket);
+				LOGGER.debug("Sent heartbeat...");
+			} else {
+				//TODO: maybe make a close code class as well?
+				websocket.sendClose(WebSocketCloseCode.UNACCEPTABLE,"Heartbeat ACK not received.");
+			}
+		}, 0, heartbeatInterval, TimeUnit.MILLISECONDS);
+	}
 
-		int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
-		LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
-
-		String heartbeat = String.format("{\"op\": 1, \"d\": %s}", seq);
-		LOGGER.info("heartbeat: {}", heartbeat);
-
-		//need to have scheduled heartbeat
-//				websocket.sendText(heartbeat);
+	/**
+	 * Sends a heartbeat back to the websocket
+	 * @param websocket - websocket
+	 */
+	private void sendHeartbeat(WebSocket websocket) {
+		JsonPacket heartbeatPacket = new JsonPacket();
+		heartbeatPacket.put("op", GatewayOpcode.HEARTBEAT.getOpcode());
+		heartbeatPacket.put("d", lastSeq);
+		LOGGER.info("heartbeatPacket: {}", heartbeatPacket);
+		WebSocketFrame heartbeatFrame = WebSocketFrame.createTextFrame(heartbeatPacket.toString());
+		websocket.sendFrame(heartbeatFrame);
 	}
 }
