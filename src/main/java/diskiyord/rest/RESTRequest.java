@@ -1,4 +1,4 @@
-package kiyobot.rest;
+package diskiyord.rest;
 
 import java.util.Map;
 

@@ -1,14 +1,8 @@
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import kiyobot.util.JsonConfigArgParser;
-import kiyobot.util.JsonPacket;
-import kiyobot.util.gateway.GatewayOpcode;
-import kiyobot.ws.DiscordWebsocketAdapter;
+import diskiyord.util.JsonConfigArgParser;
+import diskiyord.ws.DiscordWebsocketAdapter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Map;
 
 
 /**

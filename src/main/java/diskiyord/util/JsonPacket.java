@@ -1,13 +1,10 @@
-package kiyobot.util;
+package diskiyord.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * A convenience class for creating JSON formatted strings for output

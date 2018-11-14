@@ -1,6 +1,6 @@
-package kiyobot.util.gateway;
+package diskiyord.util.gateway;
 
-import kiyobot.util.ObjectContainer;
+import diskiyord.util.ObjectContainer;
 
 import java.util.Arrays;
 import java.util.HashMap;

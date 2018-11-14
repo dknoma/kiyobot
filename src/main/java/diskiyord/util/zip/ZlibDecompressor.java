@@ -1,4 +1,4 @@
-package kiyobot.util.zip;
+package diskiyord.util.zip;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

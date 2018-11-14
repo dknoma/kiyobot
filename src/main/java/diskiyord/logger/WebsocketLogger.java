@@ -1,4 +1,4 @@
-package kiyobot.logger;
+package diskiyord.logger;
 
 import com.neovisionaries.ws.client.*;
 import org.apache.logging.log4j.LogManager;

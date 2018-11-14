@@ -1,6 +1,6 @@
-package kiyobot.util.gateway;
+package diskiyord.util.gateway;
 
-import kiyobot.util.ObjectContainer;
+import diskiyord.util.ObjectContainer;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,7 +9,8 @@ import java.util.Map;
 public enum GatewayEvent {
 
 	READY("READY"),
-	GUILD_CREATE("GUILD_CREATE");
+	GUILD_CREATE("GUILD_CREATE"),
+	MESSAGE_CREATE("MESSAGE_CREATE");
 
 	private static final Map<String, GatewayEvent> INSTANCE_BY_EVENT = new HashMap<>();
 	private final String event;

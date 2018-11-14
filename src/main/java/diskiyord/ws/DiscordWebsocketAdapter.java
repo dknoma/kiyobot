@@ -1,14 +1,14 @@
-package kiyobot.ws;
+package diskiyord.ws;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.neovisionaries.ws.client.*;
-import kiyobot.logger.WebsocketLogger;
-import kiyobot.util.JsonPacket;
-import kiyobot.util.ObjectContainer;
-import kiyobot.util.gateway.GatewayEvent;
-import kiyobot.util.gateway.GatewayOpcode;
-import kiyobot.util.zip.ZlibDecompressor;
+import diskiyord.logger.WebsocketLogger;
+import diskiyord.util.JsonPacket;
+import diskiyord.util.ObjectContainer;
+import diskiyord.util.gateway.GatewayEvent;
+import diskiyord.util.gateway.GatewayOpcode;
+import diskiyord.util.zip.ZlibDecompressor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,9 +28,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 /**
  * An extension of a Websocket adapter for Discord API connections.
@@ -75,9 +72,8 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	/**
 	 * Gets the secure websocket from the first connection to the Discord api gateway
 	 * GET /api/gateway
-	 * TODO: maybe make a REST classes for convenience? Will make making requests and method calls easier.
+	 * TODO: maybe make REST classes for convenience? Will make making requests and method calls easier.
 	 * TODO: rather than coding calls each time, should have a class to format calls/requests for us
-	 * TODO: packet class, to send formatted responses back to API
 	 */
 	public void getWss() {
 		try {
@@ -86,7 +82,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 			connection.setDoInput(true);
 			connection.setRequestMethod("GET");
-			connection.setRequestProperty("User-Agent", String.format("kiyobot (v%s)", VERSION));
+			connection.setRequestProperty("User-Agent", String.format("diskiyord (v%s)", VERSION));
 			connection.setRequestProperty("Content-Type", "application/json");
 
 			InputStream instream = connection.getInputStream();
@@ -139,7 +135,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			// Register a listener to receive WebSocket events.
 			ws.addListener(this);
 			ws.addListener(new WebsocketLogger());
-			//TODO: rate limit of 5 seconds. IDENTIFY can only send ONCE every 5 seconds
+			//TODO: change rate limit from a hard 5.432 seconds
 			rateLimit();
 			ws.connect();
         } catch (URISyntaxException use) {
@@ -187,6 +183,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		switch(gatewayEvent.getObject()) {
 			case READY:
 				this.sessionId.set(messagePacket.get("d").asPacket().get("session_id").asString());
+				System.out.println(String.format("HUE HUE HUE ::: %s", this.sessionId.get()));
 				break;
 			case GUILD_CREATE:
 				break;
@@ -204,19 +201,18 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	public void onTextMessage(WebSocket websocket, String message) throws Exception {
 		LOGGER.info("onTextMessage: message={}", message);
 
-//		JsonObject obj = gson.fromJson(message, JsonObject.class);
 		JsonPacket messagePacket = new JsonPacket(message);
 
-		int op;
-		//TODO: throws exception, so the upstream method call should handle this.
-		try {
-//			op = obj.get("op").getAsInt();
-			op = messagePacket.get("op").asInt();
-		} catch(NumberFormatException nfe) {
-			LOGGER.info("Received an unknown payload. The value at \"op\" was not a number or does not exist. {}",
-					nfe.getMessage());
-			op = -1;
-		}
+		int op = messagePacket.get("op").asInt();
+//		//TODO: throws exception, so the upstream method call should handle this.
+//		try {
+////			op = obj.get("op").getAsInt();
+//			op = messagePacket.get("op").asInt();
+//		} catch(NumberFormatException nfe) {
+//			LOGGER.info("Received an unknown payload. The value at \"op\" was not a number or does not exist. {}",
+//					nfe.getMessage());
+//			op = -1;
+//		}
 
 		ObjectContainer<GatewayOpcode> gatewayOpcode = GatewayOpcode.fromOpcode(op);
 
@@ -235,7 +231,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		switch(gatewayOpcode.getObject()) {
 			case DISPATCH:
 				LOGGER.debug("Received dispatch");
-				//TODO: READY is received here
 				/*
 				 * Format:
 				 * 		{
