@@ -15,15 +15,18 @@ This is a Discord bot implemented using Java.
       * Commands for the LULz
 
 # Revision History
-Change log below:
+## Version 0.1.0
+* Basic library set up, allows bot to view and send messages to a channel.
+## Version 0.0.0
+* Repository setup.
 
 ## Contributions
 Drew Noma - djknoma@gmail.com
 
 [https://github.com/dknoma](https://github.com/dknoma)
 
-Version 0.0.0
-* Created repository
+Current Version 0.1.0
+* Basic message viewing and sending.
 
 # NOTES
 > Since this is implementing a custom library, it may not be finished in time.
