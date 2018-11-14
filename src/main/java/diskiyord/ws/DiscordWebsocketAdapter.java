@@ -3,6 +3,7 @@ package diskiyord.ws;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.neovisionaries.ws.client.*;
+import diskiyord.api.DiskiyordApi;
 import diskiyord.logger.WebsocketLogger;
 import diskiyord.util.JsonPacket;
 import diskiyord.util.ObjectContainer;
@@ -44,15 +45,16 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	private String wss;
 	private Gson gson;
 	private ScheduledExecutorService threadpool;
-	private AtomicReference<WebSocketFrame> nextHeartbeatFrame = new AtomicReference<>();
+//	private AtomicReference<WebSocketFrame> nextHeartbeatFrame = new AtomicReference<>();
 
 	private volatile int lastSeq = -1;
 	private volatile boolean heartbeatAckReceived;
 	private volatile boolean reconnect;
 
-//	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
+	private final DiskiyordApi api;
 	private final String token;
 	private final AtomicReference<String> sessionId = new AtomicReference<>();
+	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
 
 	private static final int GATEWAY_VERSION = 6;
 	private static final String ENCODING = "json";
@@ -60,13 +62,17 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	private static final String GET_URL = "https://www.discordapp.com/api/gateway";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public DiscordWebsocketAdapter(String token) {
+	public DiscordWebsocketAdapter(DiskiyordApi api) {
+		this.api = api;
 		this.wss = "";
 		this.gson = new Gson();
 		this.threadpool = Executors.newScheduledThreadPool(1);
 		this.heartbeatAckReceived = false;
 		this.reconnect = true;
-		this.token = token;
+		this.token = this.api.getToken();
+
+		getWss();
+		connect();
 	}
 
 	/**
@@ -95,7 +101,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		} catch (MalformedURLException mue) {
 			LOGGER.fatal("URL is malformed, {},\n{}", mue.getMessage(), mue.getStackTrace());
 		} catch (IOException ioe) {
-			LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(),
+			LOGGER.fatal("Error has occurred when attempting connection, {},\n{}", ioe.getMessage(),
 					ioe.getStackTrace());
 		}
 	}
@@ -131,7 +137,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			URI uri = new URI(wssUri);
 			LOGGER.debug("URI: {}", uri);
 			WebSocket ws = factory.createSocket(uri);
-//			this.websocket.set(ws);
+			this.websocket.set(ws);
 			// Register a listener to receive WebSocket events.
 			ws.addListener(this);
 			ws.addListener(new WebsocketLogger());
@@ -183,7 +189,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		switch(gatewayEvent.getObject()) {
 			case READY:
 				this.sessionId.set(messagePacket.get("d").asPacket().get("session_id").asString());
-				System.out.println(String.format("HUE HUE HUE ::: %s", this.sessionId.get()));
 				break;
 			case GUILD_CREATE:
 				break;
@@ -307,6 +312,14 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 				LOGGER.error("Received an unknown payload. {\"op\": {}}.", op);
 				break;
 		}
+	}
+
+	/**
+	 * Gets an atomic reference to this websocket
+	 * @return this.websocket
+	 */
+	public AtomicReference<WebSocket> getWebsocket() {
+		return websocket;
 	}
 
 	/**

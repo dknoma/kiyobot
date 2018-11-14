@@ -2,11 +2,16 @@ package diskiyord.event.message;
 
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
+import diskiyord.api.DiskiyordApi;
 import diskiyord.util.JsonPacket;
 import diskiyord.util.ObjectContainer;
+import diskiyord.util.channel.Channel;
 import diskiyord.util.gateway.GatewayEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A WebsocketListener specifically for dealing with Message Create related events.
@@ -17,12 +22,20 @@ public class MessageCreateListener extends WebSocketAdapter {
 
 	private String messageContent;
 	private String channelId;
+	private AtomicReference<CountDownLatch> latch;
+
+	private final DiskiyordApi api;
+
+	private volatile boolean receivedMessage;
 
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public MessageCreateListener() {
+	public MessageCreateListener(DiskiyordApi api) {
 		this.messageContent = "";
 		this.channelId = "";
+		this.receivedMessage = false;
+		this.latch = new AtomicReference<>(new CountDownLatch(1));
+		this.api = api;
 	}
 
 	@Override
@@ -42,8 +55,12 @@ public class MessageCreateListener extends WebSocketAdapter {
 
 		switch(gatewayEvent.getObject()) {
 			case MESSAGE_CREATE:
+				LOGGER.debug("Received a message.");
 				this.messageContent = messagePacket.get("d").asPacket().get("content").asString();
 				this.channelId = messagePacket.get("d").asPacket().get("channel_id").asString();
+				LOGGER.debug("messageContent = {}", this.messageContent);
+				this.receivedMessage = true;
+				this.latch.get().countDown();
 				break;
 			default:
 				LOGGER.debug("Nothing to see here...");
@@ -56,14 +73,26 @@ public class MessageCreateListener extends WebSocketAdapter {
 	 * @return message content
 	 */
 	public String getMessageContent() {
-		return this.messageContent;
+		System.out.println("Waiting for a message...");
+		try {
+			try {
+				this.latch.get().await();
+				System.out.println("Found a message.");
+			} catch (InterruptedException e) {
+				LOGGER.error("An interruption occurred, {},\n{}", e.getMessage(), e.getStackTrace());
+			}
+			return this.messageContent;
+		} finally {
+			this.receivedMessage = false;
+			this.latch.set(new CountDownLatch(1));
+		}
 	}
 
 	/**
 	 * Gets the message from the event
 	 * @return message content
 	 */
-	public String getChannelId() {
-		return this.channelId;
+	public Channel getChannel() {
+		return new Channel(this.channelId, this.api);
 	}
 }
