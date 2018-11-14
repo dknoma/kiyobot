@@ -48,7 +48,8 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	private volatile boolean heartbeatAckReceived;
 	private volatile boolean reconnect;
 
-	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
+//	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
+	private final String token;
 
 	private static final int GATEWAY_VERSION = 6;
 	private static final String ENCODING = "json";
@@ -56,12 +57,13 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	private static final String GET_URL = "https://www.discordapp.com/api/gateway";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public DiscordWebsocketAdapter() {
+	public DiscordWebsocketAdapter(String token) {
 		this.wss = "";
 		this.gson = new Gson();
 		this.threadpool = Executors.newScheduledThreadPool(1);
 		this.heartbeatAckReceived = false;
 		this.reconnect = true;
+		this.token = token;
 	}
 
 	/**
@@ -127,11 +129,12 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			URI uri = new URI(wssUri);
 			LOGGER.debug("URI: {}", uri);
 			WebSocket ws = factory.createSocket(uri);
-			this.websocket.set(ws);
+//			this.websocket.set(ws);
 			// Register a listener to receive WebSocket events.
 			ws.addListener(this);
 			ws.addListener(new WebsocketLogger());
-
+			//TODO: rate limit of 5 seconds. IDENTIFY can only send ONCE every 5 seconds
+			rateLimit();
 			ws.connect();
         } catch (URISyntaxException use) {
 			LOGGER.fatal("Error has occured in URI creation, {},\n{}", use.getMessage(), use.getStackTrace());
@@ -141,6 +144,20 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
         } catch (Exception e) {
 			LOGGER.fatal("Error has occured starting WebSocketClient, {},\n{}", e.getMessage(), e.getStackTrace());
 		}
+	}
+
+	/**
+	 * Need to wait at least 5 seconds in between IDENTIFY calls
+	 */
+	private void rateLimit() {
+		// delay of 5432 milliseconds
+		long delay = 5432;
+		try {
+			Thread.sleep(delay);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		LOGGER.debug(String.format("Waited for %f seconds", (delay/1000.0)));
 	}
 
 	@Override
@@ -182,6 +199,38 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		switch(gatewayOpcode.getObject()) {
 			case DISPATCH:
 				LOGGER.debug("Received dispatch");
+				//TODO: READY is received here
+				/*
+				 * Format:
+				 * 		{
+							"t": "READY",
+							"s": 1,
+							"op": 0,
+							"d": {
+								"v": 6,
+								"user_settings": {},
+								"user": {
+									"verified": true,
+									"username": "Kiyobot",
+									"mfa_enabled": true,
+									"id": "<id>",
+									"email": null,
+									"discriminator": "<#>",
+									"bot": true,
+									"avatar": "<avatar>"
+								},
+								"session_id": "<id>",
+								"relationships": [],
+								"private_channels": [],
+								"presences": [],
+								"guilds": [{
+									"unavailable": true,
+									"id": "<id>"
+								}],
+								"_trace": ["gateway-prd-main-fp7m", "discord-sessions-prd-1-11"]
+							}
+						}
+				 */
 				break;
 			case HEARTBEAT:
 				LOGGER.debug("Received heartbeat");
@@ -215,6 +264,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
 				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
 				startHeartbeat(websocket, heartbeatInterval);
+				sendIdentify(websocket);
 				break;
 			case HEARTBEAT_ACK:
 				LOGGER.info("Received heartbeat ack");
@@ -239,7 +289,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			if(this.heartbeatAckReceived) {
 				this.heartbeatAckReceived = false;
 				sendHeartbeat(websocket);
-				LOGGER.debug("Sent heartbeat...");
 			} else {
 				//TODO: maybe make a close code class as well?
 				websocket.sendClose(WebSocketCloseCode.UNACCEPTABLE,"Heartbeat ACK not received.");
@@ -255,8 +304,46 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		JsonPacket heartbeatPacket = new JsonPacket();
 		heartbeatPacket.put("op", GatewayOpcode.HEARTBEAT.getOpcode());
 		heartbeatPacket.put("d", lastSeq);
-		LOGGER.info("heartbeatPacket: {}", heartbeatPacket);
+		LOGGER.info("Sending heartbeat response.");
 		WebSocketFrame heartbeatFrame = WebSocketFrame.createTextFrame(heartbeatPacket.toString());
 		websocket.sendFrame(heartbeatFrame);
+	}
+
+	/**
+	 * Sends identify back to the websocket
+	 * format:
+	 *  {
+	 *      "op": 2
+	 *     	"d": {
+	 *      	"token": "my_token",
+	 *			"properties": {
+	 *				"$os": System.getProperty("os.name"),
+	 *				"$browser": "kiyo",
+	 *				"$device": "kiyo"
+	 *			},
+	 *			"compress": true,
+	 *			"large_threshold": 250
+	 *		}
+	 *  }
+	 * @param websocket - websocket
+	 */
+	private void sendIdentify(WebSocket websocket) {
+		// creates json w/ fields {op, d { ... }, ... }, can nest JsonPackets for json within json
+		JsonPacket identifyPacket = new JsonPacket();
+		identifyPacket.put("op", GatewayOpcode.IDENTIFY.getOpcode());
+		JsonPacket data = new JsonPacket();
+		identifyPacket.put("d", data);
+		data.put("token", this.token);
+		JsonPacket properties = new JsonPacket();
+		data.put("properties", properties);
+		properties.put("$os", System.getProperty("os.name"));
+		properties.put("$browser", "kiyo");
+		properties.put("$device", "kiyo");
+		data.put("compress", false);
+		data.put("large_threshold", 250);
+
+		WebSocketFrame identifyFrame = WebSocketFrame.createTextFrame(identifyPacket.toString());
+		LOGGER.debug("Sending IDENTIFY response.");
+		websocket.sendFrame(identifyFrame);
 	}
 }

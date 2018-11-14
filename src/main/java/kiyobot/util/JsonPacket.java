@@ -1,6 +1,7 @@
 package kiyobot.util;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.LinkedHashMap;
@@ -8,6 +9,16 @@ import java.util.Map;
 
 /**
  * A convenience class for creating JSON formatted strings for output
+ *
+ * Format:
+ * 	{
+ * 	    "key": value,
+ * 	    "anotherkey": {
+ * 	        "JsonPackets": "can",
+ * 	        "also": "be",
+ * 	        "values": true
+ * 	    }
+ * 	}
  */
 public class JsonPacket {
 
@@ -17,6 +28,17 @@ public class JsonPacket {
 	public JsonPacket() {
 		this.output = new LinkedHashMap<>();
 		this.gson = new Gson();
+	}
+
+	public JsonPacket(String json) {
+		mapJson(json);
+	}
+
+	private void mapJson(String string) {
+		JsonObject obj = gson.fromJson(string, JsonObject.class);
+		for(Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+			this.output.put(entry.getKey(), entry.getValue().toString());
+		}
 	}
 
 	/**
@@ -37,7 +59,7 @@ public class JsonPacket {
 			i++;
 			String key = pair.getKey();
 			Object value = pair.getValue();
-			if(pair.getValue() instanceof String) {
+			if(value instanceof String) {
 				sb.append(String.format("\"%1$s\": \"%2$s\"", key, value));
 			} else {
 				sb.append(String.format("\"%1$s\": %2$s", key, value));
