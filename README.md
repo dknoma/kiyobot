@@ -1,7 +1,7 @@
 # Kiyobot
 > Java Discord Bot
 
-This is a Discord bot implemented using Java.
+This is a Discord bot implemented using Java. This bot is a personal side project that is being updated over time. Things may be incomplete or design may not be 100% efficient, but they are being kept track of.
 
 # Bot Functionality
 * Receive and send messages to channels in the Discord server the bot is present at.
