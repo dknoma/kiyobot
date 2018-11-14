@@ -51,24 +51,10 @@ public class BotTest {
 //		System.out.println(packet.toString());
 
 		//testing app
-//		JsonConfigArgParser parser = new JsonConfigArgParser();
-//		parser.parseConfig();
-//		DiscordWebsocketAdapter connection = new DiscordWebsocketAdapter(parser.getAuthTok());
-//		connection.getWss();
-//		connection.connect();
+		JsonConfigArgParser parser = new JsonConfigArgParser();
+		parser.parseConfig();
+		DiscordWebsocketAdapter connection = new DiscordWebsocketAdapter(parser.getAuthTok());
+		connection.getWss();
+		connection.connect();
 	}
-
-//	private static void mapJson(String string) {
-//		JsonObject obj = gson.fromJson(string, JsonObject.class);
-//		for(Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-//			String key = entry.getKey();
-//			JsonElement value = entry.getValue();
-//			System.out.println(value.toString());
-////			if(value.) {
-////				this.output.put(key, value.toString());
-////			} else {
-////				this.output.put()
-////			}
-//		}
-//	}
 }

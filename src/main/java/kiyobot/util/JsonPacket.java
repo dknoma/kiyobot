@@ -24,23 +24,25 @@ import java.util.Map;
  */
 public class JsonPacket {
 
-//	private Map<String, Object> output;
 	private JsonObject object;
 	private Gson gson;
 
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public JsonPacket() {
-//		this.output = new LinkedHashMap<>();
 		this.object = new JsonObject();
 		this.gson = new Gson();
 	}
 
 	public JsonPacket(String json) {
-//		this.output = new LinkedHashMap<>();
 		this.object = new JsonObject();
 		this.gson = new Gson();
 		mapJson(json);
+	}
+
+	public JsonPacket(JsonObject json) {
+		this.object = json;
+		this.gson = new Gson();
 	}
 
 	/**
@@ -49,47 +51,125 @@ public class JsonPacket {
 	 */
 	private void mapJson(String string) {
 		 this.object = gson.fromJson(string, JsonObject.class);
-//		JsonObject obj = gson.fromJson(string, JsonObject.class);
-//		for(Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-//			this.output.put(entry.getKey(), entry.getValue().toString());
-//		}
 	}
 
 	/**
 	 * Adds key/value pair to map
-	 * @param key -
-	 * @param value -
+	 * @param key - key
+	 * @param value - value
 	 */
 	public void put(String key, Object value) {
-//		this.output.put(key, value);
 		JsonElement ele = gson.toJsonTree(value);
-		JsonObject obj = new JsonObject();
 		if(ele.isJsonObject()) {
-			obj = ele.getAsJsonObject();
+			JsonObject obj = ele.getAsJsonObject();
 			ele = obj.get("object");
-			System.out.println("ele is a JsonObject = " + ele.toString());
+			LOGGER.debug("ele is a JsonObject = {}", ele.toString());
 		}
-//		System.out.println("key=" + key + ", value=" + ele);
 		this.object.add(key, ele);
+	}
+
+	/**
+	 * Gets a value from the given key if it exists
+	 * @param key - key
+	 */
+	public PacketElement get(String key) {
+		return new PacketElement(this.object.get(key));
 	}
 
 	@Override
 	public String toString() {
-//		StringBuilder sb = new StringBuilder();
-//		sb.append("{");
-//		int i = 0;
-//		for(Map.Entry<String, Object> pair : this.output.entrySet()) {
-//			String key = pair.getKey();
-//			Object value = pair.getValue();
-//			System.out.println("value = " + value.toString());
-//			sb.append(String.format("%1$s: %2$s", key, value));
-//			if(++i < this.output.size()) {
-//				sb.append(",");
-//			}
-//		}
-//		sb.append("}");
-//		JsonObject obj = gson.fromJson(sb.toString(), JsonObject.class);
-//		return obj.;
 		return this.object.toString();
+	}
+
+	/**
+	 * Inner class
+	 */
+	public class PacketElement {
+
+		private JsonElement ele;
+
+		private PacketElement(JsonElement ele) {
+			this.ele = ele;
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public boolean asBoolean() {
+			return this.ele.getAsBoolean();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public byte asByte() {
+			return this.ele.getAsByte();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public char asChar() {
+			return this.ele.getAsCharacter();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public double asDouble() {
+			return this.ele.getAsDouble();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public float asFloat() {
+			return this.ele.getAsFloat();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public int asInt() {
+			return this.ele.getAsInt();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public Number asNumer() {
+			return this.ele.getAsNumber();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public JsonPacket asPacket() {
+			return new JsonPacket(this.ele.getAsJsonObject());
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public String asString() {
+			return this.ele.getAsString();
+		}
+
+		/**
+		 * Get the JsonElement as an int
+		 * @return int
+		 */
+		public short asShort() {
+			return this.ele.getAsShort();
+		}
 	}
 }

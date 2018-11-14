@@ -6,7 +6,9 @@ import com.neovisionaries.ws.client.*;
 import kiyobot.logger.WebsocketLogger;
 import kiyobot.util.JsonPacket;
 import kiyobot.util.ObjectContainer;
+import kiyobot.util.gateway.GatewayEvent;
 import kiyobot.util.gateway.GatewayOpcode;
+import kiyobot.util.zip.ZlibDecompressor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,6 +28,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 /**
  * An extension of a Websocket adapter for Discord API connections.
@@ -50,6 +55,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 
 //	private final AtomicReference<WebSocket> websocket = new AtomicReference<>();
 	private final String token;
+	private final AtomicReference<String> sessionId = new AtomicReference<>();
 
 	private static final int GATEWAY_VERSION = 6;
 	private static final String ENCODING = "json";
@@ -161,6 +167,34 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	}
 
 	@Override
+	public void onBinaryMessage(WebSocket websocket, byte[] binary) throws  Exception {
+		ZlibDecompressor decompressor = new ZlibDecompressor();
+		String output = decompressor.decompress(binary);
+		LOGGER.debug("onBinaryMessage: decompressed={}", output);
+
+		JsonPacket messagePacket = new JsonPacket(output);
+		String event = messagePacket.get("t").asString();
+
+		ObjectContainer<GatewayEvent> gatewayEvent = GatewayEvent.fromEvent(event);
+		/*
+		 * Must have gotten an illegal opcode
+		 */
+		if(!gatewayEvent.objectIsPresent()) {
+			LOGGER.error("Received an unknown payload. \"op\"={} does not exist.", event);
+			return;
+		}
+
+		switch(gatewayEvent.getObject()) {
+			case READY:
+				this.sessionId.set(messagePacket.get("d").asPacket().get("session_id").asString());
+				break;
+			case GUILD_CREATE:
+				break;
+		}
+	}
+
+
+	@Override
 	public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame,
 							   boolean closedByServer) throws Exception {
 		//TODO: do something on disconnect
@@ -170,12 +204,14 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	public void onTextMessage(WebSocket websocket, String message) throws Exception {
 		LOGGER.info("onTextMessage: message={}", message);
 
-		JsonObject obj = gson.fromJson(message, JsonObject.class);
+//		JsonObject obj = gson.fromJson(message, JsonObject.class);
+		JsonPacket messagePacket = new JsonPacket(message);
 
 		int op;
 		//TODO: throws exception, so the upstream method call should handle this.
 		try {
-			op = obj.get("op").getAsInt();
+//			op = obj.get("op").getAsInt();
+			op = messagePacket.get("op").asInt();
 		} catch(NumberFormatException nfe) {
 			LOGGER.info("Received an unknown payload. The value at \"op\" was not a number or does not exist. {}",
 					nfe.getMessage());
@@ -231,6 +267,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 							}
 						}
 				 */
+				//TODO: GUILD_CREATE is received here
 				break;
 			case HEARTBEAT:
 				LOGGER.debug("Received heartbeat");
@@ -261,7 +298,8 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 				LOGGER.debug("Received invalid session");
 				break;
 			case HELLO:
-				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
+//				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
+				int heartbeatInterval = messagePacket.get("d").asPacket().get("heartbeat_interval").asInt();
 				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
 				startHeartbeat(websocket, heartbeatInterval);
 				sendIdentify(websocket);
@@ -331,16 +369,18 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		// creates json w/ fields {op, d { ... }, ... }, can nest JsonPackets for json within json
 		JsonPacket identifyPacket = new JsonPacket();
 		identifyPacket.put("op", GatewayOpcode.IDENTIFY.getOpcode());
+
 		JsonPacket data = new JsonPacket();
-		identifyPacket.put("d", data);
 		data.put("token", this.token);
+
 		JsonPacket properties = new JsonPacket();
-		data.put("properties", properties);
 		properties.put("$os", System.getProperty("os.name"));
 		properties.put("$browser", "kiyo");
 		properties.put("$device", "kiyo");
-		data.put("compress", false);
+		data.put("properties", properties);
+		data.put("compress", true);
 		data.put("large_threshold", 250);
+		identifyPacket.put("d", data);
 
 		WebSocketFrame identifyFrame = WebSocketFrame.createTextFrame(identifyPacket.toString());
 		LOGGER.debug("Sending IDENTIFY response.");
