@@ -51,13 +51,11 @@ public class BotTest {
 //		System.out.println(packet.toString());
 
 		//testing app
-		JsonConfigArgParser parser = new JsonConfigArgParser();
-		parser.parseConfig();
-		DiscordWebsocketAdapter connection = new DiscordWebsocketAdapter(parser.getAuthTok());
-		connection.getWss();
-		connection.connect();
-//		String json = "{ \"b\": true, \"s\": string, \"i\": 10, \"data\": { \"f\": false } }";
-//		mapJson(json);
+//		JsonConfigArgParser parser = new JsonConfigArgParser();
+//		parser.parseConfig();
+//		DiscordWebsocketAdapter connection = new DiscordWebsocketAdapter(parser.getAuthTok());
+//		connection.getWss();
+//		connection.connect();
 	}
 
 //	private static void mapJson(String string) {
