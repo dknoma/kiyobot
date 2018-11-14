@@ -14,6 +14,43 @@ This is a Discord bot implemented using Java.
       * This kind of command could choose a random image link from a pool of links which would have pictures of people laughing or have the word "kek" in them.
       * Commands for the LULz
 
+## Example Bot
+
+This is an example of how a simple bot can be created using this API. This bot will be able to read messages being sent to a server and respond if a certain command is in that message.
+
+```Java
+public class MessageBot {
+
+    public static void main(String[] args) {
+        // api token goes here. NOTE* Make sure to store it securely and not in any public repository.
+        String token = "api_token";
+        // Creates the api for the bot.
+        DiskiyordApi api = DiskiyordApiBuilder.buildApi(token);
+        // Adds an event listener specifically for detecting text messages being sent in a server.
+        api.addMessageCreateListener(messageEvent -> {
+            while(true) {
+                String message = messageEvent.getMessageContent();
+                String[] messageArgs = message.split(" {2}");
+                String errorMessage = "";
+                try {
+                    // Using switch() for different possible commands.
+                    switch (messageArgs[0]) {
+                        // If someone types "!ping", the bot responds with "Pong!"
+                        case "!ping":
+                            messageEvent.getChannel().sendTextMessage("Pong!");
+                            break;
+                        default:
+                            break;
+                    }
+                } catch(ArrayIndexOutOfBoundsException aiobe) {
+                    messageEvent.getChannel().sendTextMessage(errorMessage);
+                }
+            }
+        });
+    }
+}
+```
+
 # Revision History
 ## Version 0.1.0
 * Basic library set up, allows bot to view and send messages to a channel.
