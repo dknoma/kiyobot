@@ -30,6 +30,7 @@ public class MessageBot {
         api.addMessageCreateListener(messageEvent -> {
             while(true) {
                 String message = messageEvent.getMessageContent();
+                // Can parse the message for arguments after the command; in this case it splits on 2 space characters
                 String[] messageArgs = message.split(" {2}");
                 String errorMessage = "";
                 try {
