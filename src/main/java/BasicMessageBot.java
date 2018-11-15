@@ -37,26 +37,24 @@ public class BasicMessageBot {
 		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
 
 		api.addMessageCreateListener(messageEvent -> {
-			while(true) {
-				String message = messageEvent.getMessageContent();
-				String[] messageArgs = message.split(" {2}");
-				String errorMessage = "";
-				try {
-					switch (messageArgs[0]) {
-						case "!ping":
-							messageEvent.getChannel().sendTextMessage("Pong!");
-							break;
-						case "!addtodo":
-							errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-							String botOutput = String.format("Added TODO: %s.", messageArgs[1]);
-							messageEvent.getChannel().sendTextMessage(botOutput);
-							break;
-						default:
-							break;
-					}
-				} catch(ArrayIndexOutOfBoundsException aiobe) {
-					messageEvent.getChannel().sendTextMessage(errorMessage);
+			String message = messageEvent.getMessageContent();
+			String[] messageArgs = message.split(" {2}");
+			String errorMessage = "";
+			try {
+				switch (messageArgs[0]) {
+					case "!ping":
+						messageEvent.getChannel().sendTextMessage("Pong!");
+						break;
+					case "!addtodo":
+						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
+						String botOutput = String.format("Added TODO: %s.", messageArgs[1]);
+						messageEvent.getChannel().sendTextMessage(botOutput);
+						break;
+					default:
+						break;
 				}
+			} catch(ArrayIndexOutOfBoundsException aiobe) {
+				messageEvent.getChannel().sendTextMessage(errorMessage);
 			}
 		});
 		System.out.println("Finished bot stuff?");
