@@ -54,14 +54,6 @@ public class DiskiyordApi {
 	}
 
 	/**
-	 * Gets the websocket
-	 * @return websocket
-	 */
-	public WebSocket getWebSocket() {
-		return this.webSocket;
-	}
-
-	/**
 	 * Gets the token of this API
 	 * @return token
 	 */

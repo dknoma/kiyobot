@@ -39,7 +39,7 @@ public class Channel {
 			HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
 			connection.setDoOutput(true);
-			connection.setDoInput(true);
+//			connection.setDoInput(true);
 			connection.setRequestMethod("POST");
 			connection.setRequestProperty("Authorization", String.format("Bot %s", this.api.getToken()));
 			connection.setRequestProperty("User-Agent", "Kiyobot");
@@ -48,10 +48,9 @@ public class Channel {
 			OutputStream outstream = connection.getOutputStream();
 			outstream.write(requestBodyPacket.toString().getBytes());
 			outstream.flush();
-
-			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-			LOGGER.debug(String.format("Sent message %s", reader.readLine()));
-			reader.close();
+//			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//			LOGGER.debug(String.format("Sent message %s", reader.readLine()));
+//			reader.close();
 			outstream.close();
 		} catch (MalformedURLException mue) {
 			LOGGER.error("Malformed URL, {},\n{}", mue.getMessage(), mue.getStackTrace());

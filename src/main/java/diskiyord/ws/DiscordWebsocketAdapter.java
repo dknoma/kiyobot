@@ -79,7 +79,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	 * Gets the secure websocket from the first connection to the Discord api gateway
 	 * GET /api/gateway
 	 * TODO: maybe make REST classes for convenience? Will make making requests and method calls easier.
-	 * TODO: rather than coding calls each time, should have a class to format calls/requests for us
 	 */
 	public void getWss() {
 		try {
@@ -209,7 +208,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		JsonPacket messagePacket = new JsonPacket(message);
 
 		int op = messagePacket.get("op").asInt();
-//		//TODO: throws exception, so the upstream method call should handle this.
 //		try {
 ////			op = obj.get("op").getAsInt();
 //			op = messagePacket.get("op").asInt();
@@ -336,7 +334,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 				this.heartbeatAckReceived = false;
 				sendHeartbeat(websocket);
 			} else {
-				//TODO: maybe make a close code class as well?
 				websocket.sendClose(WebSocketCloseCode.UNACCEPTABLE,"Heartbeat ACK not received.");
 			}
 		}, 0, heartbeatInterval, TimeUnit.MILLISECONDS);

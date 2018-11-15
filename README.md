@@ -24,28 +24,27 @@ public class MessageBot {
     public static void main(String[] args) {
         // api token goes here. NOTE* Make sure to store it securely and not in any public repository.
         String token = "api_token";
+
         // Creates the api for the bot.
         DiskiyordApi api = DiskiyordApiBuilder.buildApi(token);
         // Adds an event listener specifically for detecting text messages being sent in a server.
         api.addMessageCreateListener(messageEvent -> {
-            while(true) {
-                String message = messageEvent.getMessageContent();
-                // Can parse the message for arguments after the command; in this case it splits on 2 space characters
-                String[] messageArgs = message.split(" {2}");
-                String errorMessage = "";
-                try {
-                    // Using switch() for different possible commands.
-                    switch (messageArgs[0]) {
-                        // If someone types "!ping", the bot responds with "Pong!"
-                        case "!ping":
-                            messageEvent.getChannel().sendTextMessage("Pong!");
-                            break;
-                        default:
-                            break;
-                    }
-                } catch(ArrayIndexOutOfBoundsException aiobe) {
-                    messageEvent.getChannel().sendTextMessage(errorMessage);
+            String message = messageEvent.getMessageContent();
+            // Can parse the message for arguments after the command; in this case it splits on 2 space characters
+            String[] messageArgs = message.split(" {2}");
+            String errorMessage = "";
+            try {
+                // Using switch() for different possible commands.
+                switch (messageArgs[0]) {
+                    // If someone types "!ping", the bot responds with "Pong!"
+                    case "!ping":
+                        messageEvent.getChannel().sendTextMessage("Pong!");
+                        break;
+                    default:
+                        break;
                 }
+            } catch(ArrayIndexOutOfBoundsException aiobe) {
+                messageEvent.getChannel().sendTextMessage(errorMessage);
             }
         });
     }
