@@ -27,8 +27,10 @@ import diskiyord.util.JsonConfigArgParser;
  */
 public class BasicMessageBot {
 
-	public BasicMessageBot() {
+	private static int PINGS;
 
+	public BasicMessageBot() {
+		PINGS = 0;
 	}
 
 	public static void main(String[] args) {
@@ -41,16 +43,24 @@ public class BasicMessageBot {
 			String[] messageArgs = message.split(" {2}");
 			String errorMessage = "";
 			try {
-				switch (messageArgs[0]) {
+				switch(messageArgs[0]) {
 					case "!ping":
-						messageEvent.getChannel().sendTextMessage("Pong!");
+						if(PINGS < 3) {
+							messageEvent.getChannel().sendTextMessage("Pong!");
+						} else {
+							//TODO: add angry react image here
+							messageEvent.getChannel().sendTextMessage("...");
+						}
+						PINGS++;
 						break;
 					case "!addtodo":
+						PINGS = 0;
 						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
 						String botOutput = String.format("Added TODO: %s.", messageArgs[1]);
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;
 					default:
+						PINGS = 0;
 						break;
 				}
 			} catch(ArrayIndexOutOfBoundsException aiobe) {
