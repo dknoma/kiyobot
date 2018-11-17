@@ -27,32 +27,64 @@ public enum JDBCHandler {
 		}
 	}
 
-	public void setupTable(String tableName, String... keysAndProperties) throws SQLException {
+	/**
+	 * Sets up the initial table
+	 * @param tableName
+	 * @throws SQLException
+	 */
+	public void setupTable(String tableName) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		String updatedTableName = tableName.toUpperCase();
 		String primaryKey = String.format("%s_ID", updatedTableName);
 		sb.append("create table ");
 		sb.append(updatedTableName).append(" ");
 		sb.append("(").append(primaryKey).append(" integer NOT NULL, ");
-		for(String keyAndProperties : keysAndProperties) {
-			sb.append(keyAndProperties).append(", ");
-		}
-		//TODO: make separate method to all table keys. make it a lot easier to add things
 //				"SUP_NAME varchar(40) NOT NULL, " +
 //				"STREET varchar(40) NOT NULL, " +
 //				"CITY varchar(20) NOT NULL, " +
 //				"STATE char(2) NOT NULL, " +
 //				"ZIP char(5), " +
-		sb.append("PRIMARY KEY (").append(primaryKey).append(")");
 		// adds the table and primary key to the respective maps
 		TABLE_NAMES.put(updatedTableName, sb.toString());
 		TABLE_PRIMARY_KEYS.put(updatedTableName, primaryKey);
 	}
 
 	/**
-	 * Updates a table to have a foreign key if it
+	 * Adds a key of type string to the table
 	 * @param tableName
-	 * @param referenceTableName
+	 * @param key
+	 * @param isVarchar
+	 * @param chars
+	 * @param notNull
+	 */
+	public void addStringKey(String tableName, String key, boolean isVarchar, int chars, boolean notNull) {
+		key = key.toUpperCase();
+		String table = TABLE_NAMES.get(tableName);
+		String nullable = notNull ? " NOT NULL" : "";
+		String updatedTable;
+		if(isVarchar) {
+			updatedTable = String.format("%1$s, %2$s varchar(%3$s)%4$s", table, key, chars, nullable);
+		} else {
+			updatedTable = String.format("%1$s, %2$s char(%3$s)%4$s", table, key, chars, nullable);
+		}
+		TABLE_NAMES.replace(tableName, updatedTable);
+	}
+
+	/**
+	 * Adds primary key to the table
+	 * @param tableName name of table
+	 */
+	public void addPrimaryKey(String tableName) {
+		String primaryKey = TABLE_PRIMARY_KEYS.get(tableName);
+		String table = TABLE_NAMES.get(tableName);
+		String updatedTable = String.format("%1$s, PRIMARY KEY (%2$s)", table, primaryKey);
+		TABLE_NAMES.replace(tableName, updatedTable);
+	}
+
+	/**
+	 * Updates a table to have a foreign key if it
+	 * @param tableName name of table
+	 * @param referenceTableName name of reference table
 	 */
 	public void addForeignKey(String tableName, String referenceTableName) {
 		String foreignKey = TABLE_PRIMARY_KEYS.get(referenceTableName);
@@ -62,6 +94,11 @@ public enum JDBCHandler {
 		TABLE_NAMES.replace(tableName, updatedTable);
 	}
 
+	/**
+	 * Actually creates and puts it into the database
+	 * @param tableName
+	 * @throws SQLException
+	 */
 	public void createTable(String tableName) throws SQLException {
 		String table = String.format("%s)", TABLE_NAMES.get(tableName));
 
