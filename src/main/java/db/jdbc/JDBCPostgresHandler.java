@@ -3,11 +3,13 @@ package db.jdbc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum JDBCHandler {
+public enum JDBCPostgresHandler {
 
 	INSTANCE();
 
@@ -17,13 +19,31 @@ public enum JDBCHandler {
 	private static final Map<String, String> TABLE_NAMES = new HashMap<>();
 	private static final Map<String, String> TABLE_PRIMARY_KEYS = new HashMap<>();
 
-	JDBCHandler() {
+	JDBCPostgresHandler() {
+	}
+
+	/**
+	 * Sets up the connection for JDBC to the database
+	 * @param db db
+	 * @param host host
+	 * @param port port
+	 * @param username un
+	 * @param password pw
+	 */
+	public void setConnection(String db, String host, String port, String username, String password) {
 		try {
 			Class.forName("org.postgresql.Driver");
-		}
-		catch (java.lang.ClassNotFoundException e) {
-			System.out.println(String.format("Class error has occurred: %1$s,\n %2$s",
-					e.getMessage(), e.getStackTrace().toString()));
+			LOGGER.debug("Got driver.");
+
+			String dbURL = String.format("jdbc:postgresql://%1$s:%2$s/%3$s", host, port, db);
+			LOGGER.debug("db: {}", dbURL);
+
+			this.dbConn = DriverManager.getConnection(dbURL, username, password);
+			LOGGER.info("Connected to db successfully!");
+		} catch (java.lang.ClassNotFoundException e) {
+			LOGGER.error("Class error has occurred: {},\n {}", e.getMessage(), e.getStackTrace());
+		} catch (SQLException e) {
+			LOGGER.error("An SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 	}
 
@@ -38,7 +58,7 @@ public enum JDBCHandler {
 		String primaryKey = String.format("%s_ID", updatedTableName);
 		sb.append("create table ");
 		sb.append(updatedTableName).append(" ");
-		sb.append("(").append(primaryKey).append(" integer NOT NULL, ");
+		sb.append("(").append(primaryKey).append(" integer NOT NULL");
 //				"SUP_NAME varchar(40) NOT NULL, " +
 //				"STREET varchar(40) NOT NULL, " +
 //				"CITY varchar(20) NOT NULL, " +
@@ -58,6 +78,7 @@ public enum JDBCHandler {
 	 * @param notNull
 	 */
 	public void addStringKey(String tableName, String key, boolean isVarchar, int chars, boolean notNull) {
+		tableName = tableName.toUpperCase();
 		key = key.toUpperCase();
 		String table = TABLE_NAMES.get(tableName);
 		String nullable = notNull ? " NOT NULL" : "";
@@ -75,6 +96,7 @@ public enum JDBCHandler {
 	 * @param tableName name of table
 	 */
 	public void addPrimaryKey(String tableName) {
+		tableName = tableName.toUpperCase();
 		String primaryKey = TABLE_PRIMARY_KEYS.get(tableName);
 		String table = TABLE_NAMES.get(tableName);
 		String updatedTable = String.format("%1$s, PRIMARY KEY (%2$s)", table, primaryKey);
@@ -87,6 +109,7 @@ public enum JDBCHandler {
 	 * @param referenceTableName name of reference table
 	 */
 	public void addForeignKey(String tableName, String referenceTableName) {
+		tableName = tableName.toUpperCase();
 		String foreignKey = TABLE_PRIMARY_KEYS.get(referenceTableName);
 		referenceTableName = referenceTableName.toUpperCase();
 		String updatedTable = String.format("%1$s, FOREIGN KEY (%2$s) REFERENCES %3$s (%4$s)",
@@ -100,6 +123,7 @@ public enum JDBCHandler {
 	 * @throws SQLException
 	 */
 	public void createTable(String tableName) throws SQLException {
+		tableName = tableName.toUpperCase();
 		String table = String.format("%s)", TABLE_NAMES.get(tableName));
 
 		PreparedStatement stmt = null;
@@ -113,18 +137,9 @@ public enum JDBCHandler {
 		}
 	}
 
-	/**
-	 * Sets up the connection for JDBC to the database
-	 * @param url db url
-	 * @param username un
-	 * @param password pw
-	 */
-	public void setConnection(String url, String username, String password) {
-		try {
-			this.dbConn = DriverManager.getConnection(url, username, password);
-		} catch (SQLException e) {
-			LOGGER.error("An SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
+	public String getTable(String tableName) {
+		tableName = tableName.toUpperCase();
+		return TABLE_NAMES.get(tableName);
 	}
 
 	public ResultSet select(String table) {

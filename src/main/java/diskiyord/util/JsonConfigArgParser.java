@@ -19,6 +19,7 @@ public class JsonConfigArgParser {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public JsonConfigArgParser() {
+		this.authTok = "";
 		this.gson = new Gson();
 	}
 
