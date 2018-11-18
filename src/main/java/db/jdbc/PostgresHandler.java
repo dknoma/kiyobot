@@ -7,6 +7,13 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A handler for PostgreSQL queries.
+ *
+ * NOTE: Postgres uses 'single quotes' for queries rather than "double quotes".
+ *
+ * @author dk
+ */
 public class PostgresHandler implements JDBCHandler {
 
 	private Connection dbConn;
@@ -148,8 +155,13 @@ public class PostgresHandler implements JDBCHandler {
 		return dbConn;
 	}
 
-	public ResultSet select(String table) {
-		String selectStmt = String.format("SELECT * FROM %s", table);
+	/**
+	 * Regular select from table
+	 * @param table name
+	 * @return resultset of query
+	 */
+	public ResultSet select(String table, String column) {
+		String selectStmt = String.format("SELECT %1$s FROM %2$s", column, table);
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
@@ -161,6 +173,51 @@ public class PostgresHandler implements JDBCHandler {
 		return null;
 	}
 
+	public ResultSet selectFromInnerJoin(String table, String column, String otherTable, String key, String value,
+									  boolean valueIsInt, String otherKey, String otherValue, boolean otherValueIsInt) {
+		if(!valueIsInt) {
+			value = String.format("'%s'", value);
+		}
+		if(!otherValueIsInt) {
+			otherValue = String.format("'%s'", otherValue);
+		}
+		String selectStmt = String.format("SELECT %1$s FROM (%2$s INNER JOIN %3$s ON (%4$s=%5$s AND %6$s=%7$s))",
+				column, table, otherTable, key, value, otherKey, otherValue);
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
+			//execute a query, which returns a ResultSet object
+			return stmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Regular select from table
+	 * @param table name
+	 * @return resultset of query
+	 */
+	public ResultSet select(String table, String column, String key, String value) {
+		String selectStmt = String.format("SELECT %1$s FROM %2$s WHERE %3$s='%4$s'", column, table, key, value);
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
+			//execute a query, which returns a ResultSet object
+			return stmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Inserts a string value into column key of a table
+	 * @param table name
+	 * @param key key
+	 * @param value value
+	 */
 	public void insertString(String table, String key, String value) {
 		String insertStmt = String.format("INSERT INTO %1$s (%2$s) VALUES (?)", table, key);
 		try {
@@ -174,6 +231,16 @@ public class PostgresHandler implements JDBCHandler {
 		}
 	}
 
+	/**
+	 * Insert string with foreign key into column key of a table
+	 * TODO: postgres seems to like ' ' rather than " "
+	 * @param table name
+	 * @param key key
+	 * @param value value
+	 * @param foreignTable reference table
+	 * @param type reference key
+	 * @param typeValue reference name
+	 */
 	public void insertString(String table, String key, String value, String foreignTable, String type, String typeValue) {
 		String foreignKey = TABLE_PRIMARY_KEYS.get(foreignTable);
 		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s from %4$s WHERE %5$s='%6$s'))"

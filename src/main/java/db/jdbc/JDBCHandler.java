@@ -18,18 +18,18 @@ public interface JDBCHandler {
 
 	/**
 	 * Sets up the initial table
-	 * @param tableName
-	 * @throws SQLException
+	 * @param tableName name
+	 * @throws SQLException s
 	 */
 	public void setupTable(String tableName, boolean autoIncrement) throws SQLException;
 
 	/**
 	 * Adds a key of type string to the table
-	 * @param tableName
-	 * @param key
-	 * @param isVarchar
-	 * @param chars
-	 * @param notNull
+	 * @param tableName name
+	 * @param key key
+	 * @param isVarchar uses varchar or not
+	 * @param chars # chars
+	 * @param notNull can be null or not
 	 */
 	public void addStringKey(String tableName, String key, boolean isVarchar, int chars, boolean notNull);
 
@@ -48,8 +48,8 @@ public interface JDBCHandler {
 
 	/**
 	 * Actually creates and puts it into the database
-	 * @param tableName
-	 * @throws SQLException
+	 * @param tableName name
+	 * @throws SQLException s
 	 */
 	public void createTable(String tableName) throws SQLException;
 
@@ -61,11 +61,35 @@ public interface JDBCHandler {
 
 	public String getTable(String tableName);
 
+	/**
+	 * Gets the JDBC connection
+	 * @return connection
+	 */
 	public Connection getConnection();
 
-	public ResultSet select(String table);
+	/**
+	 * Regular select from table
+	 * @param table name
+	 * @return resultset of query
+	 */
+	public ResultSet select(String table, String column);
 
+	/**
+	 * Inserts a string value into column key of a table
+	 * @param table name
+	 * @param key key
+	 * @param value value
+	 */
 	public void insertString(String table, String key, String value);
 
+	/**
+	 * Insert string with foreign key into column key of a table
+	 * @param table name
+	 * @param key key
+	 * @param value value
+	 * @param foreignTable reference table
+	 * @param type reference key
+	 * @param typeValue reference name
+	 */
 	public void insertString(String table, String key, String value, String foreignTable, String type, String typeValue);
 }
