@@ -3,15 +3,11 @@ package db.jdbc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum JDBCPostgresHandler {
-
-	INSTANCE();
+public class PostgresHandler implements JDBCHandler {
 
 	private Connection dbConn;
 
@@ -19,7 +15,13 @@ public enum JDBCPostgresHandler {
 	private static final Map<String, String> TABLE_NAMES = new HashMap<>();
 	private static final Map<String, String> TABLE_PRIMARY_KEYS = new HashMap<>();
 
-	JDBCPostgresHandler() {
+	public PostgresHandler() {
+		try {
+			Class.forName("org.postgresql.Driver");
+			LOGGER.debug("Got driver.");
+		} catch (java.lang.ClassNotFoundException e) {
+			LOGGER.error("Class error has occurred: {},\n {}", e.getMessage(), e.getStackTrace());
+		}
 	}
 
 	/**
@@ -32,16 +34,10 @@ public enum JDBCPostgresHandler {
 	 */
 	public void setConnection(String db, String host, String port, String username, String password) {
 		try {
-			Class.forName("org.postgresql.Driver");
-			LOGGER.debug("Got driver.");
-
+			// format: jdbc:postgresql://host:port/pathOrDatabaseName
 			String dbURL = String.format("jdbc:postgresql://%1$s:%2$s/%3$s", host, port, db);
-			LOGGER.debug("db: {}", dbURL);
-
 			this.dbConn = DriverManager.getConnection(dbURL, username, password);
 			LOGGER.info("Connected to db successfully!");
-		} catch (java.lang.ClassNotFoundException e) {
-			LOGGER.error("Class error has occurred: {},\n {}", e.getMessage(), e.getStackTrace());
 		} catch (SQLException e) {
 			LOGGER.error("An SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -49,25 +45,29 @@ public enum JDBCPostgresHandler {
 
 	/**
 	 * Sets up the initial table
-	 * @param tableName
-	 * @throws SQLException
+	 * @param tableName name
+	 * @throws SQLException s
 	 */
-	public void setupTable(String tableName) throws SQLException {
+	public void setupTable(String tableName, boolean autoIncrement) throws SQLException {
 		StringBuilder sb = new StringBuilder();
-		String updatedTableName = tableName.toUpperCase();
-		String primaryKey = String.format("%s_ID", updatedTableName);
+		String primaryKey = String.format("%sid", tableName);
 		sb.append("create table ");
-		sb.append(updatedTableName).append(" ");
-		sb.append("(").append(primaryKey).append(" integer NOT NULL");
-//				"SUP_NAME varchar(40) NOT NULL, " +
-//				"STREET varchar(40) NOT NULL, " +
-//				"CITY varchar(20) NOT NULL, " +
-//				"STATE char(2) NOT NULL, " +
-//				"ZIP char(5), " +
+		sb.append(tableName).append(" ");
+		sb.append("(").append(primaryKey);
+		if(autoIncrement) {
+			sb.append(" SERIAL");
+		}
 		// adds the table and primary key to the respective maps
-		TABLE_NAMES.put(updatedTableName, sb.toString());
-		TABLE_PRIMARY_KEYS.put(updatedTableName, primaryKey);
+		TABLE_NAMES.put(tableName, sb.toString());
+		TABLE_PRIMARY_KEYS.put(tableName, primaryKey);
 	}
+
+//	public void dropTable() {
+//		"SELECT pg_terminate_backend(pg_stat_activity.pid)\n" +
+//				"FROM pg_stat_activity\n" +
+//				"WHERE pg_stat_activity.datname = 'TARGET_DB' -- ← change this to your DB\n" +
+//				"  AND pid <> pg_backend_pid();";
+//	}
 
 	/**
 	 * Adds a key of type string to the table
@@ -78,8 +78,6 @@ public enum JDBCPostgresHandler {
 	 * @param notNull
 	 */
 	public void addStringKey(String tableName, String key, boolean isVarchar, int chars, boolean notNull) {
-		tableName = tableName.toUpperCase();
-		key = key.toUpperCase();
 		String table = TABLE_NAMES.get(tableName);
 		String nullable = notNull ? " NOT NULL" : "";
 		String updatedTable;
@@ -96,7 +94,6 @@ public enum JDBCPostgresHandler {
 	 * @param tableName name of table
 	 */
 	public void addPrimaryKey(String tableName) {
-		tableName = tableName.toUpperCase();
 		String primaryKey = TABLE_PRIMARY_KEYS.get(tableName);
 		String table = TABLE_NAMES.get(tableName);
 		String updatedTable = String.format("%1$s, PRIMARY KEY (%2$s)", table, primaryKey);
@@ -109,9 +106,7 @@ public enum JDBCPostgresHandler {
 	 * @param referenceTableName name of reference table
 	 */
 	public void addForeignKey(String tableName, String referenceTableName) {
-		tableName = tableName.toUpperCase();
 		String foreignKey = TABLE_PRIMARY_KEYS.get(referenceTableName);
-		referenceTableName = referenceTableName.toUpperCase();
 		String updatedTable = String.format("%1$s, FOREIGN KEY (%2$s) REFERENCES %3$s (%4$s)",
 				TABLE_NAMES.get(tableName), foreignKey, referenceTableName, foreignKey);
 		TABLE_NAMES.replace(tableName, updatedTable);
@@ -123,7 +118,6 @@ public enum JDBCPostgresHandler {
 	 * @throws SQLException
 	 */
 	public void createTable(String tableName) throws SQLException {
-		tableName = tableName.toUpperCase();
 		String table = String.format("%s)", TABLE_NAMES.get(tableName));
 
 		PreparedStatement stmt = null;
@@ -137,22 +131,44 @@ public enum JDBCPostgresHandler {
 		}
 	}
 
+	public void closeTable(String tableName) {
+		String table = TABLE_NAMES.get(tableName);
+		String updatedTable = String.format("%s)", table);
+		TABLE_NAMES.replace(tableName, updatedTable);
+	}
+
 	public String getTable(String tableName) {
-		tableName = tableName.toUpperCase();
 		return TABLE_NAMES.get(tableName);
+	}
+
+	@Override
+	public Connection getConnection() {
+		return dbConn;
 	}
 
 	public ResultSet select(String table) {
 		String selectStmt = String.format("SELECT * FROM %s", table);
 		try {
 			//create a statement object
-			PreparedStatement stmt = null;
-			stmt = this.dbConn.prepareStatement(selectStmt);
+			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
 			//execute a query, which returns a ResultSet object
-			ResultSet result = stmt.executeQuery();
+			return stmt.executeQuery();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public void insertString(String table, String key, String value) {
+		String insertStmt = String.format("INSERT INTO %1$s (%2$s) VALUES (?)", table, key);
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
+			stmt.setString(1, value);
+			//execute a query, which returns a ResultSet object
+			stmt.execute();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }
