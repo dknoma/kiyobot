@@ -66,4 +66,6 @@ public interface JDBCHandler {
 	public ResultSet select(String table);
 
 	public void insertString(String table, String key, String value);
+
+	public void insertString(String table, String key, String value, String foreignTable, String type, String typeValue);
 }

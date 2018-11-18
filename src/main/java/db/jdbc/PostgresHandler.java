@@ -50,12 +50,12 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	public void setupTable(String tableName, boolean autoIncrement) throws SQLException {
 		StringBuilder sb = new StringBuilder();
-		String primaryKey = String.format("%sid", tableName);
+		String primaryKey = String.format("%sid", tableName).toLowerCase();
 		sb.append("create table ");
 		sb.append(tableName).append(" ");
 		sb.append("(").append(primaryKey);
 		if(autoIncrement) {
-			sb.append(" SERIAL");
+			sb.append(" SERIAL PRIMARY KEY");
 		}
 		// adds the table and primary key to the respective maps
 		TABLE_NAMES.put(tableName, sb.toString());
@@ -107,8 +107,10 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	public void addForeignKey(String tableName, String referenceTableName) {
 		String foreignKey = TABLE_PRIMARY_KEYS.get(referenceTableName);
-		String updatedTable = String.format("%1$s, FOREIGN KEY (%2$s) REFERENCES %3$s (%4$s)",
-				TABLE_NAMES.get(tableName), foreignKey, referenceTableName, foreignKey);
+		String updatedTable = String.format("%1$s, %2$s int, FOREIGN KEY (%2$s) REFERENCES %3$s (%2$s) ON DELETE CASCADE",
+				TABLE_NAMES.get(tableName), foreignKey, referenceTableName);
+//		String updatedTable = String.format("%1$s, ADD CONSTRAINT %2$sconstr FOREIGN KEY (%3$s) REFERENCES %4$s (%5$s)",
+//				TABLE_NAMES.get(tableName), tableName, foreignKey, referenceTableName, foreignKey);
 		TABLE_NAMES.replace(tableName, updatedTable);
 	}
 
@@ -161,6 +163,23 @@ public class PostgresHandler implements JDBCHandler {
 
 	public void insertString(String table, String key, String value) {
 		String insertStmt = String.format("INSERT INTO %1$s (%2$s) VALUES (?)", table, key);
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
+			stmt.setString(1, value);
+			//execute a query, which returns a ResultSet object
+			stmt.execute();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void insertString(String table, String key, String value, String foreignTable, String type, String typeValue) {
+		String foreignKey = TABLE_PRIMARY_KEYS.get(foreignTable);
+		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s from %4$s WHERE %5$s='%6$s'))"
+				, table, key, foreignKey, foreignTable, type, typeValue);
+		//TODO: this only works when in same db, if different dbs would need to just pass foreign key itself
+		//(SELECT id from foo WHERE type='blue')
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
