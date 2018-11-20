@@ -3,6 +3,7 @@ package db;
 import db.jdbc.JDBCEnum;
 import db.jdbc.JDBCHandler;
 import db.jdbc.PostgresHandler;
+import db.jdbc.SQLModel;
 import db.util.JsonSqlConfigParser;
 
 import java.sql.ResultSet;
@@ -32,9 +33,9 @@ public class Tester {
 
 		try {
 			todo.setupTable(TODO, true);
-//			todo.addStringKey(TODO, title, true, 40, true);
-//			todo.createTable(TODO);
-//			System.out.println("create todo table query: " + todo.getTable(TODO));
+			todo.addStringKey(TODO, title, true, 40, true);
+			todo.createTable(TODO);
+			System.out.println("create todo table query: " + todo.getTable(TODO));
 //
 //			todo.setupTable(TODO_ITEM, true);
 //			todo.addStringKey(TODO_ITEM, descripiton, true, 100, true);
@@ -64,5 +65,8 @@ public class Tester {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+
+//		SQLModel test = new SQLModel("test");
+//		test.addColumn("key", String.class, true);
 	}
 }
