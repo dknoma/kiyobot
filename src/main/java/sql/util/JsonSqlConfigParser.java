@@ -1,4 +1,4 @@
-package db.util;
+package sql.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -51,9 +51,9 @@ public class JsonSqlConfigParser {
 	 */
 	private void parseJson(String line) {
 		JsonObject obj = gson.fromJson(line, JsonObject.class);
-		if(obj.has("db") && obj.has("host") && obj.has("port")
+		if(obj.has("sql") && obj.has("host") && obj.has("port")
 				&& obj.has("username") && obj.has("password")) {
-			this.db = obj.get("db").getAsString();
+			this.db = obj.get("sql").getAsString();
 			this.host = obj.get("host").getAsString();
 			this.port = obj.get("port").getAsString();
 			this.username = obj.get("username").getAsString();
@@ -62,24 +62,24 @@ public class JsonSqlConfigParser {
 	}
 
 	/**
-	 * Get db url
-	 * @return db
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getDb() {
 		return  this.db;
 	}
 
 	/**
-	 * Get db url
-	 * @return db
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getHost() {
 		return  this.host;
 	}
 
 	/**
-	 * Get db url
-	 * @return db
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getPort() {
 		return  this.port;

@@ -1,4 +1,4 @@
-package db.jdbc;
+package sql.jdbc;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,7 +33,7 @@ public class PostgresHandler implements JDBCHandler {
 
 	/**
 	 * Sets up the connection for JDBC to the database
-	 * @param db db
+	 * @param db sql
 	 * @param host host
 	 * @param port port
 	 * @param username un
@@ -44,7 +44,7 @@ public class PostgresHandler implements JDBCHandler {
 			// format: jdbc:postgresql://host:port/pathOrDatabaseName
 			String dbURL = String.format("jdbc:postgresql://%1$s:%2$s/%3$s", host, port, db);
 			this.dbConn = DriverManager.getConnection(dbURL, username, password);
-			LOGGER.info("Connected to db successfully!");
+			LOGGER.info("Connected to sql successfully!");
 		} catch (SQLException e) {
 			LOGGER.error("An SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -245,7 +245,7 @@ public class PostgresHandler implements JDBCHandler {
 		String foreignKey = TABLE_PRIMARY_KEYS.get(foreignTable);
 		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s from %4$s WHERE %5$s='%6$s'))"
 				, table, key, foreignKey, foreignTable, type, typeValue);
-		//TODO: this only works when in same db, if different dbs would need to just pass foreign key itself
+		//TODO: this only works when in same sql, if different dbs would need to just pass foreign key itself
 		//(SELECT id from foo WHERE type='blue')
 		try {
 			//create a statement object

@@ -1,4 +1,4 @@
-package db.jdbc;
+package sql.jdbc;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -8,7 +8,7 @@ public interface JDBCHandler {
 
 	/**
 	 * Sets up the connection for JDBC to the database
-	 * @param db db
+	 * @param db sql
 	 * @param host host
 	 * @param port port
 	 * @param username un

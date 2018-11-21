@@ -1,0 +1,1 @@
+{"name": "todoitem", "autoIncrement": true, "reference": "todo","columns": {"content": {"type": "STRING", "allowNull": false}, "complete": {"type": "BOOLEAN", "defaultValue": true}}}
