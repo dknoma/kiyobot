@@ -17,7 +17,7 @@ public enum JDBCEnum {
 	 * @param dbName
 	 * @param handler
 	 */
-	public void addJDBCHandler(String dbName, JDBCHandler handler) {
+	public static void addJDBCHandler(String dbName, JDBCHandler handler) {
 		HANDLER_MAP.put(dbName, handler);
 	}
 
@@ -26,7 +26,7 @@ public enum JDBCEnum {
 	 * @param dbName
 	 * @return
 	 */
-	public JDBCHandler getJDBCHandler(String dbName) {
+	public static JDBCHandler getJDBCHandler(String dbName) {
 		return HANDLER_MAP.get(dbName);
 	}
 }

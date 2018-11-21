@@ -1,30 +1,55 @@
 package sql;
 
+import javafx.geometry.Pos;
 import sql.jdbc.JDBCEnum;
 import sql.jdbc.JDBCHandler;
 import sql.jdbc.PostgresHandler;
+import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
+
+import java.sql.SQLException;
+import java.util.Map;
 
 public class Tester {
 
 	private static final String TODO = "Todo";
 	private static final String TODO_ITEM = "TodoItem";
+	private static final String CONFIG_FILE = "./config/sqlconfig.json";
 
 	public static void main(String[] args) {
+		JsonSqlConfigParser parser = new JsonSqlConfigParser();
+		parser.parseConfig(CONFIG_FILE);
 
-		SQLModelBuilder builder = new SQLModelBuilder();
+		SQLModelBuilder builder = new SQLModelBuilder(parser);
 		builder.findModelFiles("./models");
 		for(String s : builder.getModelFiles()) {
 			System.out.println(s);
 		}
 		builder.readFiles();
 
+		Map<String, SQLModel> models = builder.getCopyOfModels();
+//		for(Map.Entry<String, SQLModel> entry : models.entrySet()) {
+//			SQLModel copy = entry.getValue();
+//			System.out.println(copy.toString());
+//			copy.getQuery();
+//		}
+
+		String dbName = parser.getDbName();
+		PostgresHandler pghandler = new PostgresHandler(models);
+		JDBCEnum.addJDBCHandler(dbName, pghandler);
+
+		JDBCHandler handler = JDBCEnum.getJDBCHandler(dbName);
+		try {
+			handler.setConnection(parser.getDb(), parser.getHost(), parser.getPort(),
+					parser.getUsername(), parser.getPassword());
+			handler.createTables();
+			System.out.println(handler.getTable("todo"));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
 
-
-//		JsonSqlConfigParser parser = new JsonSqlConfigParser();
-//		parser.parseConfig();
 //
 //		JDBCEnum handlers = JDBCEnum.INSTANCE;
 //		handlers.addJDBCHandler(TODO, new PostgresHandler());

@@ -6,6 +6,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sql.jdbc.JDBCEnum;
+import sql.jdbc.PostgresHandler;
 import sql.model.PostgreSQLModel;
 import sql.model.SQLModel;
 
@@ -20,6 +22,7 @@ import java.util.Map;
 
 public class SQLModelBuilder {
 
+	private JsonSqlConfigParser parser;
 	private String[] modelFiles;
 	private Gson gson;
 	private Map<String, SQLModel> models;
@@ -29,7 +32,8 @@ public class SQLModelBuilder {
 	private static final String BOOLEAN = "BOOLEAN";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public SQLModelBuilder() {
+	public SQLModelBuilder(JsonSqlConfigParser parser) {
+		this.parser = parser;
 		this.gson = new Gson();
 		this.models = new HashMap<>();
 	}
@@ -83,7 +87,6 @@ public class SQLModelBuilder {
 		SQLModel model = initializeModel(obj);
 		addColumns(obj, model);
 		model.createTableQuery();
-//		model.getQuery();
 		SQLModel copy = model.deepCopy();
 		this.models.put(name, copy);
 	}
@@ -116,19 +119,34 @@ public class SQLModelBuilder {
 				boolean keyLengthIsVar = attributes.has("lengthIsVar")
 						&& attributes.get("lengthIsVar").getAsBoolean();
 				int length = attributes.get("length").getAsInt();
-				model.addColumn(keyName, allowNull, keyLengthIsVar, length);
+				if(attributes.has("defaultValue")) {
+					model.addColumn(keyName, allowNull, keyLengthIsVar, length,
+							true, attributes.get("defaultValue"));
+				} else {
+					model.addColumn(keyName, allowNull, keyLengthIsVar, length,
+							false, "");
+				}
 			} else {
 				if(attributes.get("type").getAsString().equals(INTEGER)) {
-					model.addColumn(keyName, allowNull, Integer.class);
+					if(attributes.has("defaultValue")) {
+						model.addColumn(keyName, allowNull, Integer.class,
+								true, attributes.get("defaultValue"));
+					} else {
+						model.addColumn(keyName, allowNull, Integer.class, false, "");
+					}
 				} else if(attributes.get("type").getAsString().equals(BOOLEAN)){
-					model.addColumn(keyName, allowNull, Boolean.class);
+					if(attributes.has("defaultValue")) {
+						model.addColumn(keyName, allowNull, Boolean.class,
+								true, attributes.get("defaultValue"));
+					} else {
+						model.addColumn(keyName, allowNull, Boolean.class, false, "");
+					}
 				} else {
 					LOGGER.error("There was an error in the format of the json file. Please try again.");
 					return;
 				}
 			}
 		}
-		System.out.println("Model: " + model.toString());
 	}
 
 	public String[] getModelFiles() {

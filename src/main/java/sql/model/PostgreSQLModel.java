@@ -3,6 +3,8 @@ package sql.model;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -24,6 +26,8 @@ public class PostgreSQLModel implements SQLModel{
 	private Map<String, Boolean> columnCanBeNull;
 	private Map<String, Boolean> keyIsVar;
 	private Map<String, Integer> keyLengths;
+	private Map<String, Boolean> hasDefaultValue;
+	private Map<String, Object> defaultValues;
 
 	private static final String INT = "INT";
 	private static final String BOOLEAN = "BOOLEAN";
@@ -46,6 +50,8 @@ public class PostgreSQLModel implements SQLModel{
 		this.columnCanBeNull = new HashMap<>();
 		this.keyIsVar = new HashMap<>();
 		this.keyLengths = new HashMap<>();
+		this.hasDefaultValue = new HashMap<>();
+		this.defaultValues = new HashMap<>();
 	}
 
 	/**
@@ -66,6 +72,8 @@ public class PostgreSQLModel implements SQLModel{
 		this.columnCanBeNull = new HashMap<>();
 		this.keyIsVar = new HashMap<>();
 		this.keyLengths = new HashMap<>();
+		this.hasDefaultValue = new HashMap<>();
+		this.defaultValues = new HashMap<>();
 	}
 
 	/**
@@ -75,12 +83,15 @@ public class PostgreSQLModel implements SQLModel{
 	 * @param  keyIsVar if string can have variable length
 	 */
 	@Override
-	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength) {
+	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength,
+						  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
 		this.columnType.put(key, String.class);
 		this.columnCanBeNull.put(key, isNotNull);
 		this.keyIsVar.put(key, keyIsVar);
 		this.keyLengths.put(key, keyLength);
+		this.hasDefaultValue.put(key, hasDefaultValue);
+		this.defaultValues.put(key, defaultValue);
 	}
 
 	/**
@@ -90,10 +101,13 @@ public class PostgreSQLModel implements SQLModel{
 	 * @param classOfT class of the key
 	 */
 	@Override
-	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT) {
+	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT,
+							  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
 		this.columnType.put(key, classOfT);
 		this.columnCanBeNull.put(key, isNotNull);
+		this.hasDefaultValue.put(key, hasDefaultValue);
+		this.defaultValues.put(key, defaultValue);
 	}
 
 	/**
@@ -121,8 +135,14 @@ public class PostgreSQLModel implements SQLModel{
 				}
 			} else if(classOfKey.equals(Integer.class)) {
 				sb.append(String.format(", %1$s %2$s", key, INT));
+				if(this.hasDefaultValue.get(key)) {
+					sb.append(String.format(" DEFAULT %s", this.defaultValues.get(key)));
+				}
 			} else if(classOfKey.equals(Boolean.class)) {
 				sb.append(String.format(", %1$s %2$s", key, BOOLEAN));
+				if(this.hasDefaultValue.get(key)) {
+					sb.append(String.format(" DEFAULT %b", this.defaultValues.get(key)));
+				}
 			}
 		}
 		// if has foreign key, add to query
@@ -134,12 +154,27 @@ public class PostgreSQLModel implements SQLModel{
 		this.query = sb.toString();
 	}
 
-
 	@Override
-	public void getQuery() {
-		System.out.println("Query: "+ this.query);
+	public String getQuery() {
+//		System.out.println("Query: "+ this.query);
+		return this.query;
 	}
 
+	public String getModelName() {
+		return modelName;
+	}
+
+	public String getPrimaryKey() {
+		return primaryKey;
+	}
+
+	public String getForeignModelName() {
+		return foreignModelName;
+	}
+
+	public String getForeignKey() {
+		return foreignKey;
+	}
 
 	@Override
 	public void newQuery() {
@@ -155,6 +190,7 @@ public class PostgreSQLModel implements SQLModel{
 	@Override
 	public SQLModel deepCopy() {
 		PostgreSQLModel model = new PostgreSQLModel(this.modelName, this.autoIncrement);
+		model.query = this.query;
 		model.foreignKey = this.foreignKey;
 		model.foreignModelName = this.foreignModelName;
 		model.columnCanBeNull = this.columnCanBeNull;
@@ -163,6 +199,8 @@ public class PostgreSQLModel implements SQLModel{
 		model.columnType.putAll(this.columnType);
 		model.keyIsVar.putAll(this.keyIsVar);
 		model.keyLengths.putAll(this.keyLengths);
+		model.hasDefaultValue.putAll(this.hasDefaultValue);
+		model.defaultValues.putAll(this.defaultValues);
 		return model;
 	}
 

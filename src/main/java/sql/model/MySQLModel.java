@@ -14,7 +14,7 @@ import java.util.Map;
  * Foreign key:
  * 	"table, <foreignid> int, FOREIGN KEY (<foreignid>) REFERENCES <foreigntable> (<foreignid>) ON DELETE CASCADE"
  */
-public class MySQLModel implements SQLModel{
+public class MySQLModel {
 
 	private String modelName;
 	private String primaryKey;
@@ -27,6 +27,8 @@ public class MySQLModel implements SQLModel{
 	private Map<String, Boolean> columnCanBeNull;
 	private Map<String, Boolean> keyIsVar;
 	private Map<String, Integer> keyLengths;
+	private Map<String, Boolean> hasDefaultValue;
+	private Map<String, Object> defaultValues;
 
 	private static final String INT = "INT";
 	private static final String BOOLEAN = "BOOLEAN";
@@ -49,6 +51,8 @@ public class MySQLModel implements SQLModel{
 		this.columnCanBeNull = new HashMap<>();
 		this.keyIsVar = new HashMap<>();
 		this.keyLengths = new HashMap<>();
+		this.hasDefaultValue = new HashMap<>();
+		this.defaultValues = new HashMap<>();
 	}
 
 	/**
@@ -69,6 +73,8 @@ public class MySQLModel implements SQLModel{
 		this.columnCanBeNull = new HashMap<>();
 		this.keyIsVar = new HashMap<>();
 		this.keyLengths = new HashMap<>();
+		this.hasDefaultValue = new HashMap<>();
+		this.defaultValues = new HashMap<>();
 	}
 
 	/**
@@ -77,13 +83,15 @@ public class MySQLModel implements SQLModel{
 	 * @param isNotNull if key can be null
 	 * @param  keyIsVar if string can have variable length
 	 */
-	@Override
-	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength) {
+	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength,
+						  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
 		this.columnType.put(key, String.class);
 		this.columnCanBeNull.put(key, isNotNull);
 		this.keyIsVar.put(key, keyIsVar);
 		this.keyLengths.put(key, keyLength);
+		this.hasDefaultValue.put(key, hasDefaultValue);
+		this.defaultValues.put(key, defaultValue);
 	}
 
 	/**
@@ -92,17 +100,18 @@ public class MySQLModel implements SQLModel{
 	 * @param isNotNull if key can be null
 	 * @param classOfT class of the key
 	 */
-	@Override
-	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT) {
+	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT,
+							  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
 		this.columnType.put(key, classOfT);
 		this.columnCanBeNull.put(key, isNotNull);
+		this.hasDefaultValue.put(key, hasDefaultValue);
+		this.defaultValues.put(key, defaultValue);
 	}
 
 	/**
 	 * Creates the query to create the table
 	 */
-	@Override
 	public void createTableQuery() {
 		StringBuilder sb = new StringBuilder();
 		if(this.autoIncrement) {
@@ -124,8 +133,14 @@ public class MySQLModel implements SQLModel{
 				}
 			} else if(classOfKey.equals(Integer.class)) {
 				sb.append(String.format(", %1$s %2$s", key, INT));
+				if(this.hasDefaultValue.get(key)) {
+					sb.append(String.format(" DEFAULT %s", this.defaultValues.get(key)));
+				}
 			} else if(classOfKey.equals(Boolean.class)) {
 				sb.append(String.format(", %1$s %2$s", key, BOOLEAN));
+				if(this.hasDefaultValue.get(key)) {
+					sb.append(String.format(" DEFAULT %b", this.defaultValues.get(key)));
+				}
 			}
 		}
 		// if has foreign key, add to query
@@ -137,25 +152,50 @@ public class MySQLModel implements SQLModel{
 		this.query = sb.toString();
 	}
 
-	@Override
-	public void getQuery() {
+	public String getQuery() {
 		System.out.println(this.query);
+		return this.query;
 	}
 
-	@Override
+	public String getModelName() {
+		return modelName;
+	}
+
+	public String getPrimaryKey() {
+		return primaryKey;
+	}
+
+	public String getForeignModelName() {
+		return foreignModelName;
+	}
+
+	public String getForeignKey() {
+		return foreignKey;
+	}
+
 	public void newQuery() {
 		this.query = "";
 	}
 
-	@Override
 	public void select() {
 		this.query = String.format("%sSELECT", this.query);
 	}
 
-	@Override
-	public SQLModel deepCopy() {
-		return null;
-	}
+//	public SQLModel deepCopy() {
+//		MySQLModel model = new MySQLModel(this.modelName, this.autoIncrement);
+//		model.query = this.query;
+//		model.foreignKey = this.foreignKey;
+//		model.foreignModelName = this.foreignModelName;
+//		model.columnCanBeNull = this.columnCanBeNull;
+//		model.columns.addAll(this.columns);
+//		model.columnCanBeNull.putAll(this.columnCanBeNull);
+//		model.columnType.putAll(this.columnType);
+//		model.keyIsVar.putAll(this.keyIsVar);
+//		model.keyLengths.putAll(this.keyLengths);
+//		model.hasDefaultValue.putAll(this.hasDefaultValue);
+//		model.defaultValues.putAll(this.defaultValues);
+//		return model;
+//	}
 
 	/**
 	 * Returns a String representation of this model.

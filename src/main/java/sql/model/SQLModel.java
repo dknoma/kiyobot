@@ -1,15 +1,8 @@
 package sql.model;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.*;
-
 /**
- * A model representing the structure and data in a SQL database
- *
- * Foreign key:
- * 	"table, <foreignid> int, FOREIGN KEY (<foreignid>) REFERENCES <foreigntable> (<foreignid>) ON DELETE CASCADE"
+ * A model representing the structure and data in a SQL database.
+ * Supports key types: STRING, INTEGER, BOOLEAN
  */
 public interface SQLModel {
 
@@ -19,7 +12,8 @@ public interface SQLModel {
 	 * @param isNotNull if key can be null
 	 * @param  keyIsVar if string can have variable length
 	 */
-	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength);
+	public void addColumn(String key, boolean isNotNull, boolean keyIsVar,
+						  int keyLength, boolean hasDefaultValue, Object defaultValue);
 
 	/**
 	 * Adds a non-String key to the column of the table
@@ -27,14 +21,23 @@ public interface SQLModel {
 	 * @param isNotNull if key can be null
 	 * @param classOfT class of the key
 	 */
-	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT);
+	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT,
+							  boolean hasDefaultValue, Object defaultValue);
 
 	/**
 	 * Creates the query to create the table
 	 */
 	public void createTableQuery();
 
-	public void getQuery();
+	public String getQuery();
+
+	public String getModelName();
+
+	public String getPrimaryKey();
+
+	public String getForeignModelName();
+
+	public String getForeignKey();
 
 	public void newQuery();
 

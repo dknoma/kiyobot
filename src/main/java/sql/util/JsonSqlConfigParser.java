@@ -12,16 +12,17 @@ import java.nio.file.Paths;
 
 public class JsonSqlConfigParser {
 
+	private String dbName;
 	private String db;
 	private String host;
 	private String port;
 	private String username;
 	private String password;
 	private Gson gson;
-	private static final String CONFIG_FILE = "./config/sqlconfig.json";
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public JsonSqlConfigParser() {
+		this.dbName = "";
 		this.db = "";
 		this.host = "";
 		this.port = "";
@@ -33,11 +34,11 @@ public class JsonSqlConfigParser {
 	/**
 	 * Parse config file
 	 */
-	public void parseConfig() {
-		try(BufferedReader br = Files.newBufferedReader(Paths.get(CONFIG_FILE),
+	public void parseConfig(String configFile) {
+		try(BufferedReader br = Files.newBufferedReader(Paths.get(configFile),
 				java.nio.charset.StandardCharsets.ISO_8859_1)) {
 
-			LOGGER.info(CONFIG_FILE);
+			LOGGER.info(configFile);
 			parseJson(br.readLine());
 
 		} catch (IOException ioe) {
@@ -51,14 +52,24 @@ public class JsonSqlConfigParser {
 	 */
 	private void parseJson(String line) {
 		JsonObject obj = gson.fromJson(line, JsonObject.class);
-		if(obj.has("sql") && obj.has("host") && obj.has("port")
-				&& obj.has("username") && obj.has("password")) {
-			this.db = obj.get("sql").getAsString();
+		if(obj.has("dbName") && obj.has("db") && obj.has("host")
+				&& obj.has("port") && obj.has("username")
+				&& obj.has("password")) {
+			this.dbName = obj.get("dbName").getAsString();
+			this.db = obj.get("db").getAsString();
 			this.host = obj.get("host").getAsString();
 			this.port = obj.get("port").getAsString();
 			this.username = obj.get("username").getAsString();
 			this.password = obj.get("password").getAsString();
 		}
+	}
+
+	/**
+	 * Get sql url
+	 * @return sql
+	 */
+	public String getDbName() {
+		return  this.dbName;
 	}
 
 	/**
