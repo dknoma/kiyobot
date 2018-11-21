@@ -55,5 +55,17 @@ public interface JDBCHandler {
 
 	public String getQuery(String name);
 
+	public void newQuery();
+
 	public String getTable(String tableName);
+
+	public JDBCHandler select(String value);
+
+	public JDBCHandler from(String location);
+
+	public <T> JDBCHandler where(String key, Object value, Class<T> typeOf);
+
+	public <T> JDBCHandler insert(String tableName, String column, Object value, Class<T> classOfT);
+
+	public ResultSet executeQuery();
 }

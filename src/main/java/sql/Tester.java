@@ -49,6 +49,8 @@ public class Tester {
 			e.printStackTrace();
 		}
 
+		handler.insert("todo", "title", "First", String.class).executeQuery();
+
 
 //
 //		JDBCEnum handlers = JDBCEnum.INSTANCE;

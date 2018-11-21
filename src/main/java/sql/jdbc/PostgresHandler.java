@@ -49,7 +49,7 @@ public class PostgresHandler implements JDBCHandler {
 			this.dbConn = DriverManager.getConnection(dbURL, username, password);
 			LOGGER.info("Connected to sql successfully!");
 		} catch (SQLException e) {
-			LOGGER.error("An SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 	}
 
@@ -65,7 +65,7 @@ public class PostgresHandler implements JDBCHandler {
 				stmt = dbConn.prepareStatement(model.getQuery());
 				stmt.executeUpdate();
 			} catch (SQLException e) {
-				LOGGER.error("Error: {}", e.getMessage());
+				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 			} finally {
 				if (stmt != null) {
 					stmt.close();
@@ -95,7 +95,7 @@ public class PostgresHandler implements JDBCHandler {
 			//execute a query, which returns a ResultSet object
 			return stmt.executeQuery();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return null;
 	}
@@ -116,25 +116,50 @@ public class PostgresHandler implements JDBCHandler {
 			//execute a query, which returns a ResultSet object
 			return stmt.executeQuery();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return null;
 	}
 
-	public void select(String value) {
+	public JDBCHandler select(String value) {
 		this.query += String.format("SELECT %s", value);
+		return this;
 	}
 
-	public void from(String location) {
+	public JDBCHandler from(String location) {
 		this.query += String.format(" FROM %s", location);
+		return this;
 	}
 
-	public <T> void where(String key, Object value, Class<T> typeOf) {
+	public <T> JDBCHandler where(String key, Object value, Class<T> typeOf) {
 		if(typeOf.equals(String.class)) {
 			this.query += String.format(" WHERE %1$s='%2$s'", key, value);
 		} else {
 			this.query += String.format(" WHERE %1$s=%2$s", key, value);
 		}
+		return this;
+	}
+
+	public <T> JDBCHandler insert(String tableName, String column, Object value, Class<T> classOfT) {
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(this.query +
+					String.format("INSERT INTO %1$s (%2$s) VALUES (?)",
+							this.models.get(tableName).getModelName(), column));
+			if(classOfT.equals(String.class)) {
+				stmt.setString(1, (String) value);
+			} else if(classOfT.equals(Integer.class)) {
+				stmt.setInt(1, (int) value);
+			} else if(classOfT.equals(Boolean.class)) {
+				stmt.setBoolean(1, (boolean) value);
+			}
+			System.out.println(stmt.toString());
+			this.query = stmt.toString();
+			return this;
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		return null;
 	}
 
 	public ResultSet executeQuery() {
@@ -145,30 +170,12 @@ public class PostgresHandler implements JDBCHandler {
 				//execute a query, which returns a ResultSet object
 				return stmt.executeQuery();
 			} catch (SQLException e) {
-				LOGGER.error("Error has occurred, {},\n{}", e.getMessage(), e.getStackTrace());
+				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 			}
 			return null;
 		} finally {
 			newQuery();
 		}
-	}
-
-	/**
-	 * Regular select from table
-	 * @param table name
-	 * @return resultset of query
-	 */
-	public ResultSet select(String table, String column, String key, String value) {
-		String selectStmt = String.format("SELECT %1$s FROM %2$s WHERE %3$s='%4$s'", column, table, key, value);
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
-			//execute a query, which returns a ResultSet object
-			return stmt.executeQuery();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 
 	/**
@@ -186,7 +193,7 @@ public class PostgresHandler implements JDBCHandler {
 			//execute a query, which returns a ResultSet object
 			stmt.execute();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 	}
 
@@ -213,6 +220,24 @@ public class PostgresHandler implements JDBCHandler {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Regular select from table
+	 * @param table name
+	 * @return resultset of query
+	 */
+	public ResultSet select(String table, String column, String key, String value) {
+		String selectStmt = String.format("SELECT %1$s FROM %2$s WHERE %3$s='%4$s'", column, table, key, value);
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
+			//execute a query, which returns a ResultSet object
+			return stmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public String getQuery(String tableName){
