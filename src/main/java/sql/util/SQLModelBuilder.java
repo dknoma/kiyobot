@@ -1,6 +1,8 @@
 package sql.util;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +79,9 @@ public class SQLModelBuilder {
 			return;
 		}
 		SQLModel model = initializeModel(obj);
+		addColumns(obj, model);
+		model.createTable();
+		model.getQuery();
 	}
 
 	/**
@@ -93,6 +98,33 @@ public class SQLModelBuilder {
 		} else {
 			return new SQLModel(name, autoIncrement);
 		}
+	}
+
+	private void addColumns(JsonObject obj, SQLModel model) {
+		JsonArray columns = obj.get("columns").getAsJsonArray();
+		for(JsonElement column : columns) {
+			JsonObject key = column.getAsJsonObject();
+			String keyName = key.get("key").getAsString();
+			// attributes of the key
+			JsonObject attributes = key.get("attributes").getAsJsonObject();
+			boolean allowNull = attributes.has("allowNull") && attributes.get("allowNull").getAsBoolean();
+			if(attributes.get("type").getAsString().equals(STRING)) {
+				boolean keyLengthIsVar = attributes.has("lengthIsVar")
+						&& attributes.get("lengthIsVar").getAsBoolean();
+				int length = attributes.get("length").getAsInt();
+				model.addColumn(keyName, allowNull, keyLengthIsVar, length);
+			} else {
+				if(attributes.get("type").getAsString().equals(INTEGER)) {
+					model.addColumn(keyName, allowNull, Integer.class);
+				} else if(attributes.get("type").getAsString().equals(BOOLEAN)){
+					model.addColumn(keyName, allowNull, Boolean.class);
+				} else {
+					LOGGER.error("There was an error in the format of the json file. Please try again.");
+					return;
+				}
+			}
+		}
+		System.out.println("Model: " + model.toString());
 	}
 
 	public String[] getModelFiles() {

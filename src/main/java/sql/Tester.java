@@ -18,6 +18,9 @@ public class Tester {
 		for(String s : builder.getModelFiles()) {
 			System.out.println(s);
 		}
+		builder.readFiles();
+
+
 
 
 //		JsonSqlConfigParser parser = new JsonSqlConfigParser();

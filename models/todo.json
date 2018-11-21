@@ -1,1 +1,1 @@
-{"name": "todo", "autoIncrement": true, "columns": {"title": {"type": "STRING", "allowNull": false}}}
+{"name": "todo", "autoIncrement": true, "columns": [{"key": "title", "attributes": {"type": "STRING", "length": 20, "lengthIsVar": true, "allowNull": false}}]}

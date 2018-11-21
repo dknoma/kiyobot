@@ -127,6 +127,7 @@ public class SQLModel {
 			sb.append(String.format("%1$s int, FOREIGN KEY (%1$s) REFERENCES %2$s (%1$s) ON DELETE CASCADE",
 					this.foreignKey, this.foreignModelName));
 		}
+		sb.append(")");
 		this.query = sb.toString();
 	}
 
@@ -140,5 +141,30 @@ public class SQLModel {
 
 	public void select() {
 		this.query = String.format("%sSELECT", this.query);
+	}
+
+	/**
+	 * Returns a String representation of this model.
+	 * @return a String
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("{\"name\": %1$s, \"keys\": [", this.modelName));
+		int i = 0;
+		for(String key : this.columns) {
+			sb.append(String.format("\"%1$s\"", key));
+			if(i < this.columns.size() - 1) {
+				sb.append(", ");
+				i++;
+			}
+		}
+		sb.append("]");
+		if(!this.foreignKey.isEmpty()) {
+			sb.append(String.format(", \"reference\": %1$s", this.foreignModelName));
+			sb.append(String.format(", \"referenceid\": %1$s", this.foreignKey));
+		}
+		sb.append("}");
+		return sb.toString();
 	}
 }
