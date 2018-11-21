@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sql.model.PostgreSQLModel;
 import sql.model.SQLModel;
 
 import java.io.BufferedReader;
@@ -78,10 +79,13 @@ public class SQLModelBuilder {
 			LOGGER.error("No model name was found.");
 			return;
 		}
+		String name = obj.get("name").getAsString();
 		SQLModel model = initializeModel(obj);
 		addColumns(obj, model);
-		model.createTable();
-		model.getQuery();
+		model.createTableQuery();
+//		model.getQuery();
+		SQLModel copy = model.deepCopy();
+		this.models.put(name, copy);
 	}
 
 	/**
@@ -94,9 +98,9 @@ public class SQLModelBuilder {
 		boolean autoIncrement = obj.has("autoIncrement") && obj.get("autoIncrement").getAsBoolean();
 		if(obj.has("reference")) {
 			String referenceTable = obj.get("reference").getAsString();
-			return new SQLModel(name, autoIncrement, referenceTable);
+			return new PostgreSQLModel(name, autoIncrement, referenceTable);
 		} else {
-			return new SQLModel(name, autoIncrement);
+			return new PostgreSQLModel(name, autoIncrement);
 		}
 	}
 
@@ -129,5 +133,9 @@ public class SQLModelBuilder {
 
 	public String[] getModelFiles() {
 		return this.modelFiles;
+	}
+
+	public Map<String, SQLModel> getCopyOfModels() {
+		return this.models;
 	}
 }
