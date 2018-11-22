@@ -82,11 +82,11 @@ public class Tester {
 	}
 
 	private static void printResults(JDBCHandler handler, String referenceKey, int referenceId) {
-		ResultSet referenceResults = handler.executeQuery(
-				handler.select("*",
-				handler.from("todo",
-				handler.where(referenceKey, referenceId, INTEGER, "")))
-		);
+//		ResultSet referenceResults = handler.executeQuery(
+//				handler.select("*",
+//				handler.from("todo",
+//				handler.where(referenceKey, referenceId, INTEGER, "")))
+//		);
 		ResultSet results = handler.executeQuery(
 				handler.select("*",
 				handler.from("todoitem",
@@ -99,23 +99,29 @@ public class Tester {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{\n");
 		try {
-			sb.append(String.format("\t\"%1$s\": %2$s\n", referenceKey, referenceId));
+			sb.append(String.format("\t\"%1$s\": %2$s,\n", referenceKey, referenceId));
 			// resultset starts BEFORE first row, need to call next for all results
 			String tableName = results.getMetaData().getTableName(1);
 			sb.append(String.format("\t\"%s\": [\n", tableName));
 			while(results.next()) {
 				sb.append("\t\t{\n");
-				for (int i = 1; i < results.getMetaData().getColumnCount(); i++) {
+				int resultCount = results.getMetaData().getColumnCount();
+				for (int i = 1; i < resultCount; i++) {
 					String columnType = results.getMetaData().getColumnTypeName(i);
 					String columnName = results.getMetaData().getColumnName(i);
 //					System.out.println(String.format("i: %1$s, \ttype: %2$s",
 //							results.getMetaData().getColumnName(i), columnType));
 					if(isString(columnType)) {
-						sb.append(String.format("\t\t\t\"%1$s\": \"%2$s\"\n", columnName, results.getString(columnName)));
+						sb.append(String.format("\t\t\t\"%1$s\": \"%2$s\"", columnName, results.getString(columnName)));
 					} else if(isInt(columnType)) {
-						sb.append(String.format("\t\t\t\"%1$s\": %2$s\n", columnName, results.getInt(columnName)));
+						sb.append(String.format("\t\t\t\"%1$s\": %2$s", columnName, results.getInt(columnName)));
 					} else if(isBoolean(columnType)) {
-						sb.append(String.format("\t\t\t\"%1$s\": %2$s\n", columnName, results.getBoolean(columnName)));
+						sb.append(String.format("\t\t\t\"%1$s\": %2$s", columnName, results.getBoolean(columnName)));
+					}
+					if(i < resultCount - 1) {
+						sb.append(",\n");
+					} else {
+						sb.append("\n");
 					}
 				}
 				if(!results.isLast()) {
