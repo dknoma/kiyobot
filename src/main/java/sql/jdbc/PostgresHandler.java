@@ -140,6 +140,15 @@ public class PostgresHandler implements JDBCHandler {
 		return this;
 	}
 
+	/**
+	 * Insert 1 value into the table
+	 * @param tableName
+	 * @param column
+	 * @param value
+	 * @param classOfT
+	 * @param <T>
+	 * @return this
+	 */
 	public <T> JDBCHandler insert(String tableName, String column, Object value, Class<T> classOfT) {
 		try {
 			//create a statement object
@@ -153,6 +162,69 @@ public class PostgresHandler implements JDBCHandler {
 			} else if(classOfT.equals(Boolean.class)) {
 				stmt.setBoolean(1, (boolean) value);
 			}
+			this.query = stmt.toString();
+			return this;
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		return null;
+	}
+
+	/**
+	 * Insert 2 values into the table
+	 * @param tableName
+	 * @param column1
+	 * @param value1
+	 * @param classOf1
+	 * @param column2
+	 * @param value2
+	 * @param classOf2
+	 * @param <T>
+	 * @return this
+	 */
+	public <S, T> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+								  String column2, Object value2, Class<T> classOf2) {
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(this.query +
+					String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, ?)",
+							this.models.get(tableName).getModelName(), column1, column2));
+			setStatementValue(stmt, 1, value1, classOf1);
+			setStatementValue(stmt, 2, value2, classOf2);
+			this.query = stmt.toString();
+			return this;
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		return null;
+	}
+
+	/**
+	 * Insert 3 values into the table
+	 * @param tableName
+	 * @param column1
+	 * @param value1
+	 * @param classOf1
+	 * @param column2
+	 * @param value2
+	 * @param classOf2
+	 * @param column3
+	 * @param value3
+	 * @param classOf3
+	 * @param <T>
+	 * @return this
+	 */
+	public <S, T, U> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+								  String column2, Object value2, Class<T> classOf2,
+								  String column3, Object value3, Class<U> classOf3) {
+		try {
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(this.query +
+					String.format("INSERT INTO %1$s (%2$s, %3$s, %4$s) VALUES (?, ?, ?)",
+							this.models.get(tableName).getModelName(), column1, column2, column3));
+			setStatementValue(stmt, 1, value1, classOf1);
+			setStatementValue(stmt, 2, value2, classOf2);
+			setStatementValue(stmt, 3, value3, classOf3);
 			this.query = stmt.toString();
 			return this;
 		} catch (SQLException e) {
@@ -224,7 +296,7 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	public void insertString(String tableName, String key, String value, String type, String typeValue) {
 		SQLModel model = this.models.get(tableName);
-		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s from %4$s WHERE %5$s='%6$s'))"
+		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s FROM %4$s WHERE %5$s='%6$s'))"
 				, model.getModelName(), key, model.getForeignKey(), model.getForeignKey(), type, typeValue);
 		//TODO: this only works when in same sql, if different dbs would need to just pass foreign key itself
 		//(SELECT id from foo WHERE type='blue')
@@ -263,5 +335,27 @@ public class PostgresHandler implements JDBCHandler {
 
 	public String getTable(String tableName) {
 		return this.models.get(tableName).toString();
+	}
+
+	/**
+	 * Sets the value of a prepared statement at the given index
+	 * @param statement
+	 * @param index
+	 * @param value
+	 * @param classOfT
+	 * @param <T>
+	 */
+	private <T> void setStatementValue(PreparedStatement statement, int index, Object value, Class<T> classOfT) {
+		try {
+			if(classOfT.equals(String.class)) {
+				statement.setString(index, (String) value);
+			} else if(classOfT.equals(Integer.class)) {
+				statement.setInt(index, (int) value);
+			} else if(classOfT.equals(Boolean.class)) {
+				statement.setBoolean(index, (boolean) value);
+			}
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
 	}
 }

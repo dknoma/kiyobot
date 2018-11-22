@@ -51,8 +51,18 @@ public class Tester {
 			e.printStackTrace();
 		}
 
-		int results = handler.insert("todo", "title", "First", String.class).executeUpdate();
-		System.out.println(results);
+		// inserts and updated need executeUpdate as no data is returned
+		handler.insert("todo", "title", "First", String.class).executeUpdate();
+		handler.insert("todo", "title", "Second", String.class).executeUpdate();
+
+
+		handler.insert("todoitem", "content", "Finish single insert.", String.class,
+				"todoid", 1, Integer.class).executeUpdate();
+		handler.insert("todoitem", "content", "Finish double insert.", String.class,
+				"todoid", 1, Integer.class).executeUpdate();
+
+		handler.insert("todoitem", "content", "Finish JDBCHandler.", String.class,
+				"todoid", 2, Integer.class).executeUpdate();
 
 //
 //		JDBCEnum handlers = JDBCEnum.INSTANCE;

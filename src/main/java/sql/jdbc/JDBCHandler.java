@@ -67,6 +67,13 @@ public interface JDBCHandler {
 
 	public <T> JDBCHandler insert(String tableName, String column, Object value, Class<T> classOfT);
 
+	public <S, T> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+								  String column2, Object value2, Class<T> classOf2);
+
+	public <S, T, U> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+								  String column2, Object value2, Class<T> classOf2,
+								  String column3, Object value3, Class<U> classOf3);
+
 	public ResultSet executeQuery();
 
 	public int executeUpdate();
