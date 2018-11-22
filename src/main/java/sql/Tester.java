@@ -3,10 +3,7 @@ package sql;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sql.jdbc.JDBCEnum;
-import sql.jdbc.JDBCHandler;
-import sql.jdbc.PostgresHandler;
-import sql.jdbc.ResultSetHandler;
+import sql.jdbc.*;
 import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
@@ -63,11 +60,20 @@ public class Tester {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 
+		ColumnObject[] columns = new ColumnObject[5];
+		columns[0] = new ColumnObject<String>("filename", "ExGFX100", STRING);
+		columns[1] = new ColumnObject<String>("description", "Test graphics file.", STRING);
+		columns[2] = new ColumnObject<String>("type", "test", STRING);
+		columns[3] = new ColumnObject<Boolean>("completed", false, BOOLEAN);
+		columns[4] = new ColumnObject<String>("imglink", "www.google.com", STRING);
+
+		handler.executeUpdate(handler.insert("exgfx", columns));
+
 //		// insert todolists into table
 //		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", "title", "First", STRING));
-//		handler.executeUpdate(handler.insert("todo", "title", "Second", STRING));
-//
+//		handler.executeUpdate(handler.insert("todo", new ColumnObject<String>("title", "First", STRING)));
+//		handler.executeUpdate(handler.insert("todo", new ColumnObject<String>("title", "Second", STRING)));
+
 //		// insert into first todolist
 //		handler.executeUpdate(handler.insert(TODO_ITEM, "content", "Finish single insert.",
 //				STRING, "todoid", 1, INTEGER, "completed", false, BOOLEAN));

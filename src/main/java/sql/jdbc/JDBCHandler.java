@@ -38,14 +38,27 @@ public interface JDBCHandler {
 
 	public <T> String and(String key, Object value, Class<T> typeOf, String query);
 
-	public <T> String insert(String tableName, String column, Object value, Class<T> classOfT);
+	public <T> String insert(String tableName, ColumnObject<?>... columns);
 
-	public <S, T> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-								  String column2, Object value2, Class<T> classOf2);
-
-	public <S, T, U> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-								  String column2, Object value2, Class<T> classOf2,
-								  String column3, Object value3, Class<U> classOf3);
+//	public <T> String insert(String tableName, String column, Object value, Class<T> classOfT);
+//
+//	public <S, T> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
+//								  String column2, Object value2, Class<T> classOf2);
+//
+//	public <S, T, U> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
+//								   String column2, Object value2, Class<T> classOf2,
+//								   String column3, Object value3, Class<U> classOf3);
+//
+//	public <S, T, U, V> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
+//									  String column2, Object value2, Class<T> classOf2,
+//									  String column3, Object value3, Class<U> classOf3,
+//									  String column4, Object value4, Class<V> classOf4);
+//
+//	public <S, T, U, V, W> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
+//									  String column2, Object value2, Class<T> classOf2,
+//									  String column3, Object value3, Class<U> classOf3,
+//									  String column4, Object value4, Class<V> classOf4,
+//									  String column5, Object value5, Class<W> classOf5);
 
 	public String openParentheses(String outerQuery, String innerQuery);
 
