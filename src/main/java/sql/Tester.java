@@ -8,6 +8,8 @@ import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
 
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -49,8 +51,8 @@ public class Tester {
 			e.printStackTrace();
 		}
 
-		handler.insert("todo", "title", "First", String.class).executeQuery();
-
+		int results = handler.insert("todo", "title", "First", String.class).executeUpdate();
+		System.out.println(results);
 
 //
 //		JDBCEnum handlers = JDBCEnum.INSTANCE;

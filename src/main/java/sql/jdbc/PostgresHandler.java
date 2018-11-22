@@ -153,7 +153,6 @@ public class PostgresHandler implements JDBCHandler {
 			} else if(classOfT.equals(Boolean.class)) {
 				stmt.setBoolean(1, (boolean) value);
 			}
-			System.out.println(stmt.toString());
 			this.query = stmt.toString();
 			return this;
 		} catch (SQLException e) {
@@ -168,11 +167,29 @@ public class PostgresHandler implements JDBCHandler {
 				//create a statement object
 				PreparedStatement stmt = this.dbConn.prepareStatement(this.query);
 				//execute a query, which returns a ResultSet object
+				LOGGER.debug("Executing query: {}", stmt.toString());
 				return stmt.executeQuery();
 			} catch (SQLException e) {
 				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 			}
 			return null;
+		} finally {
+			newQuery();
+		}
+	}
+
+	public int executeUpdate() {
+		try {
+			try {
+				//create a statement object
+				PreparedStatement stmt = this.dbConn.prepareStatement(this.query);
+				//execute a query, which returns a ResultSet object
+				LOGGER.debug("Executing query: {}", stmt.toString());
+				return stmt.executeUpdate();
+			} catch (SQLException e) {
+				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			}
+			return Integer.MIN_VALUE;
 		} finally {
 			newQuery();
 		}
