@@ -22,7 +22,6 @@ import java.util.Map;
 
 public class SQLModelBuilder {
 
-	private JsonSqlConfigParser parser;
 	private String[] modelFiles;
 	private Gson gson;
 	private Map<String, SQLModel> models;
@@ -32,8 +31,7 @@ public class SQLModelBuilder {
 	private static final String BOOLEAN = "BOOLEAN";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public SQLModelBuilder(JsonSqlConfigParser parser) {
-		this.parser = parser;
+	public SQLModelBuilder() {
 		this.gson = new Gson();
 		this.models = new HashMap<>();
 	}

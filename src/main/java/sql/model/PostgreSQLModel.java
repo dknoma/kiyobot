@@ -3,8 +3,6 @@ package sql.model;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -29,8 +27,11 @@ public class PostgreSQLModel implements SQLModel{
 	private Map<String, Boolean> hasDefaultValue;
 	private Map<String, Object> defaultValues;
 
-	private static final String INT = "INT";
-	private static final String BOOLEAN = "BOOLEAN";
+	private static final Class<String> STRING = String.class;
+	private static final Class<Integer> INTEGER = Integer.class;
+	private static final Class<Boolean> BOOLEAN = Boolean.class;
+	private static final String DATATYPE_INT = "INT";
+	private static final String DATATYPE_BOOLEAN = "BOOLEAN";
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	/**
@@ -86,7 +87,7 @@ public class PostgreSQLModel implements SQLModel{
 	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength,
 						  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
-		this.columnType.put(key, String.class);
+		this.columnType.put(key, STRING);
 		this.columnCanBeNull.put(key, isNotNull);
 		this.keyIsVar.put(key, keyIsVar);
 		this.keyLengths.put(key, keyLength);
@@ -124,7 +125,7 @@ public class PostgreSQLModel implements SQLModel{
 		// adds the keys to the query
 		for(String key : this.columns) {
 			Class classOfKey = this.columnType.get(key);
-			if(classOfKey.equals(String.class)) {
+			if(classOfKey.equals(STRING)) {
 				if(this.keyIsVar.get(key)) {
 					sb.append(String.format(", %1$s VARCHAR(%2$s)", key, this.keyLengths.get(key)));
 				} else {
@@ -133,13 +134,13 @@ public class PostgreSQLModel implements SQLModel{
 				if(this.columnCanBeNull.get(key)) {
 					sb.append(" NOT NULL");
 				}
-			} else if(classOfKey.equals(Integer.class)) {
-				sb.append(String.format(", %1$s %2$s", key, INT));
+			} else if(classOfKey.equals(INTEGER)) {
+				sb.append(String.format(", %1$s %2$s", key, DATATYPE_INT));
 				if(this.hasDefaultValue.get(key)) {
 					sb.append(String.format(" DEFAULT %s", this.defaultValues.get(key)));
 				}
-			} else if(classOfKey.equals(Boolean.class)) {
-				sb.append(String.format(", %1$s %2$s", key, BOOLEAN));
+			} else if(classOfKey.equals(BOOLEAN)) {
+				sb.append(String.format(", %1$s %2$s", key, DATATYPE_BOOLEAN));
 				if(this.hasDefaultValue.get(key)) {
 					sb.append(String.format(" DEFAULT %b", this.defaultValues.get(key)));
 				}
@@ -156,7 +157,6 @@ public class PostgreSQLModel implements SQLModel{
 
 	@Override
 	public String getQuery() {
-//		System.out.println("Query: "+ this.query);
 		return this.query;
 	}
 

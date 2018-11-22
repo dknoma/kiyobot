@@ -28,31 +28,6 @@ public interface JDBCHandler {
 	 */
 	public Connection getConnection();
 
-//	/**
-//	 * Regular select from table
-//	 * @param table name
-//	 * @return resultset of query
-//	 */
-//	public ResultSet select(String table, String column);
-
-//	/**
-//	 * Inserts a string value into column key of a table
-//	 * @param table name
-//	 * @param key key
-//	 * @param value value
-//	 */
-//	public void insertString(String table, String key, String value);
-//
-//	/**
-//	 * Insert string with foreign key into column key of a table
-//	 * @param table name
-//	 * @param key key
-//	 * @param value value
-//	 * @param type reference key
-//	 * @param typeValue reference name
-//	 */
-//	public void insertString(String table, String key, String value, String type, String typeValue);
-
 	public String getTable(String tableName);
 
 	public String select(String value, String query);
