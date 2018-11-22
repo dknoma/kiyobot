@@ -121,7 +121,7 @@ public class Tester {
 					} else if(isBoolean(columnType)) {
 						sb.append(String.format("\t\t\"%1$s\": %2$s", columnName, results.getBoolean(columnName)));
 					}
-					if(i < resultCount - 1) {
+					if(i < resultCount) {
 						sb.append(",\n");
 					} else {
 						sb.append("\n");
@@ -165,7 +165,7 @@ public class Tester {
 					} else if(isBoolean(columnType)) {
 						sb.append(String.format("\t\t\t\"%1$s\": %2$s", columnName, results.getBoolean(columnName)));
 					}
-					if(i < resultCount - 1) {
+					if(i < resultCount) {
 						sb.append(",\n");
 					} else {
 						sb.append("\n");
