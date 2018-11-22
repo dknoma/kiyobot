@@ -51,6 +51,56 @@ public class MessageBot {
 }
 ```
 
+## SQLModel
+
+The SQLModel class is meant to hold information about a particular table in a database. Its main use is to parse information from a .json file representing the desired model.
+Rather than having to create a class each time a user wants to create a model, they only need to create a .json of the model(s) they want, and use the SQLModelBuilder to build those models. The SQLModelBuilder will look at all the files in "./models" and try to create models of all present .json files.
+
+The following is an example of how to setup a SQLModel so that the JDBCHandler can extract information and set up the appropriate table.
+
+```JSON
+{
+  "name": "exgfx",
+  "autoIncrement": true,
+  "columns": [
+    {
+	  "key": "filename",
+	  "attributes": {
+		"type": "STRING",
+		"length": 8,
+		"lengthIsVar": true,
+		"allowNull": false
+	  }
+	},
+	{
+	  "key": "description",
+	  "attributes": {
+		"type": "STRING",
+		"length": 100,
+		"lengthIsVar": true,
+		"allowNull": false
+	  }
+	},
+	{
+	  "key": "type",
+	  "attributes": {
+		"type": "STRING",
+		"length": 40,
+		"lengthIsVar": true,
+		"allowNull": false
+	  }
+	},
+	{
+	  "key": "completed",
+	  "attributes": {
+		"type": "BOOLEAN",
+		"defaultValue": false
+	  }
+	}
+  ]
+}
+```
+
 # Revision History
 ## Version 0.1.0
 * Basic library set up, allows bot to view and send messages to a channel.

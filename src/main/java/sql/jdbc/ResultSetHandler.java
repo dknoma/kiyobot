@@ -1,6 +1,7 @@
 package sql.jdbc;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,15 +17,15 @@ public enum ResultSetHandler {
 
 	INSTANCE();
 
-	private static final Gson gson = new Gson();
+	private static final Gson GSON = new Gson();
 	private static final Class<String> STRING = String.class;
 	private static final Class<Integer> INTEGER = Integer.class;
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
-	private static final String TODO = "Todo";
-	private static final String TODO_ITEM = "TodoItem";
+//	private static final String TODO = "Todo";
+//	private static final String TODO_ITEM = "TodoItem";
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	ResultSetHandler(){
+	ResultSetHandler() {
 
 	}
 
@@ -35,10 +36,11 @@ public enum ResultSetHandler {
 	 * @param referenceId reference table id
 	 * @return json
 	 */
-	public static String getInfoFromReference(JDBCHandler handler, String referenceKey, int referenceId) {
+	public static String getInfoFromReference(JDBCHandler handler, String referenceLocation,
+											  String referenceKey, int referenceId) {
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
-						handler.from("todo",
+						handler.from(referenceLocation,
 								handler.where(referenceKey, referenceId, INTEGER, "")
 						)
 				)
@@ -49,15 +51,15 @@ public enum ResultSetHandler {
 	/**
 	 * Gets a single json object  w/o any references
 	 * @param handler JDBCHandler
-	 * @param referenceKey reference table primary key
-	 * @param referenceId reference table id
+	 * @param key key
+	 * @param value value
 	 * @return json
 	 */
-	public static String getResultSet(JDBCHandler handler, String referenceKey, int referenceId) {
+	public static String getResultSet(JDBCHandler handler, String location, String key, int value) {
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
-						handler.from("todo",
-								handler.where(referenceKey, referenceId, INTEGER, "")
+						handler.from(location,
+								handler.where(key, value, INTEGER, "")
 						)
 				)
 		);
@@ -65,22 +67,39 @@ public enum ResultSetHandler {
 	}
 
 	/**
-	 * Prints out all results of the query
+	 * Gets a json string representation of all results of the query; This query is meant to be used to get
+	 * all values from the table of a specific referenceid
 	 * @param handler JDBCHandler
 	 * @param referenceKey reference table primary key
 	 * @param referenceId reference table id
 	 * @return json
 	 */
-	public static String getResultSetWithReference(JDBCHandler handler, String referenceKey, int referenceId) {
+	public static String getResultSetWithReference(JDBCHandler handler, String location, String referenceKey, int referenceId) {
 		ResultSet results = handler.executeQuery(
 				handler.select("*",
-						handler.from("todoitem",
+						handler.from(location,
 								handler.where(referenceKey, referenceId, INTEGER, "")
 						)
 				)
 		);
-		String out = getAllResults(referenceKey, referenceId, results);
-		return out;
+		return getAllResults(referenceKey, referenceId, results);
+	}
+
+	/**
+	 * Returns the JsonObject representation of the input json
+	 * @param json input
+	 * @return string
+	 */
+	public static JsonObject getInfoFromJson(String json) {
+		return GSON.fromJson(json, JsonObject.class);
+	}
+
+	public static String getTableNameFromJson(String json) {
+		return GSON.fromJson(json, JsonObject.class).get("primaryKey").getAsString();
+	}
+
+	public static int getTableIdFromJson(String json) {
+		return GSON.fromJson(json, JsonObject.class).get("id").getAsInt();
 	}
 
 	/**
