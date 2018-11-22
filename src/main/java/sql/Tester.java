@@ -73,29 +73,75 @@ public class Tester {
 //		handler.executeUpdate(handler.insert("todoitem", "content", "Finish JDBCHandler.",
 //				STRING, "todoid", 2, INTEGER, "completed", false, BOOLEAN));
 
-
-
 		String referenceKey = "todoid";
 		int referenceId = 1;
+		getReference(handler, referenceKey, referenceId);
+
 		printResults(handler, referenceKey, referenceId);
 		printResults(handler, referenceKey, 2);
 	}
 
+	private static String getReference(JDBCHandler handler, String referenceKey, int referenceId) {
+		ResultSet referenceResults = handler.executeQuery(
+				handler.select("*",
+					handler.from("todo",
+						handler.where(referenceKey, referenceId, INTEGER, "")
+					)
+				)
+		);
+		return getResults(referenceResults);
+	}
+
 	private static void printResults(JDBCHandler handler, String referenceKey, int referenceId) {
-//		ResultSet referenceResults = handler.executeQuery(
-//				handler.select("*",
-//				handler.from("todo",
-//				handler.where(referenceKey, referenceId, INTEGER, "")))
-//		);
 		ResultSet results = handler.executeQuery(
 				handler.select("*",
-				handler.from("todoitem",
-				handler.where(referenceKey, referenceId, INTEGER, "")))
+					handler.from("todoitem",
+						handler.where(referenceKey, referenceId, INTEGER, "")
+					)
+				)
 		);
 		getAllResults(referenceKey, referenceId, results);
 	}
 
-	private static void getAllResults(String referenceKey, int referenceId, ResultSet results) {
+	private static String getResults(ResultSet results) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{\n");
+		try {
+			while(results.next()) {
+				sb.append("\t{\n");
+				int resultCount = results.getMetaData().getColumnCount();
+//				System.out.println(resultCount);
+				for (int i = 1; i <= resultCount; i++) {
+					String columnType = results.getMetaData().getColumnTypeName(i);
+					String columnName = results.getMetaData().getColumnName(i);
+					if(isString(columnType)) {
+						sb.append(String.format("\t\t\"%1$s\": \"%2$s\"", columnName, results.getString(columnName)));
+					} else if(isInt(columnType)) {
+						sb.append(String.format("\t\t\"%1$s\": %2$s", columnName, results.getInt(columnName)));
+					} else if(isBoolean(columnType)) {
+						sb.append(String.format("\t\t\"%1$s\": %2$s", columnName, results.getBoolean(columnName)));
+					}
+					if(i < resultCount - 1) {
+						sb.append(",\n");
+					} else {
+						sb.append("\n");
+					}
+				}
+				if(!results.isLast()) {
+					sb.append("\t},\n");
+				} else {
+					sb.append("\t}\n");
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		sb.append("}");
+		System.out.println(sb.toString());
+		return sb.toString();
+	}
+
+	private static String getAllResults(String referenceKey, int referenceId, ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{\n");
 		try {
@@ -106,7 +152,8 @@ public class Tester {
 			while(results.next()) {
 				sb.append("\t\t{\n");
 				int resultCount = results.getMetaData().getColumnCount();
-				for (int i = 1; i < resultCount; i++) {
+//				System.out.println(resultCount);
+				for (int i = 1; i <= resultCount; i++) {
 					String columnType = results.getMetaData().getColumnTypeName(i);
 					String columnName = results.getMetaData().getColumnName(i);
 //					System.out.println(String.format("i: %1$s, \ttype: %2$s",
@@ -136,6 +183,7 @@ public class Tester {
 			e.printStackTrace();
 		}
 		System.out.println(sb.toString());
+		return sb.toString();
 	}
 
 	private static boolean isString(String columnType) {
@@ -148,7 +196,7 @@ public class Tester {
 	}
 
 	private static boolean isInt(String columnType) {
-		if(columnType.equals("tinyint") || columnType.equals("smallint")
+		if(columnType.equals("tinyint") || columnType.equals("smallint") || columnType.equals("int4")
 				|| columnType.equals("int") || columnType.equals("serial")) {
 			return true;
 		}
