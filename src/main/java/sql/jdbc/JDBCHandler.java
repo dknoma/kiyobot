@@ -35,23 +35,23 @@ public interface JDBCHandler {
 //	 */
 //	public ResultSet select(String table, String column);
 
-	/**
-	 * Inserts a string value into column key of a table
-	 * @param table name
-	 * @param key key
-	 * @param value value
-	 */
-	public void insertString(String table, String key, String value);
-
-	/**
-	 * Insert string with foreign key into column key of a table
-	 * @param table name
-	 * @param key key
-	 * @param value value
-	 * @param type reference key
-	 * @param typeValue reference name
-	 */
-	public void insertString(String table, String key, String value, String type, String typeValue);
+//	/**
+//	 * Inserts a string value into column key of a table
+//	 * @param table name
+//	 * @param key key
+//	 * @param value value
+//	 */
+//	public void insertString(String table, String key, String value);
+//
+//	/**
+//	 * Insert string with foreign key into column key of a table
+//	 * @param table name
+//	 * @param key key
+//	 * @param value value
+//	 * @param type reference key
+//	 * @param typeValue reference name
+//	 */
+//	public void insertString(String table, String key, String value, String type, String typeValue);
 
 	public String getTable(String tableName);
 

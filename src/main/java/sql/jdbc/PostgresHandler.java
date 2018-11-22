@@ -20,6 +20,9 @@ public class PostgresHandler implements JDBCHandler {
 	private Connection dbConn;
 	private Map<String, SQLModel> models;
 
+	private static final Class<String> STRING = String.class;
+	private static final Class<Integer> INTEGER = Integer.class;
+	private static final Class<Boolean> BOOLEAN = Boolean.class;
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public PostgresHandler(Map<String, SQLModel> models) {
@@ -124,7 +127,7 @@ public class PostgresHandler implements JDBCHandler {
 	}
 
 	public <T> String where(String key, Object value, Class<T> typeOf, String query) {
-		if(typeOf.equals(String.class)) {
+		if(typeOf.equals(STRING)) {
 			return String.format(" WHERE %1$s='%2$s'%3$s", key, value, query);
 		} else {
 			return String.format(" WHERE %1$s=%2$s%3$s", key, value, query);
@@ -132,7 +135,7 @@ public class PostgresHandler implements JDBCHandler {
 	}
 
 	public <T> String and(String key, Object value, Class<T> typeOf, String query) {
-		if(typeOf.equals(String.class)) {
+		if(typeOf.equals(STRING)) {
 			return String.format(" AND %1$s='%2$s'%3$s", key, value, query);
 		} else {
 			return String.format(" AND %1$s=%2$s%3$s", key, value, query);
@@ -190,11 +193,11 @@ public class PostgresHandler implements JDBCHandler {
 			PreparedStatement stmt = this.dbConn.prepareStatement(
 					String.format("INSERT INTO %1$s (%2$s) VALUES (?)",
 							this.models.get(tableName).getModelName(), column));
-			if(classOfT.equals(String.class)) {
+			if(classOfT.equals(STRING)) {
 				stmt.setString(1, (String) value);
-			} else if(classOfT.equals(Integer.class)) {
+			} else if(classOfT.equals(INTEGER)) {
 				stmt.setInt(1, (int) value);
-			} else if(classOfT.equals(Boolean.class)) {
+			} else if(classOfT.equals(BOOLEAN)) {
 				stmt.setBoolean(1, (boolean) value);
 			}
 			return stmt.toString();
@@ -270,7 +273,7 @@ public class PostgresHandler implements JDBCHandler {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
 			//execute a query, which returns a ResultSet object
-			LOGGER.debug("Executing query: {}", stmt.toString());
+//			LOGGER.debug("Executing query: {}", stmt.toString());
 			return stmt.executeQuery();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
@@ -283,76 +286,76 @@ public class PostgresHandler implements JDBCHandler {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
 			//execute a query, which returns a ResultSet object
-			LOGGER.debug("Executing query: {}", stmt.toString());
+//			LOGGER.debug("Executing update: {}", stmt.toString());
 			return stmt.executeUpdate();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return Integer.MIN_VALUE;
 	}
+//
+//	/**
+//	 * Inserts a string value into column key of a table
+//	 * @param key key
+//	 * @param value value
+//	 */
+//	public void insertString(String tableName, String key, String value) {
+//		String insertStmt = String.format("INSERT INTO %1$s (%2$s) VALUES (?)",
+//				this.models.get(tableName).getModelName(), key);
+//		try {
+//			//create a statement object
+//			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
+//			stmt.setString(1, value);
+//			//execute a query, which returns a ResultSet object
+//			stmt.execute();
+//		} catch (SQLException e) {
+//			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+//		}
+//	}
+//
+//	/**
+//	 * Insert string with foreign key into column key of a table
+//	 * TODO: postgres seems to like ' ' rather than " "
+//	 * @param key key
+//	 * @param value value
+//	 * @param type reference key
+//	 * @param typeValue reference name
+//	 */
+//	public void insertString(String tableName, String key, String value, String type, String typeValue) {
+//		SQLModel model = this.models.get(tableName);
+//		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s FROM %4$s WHERE %5$s='%6$s'))"
+//				, model.getModelName(), key, model.getForeignKey(), model.getForeignKey(), type, typeValue);
+//		//TODO: this only works when in same sql, if different dbs would need to just pass foreign key itself
+//		//(SELECT id from foo WHERE type='blue')
+//		try {
+//			//create a statement object
+//			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
+//			stmt.setString(1, value);
+//			//execute a query, which returns a ResultSet object
+//			stmt.execute();
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		}
+//	}
 
-	/**
-	 * Inserts a string value into column key of a table
-	 * @param key key
-	 * @param value value
-	 */
-	public void insertString(String tableName, String key, String value) {
-		String insertStmt = String.format("INSERT INTO %1$s (%2$s) VALUES (?)",
-				this.models.get(tableName).getModelName(), key);
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
-			stmt.setString(1, value);
-			//execute a query, which returns a ResultSet object
-			stmt.execute();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-	}
-
-	/**
-	 * Insert string with foreign key into column key of a table
-	 * TODO: postgres seems to like ' ' rather than " "
-	 * @param key key
-	 * @param value value
-	 * @param type reference key
-	 * @param typeValue reference name
-	 */
-	public void insertString(String tableName, String key, String value, String type, String typeValue) {
-		SQLModel model = this.models.get(tableName);
-		String insertStmt = String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, (SELECT %3$s FROM %4$s WHERE %5$s='%6$s'))"
-				, model.getModelName(), key, model.getForeignKey(), model.getForeignKey(), type, typeValue);
-		//TODO: this only works when in same sql, if different dbs would need to just pass foreign key itself
-		//(SELECT id from foo WHERE type='blue')
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(insertStmt);
-			stmt.setString(1, value);
-			//execute a query, which returns a ResultSet object
-			stmt.execute();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Regular select from table
-	 * @param table name
-	 * @return resultset of query
-	 */
-	public ResultSet select(String table, String column, String key, String value) {
-		String selectStmt = String.format("SELECT %1$s FROM %2$s WHERE %3$s='%4$s'", column, table, key, value);
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
-			//execute a query, which returns a ResultSet object
-			return stmt.executeQuery();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
+//	/**
+//	 * Regular select from table
+//	 * @param table name
+//	 * @return resultset of query
+//	 */
+//	public ResultSet select(String table, String column, String key, String value) {
+//		String selectStmt = String.format("SELECT %1$s FROM %2$s WHERE %3$s='%4$s'", column, table, key, value);
+//		try {
+//			//create a statement object
+//			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
+//			//execute a query, which returns a ResultSet object
+//			return stmt.executeQuery();
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		}
+//		return null;
+//	}
+//
 	public String getTable(String tableName) {
 		return this.models.get(tableName).toString();
 	}
@@ -367,11 +370,11 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	private <T> void setStatementValue(PreparedStatement statement, int index, Object value, Class<T> classOfT) {
 		try {
-			if(classOfT.equals(String.class)) {
+			if(classOfT.equals(STRING)) {
 				statement.setString(index, (String) value);
-			} else if(classOfT.equals(Integer.class)) {
+			} else if(classOfT.equals(INTEGER)) {
 				statement.setInt(index, (int) value);
-			} else if(classOfT.equals(Boolean.class)) {
+			} else if(classOfT.equals(BOOLEAN)) {
 				statement.setBoolean(index, (boolean) value);
 			}
 		} catch (SQLException e) {
