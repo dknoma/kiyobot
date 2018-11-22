@@ -61,12 +61,16 @@ public class SQLModelBuilder {
 			return;
 		}
 		for(String fileName : this.modelFiles) {
-			try(BufferedReader br = Files.newBufferedReader(Paths.get(fileName), java.nio.charset.StandardCharsets.ISO_8859_1)) {
+			if(fileName.endsWith(".json")) {
+				try (BufferedReader br = Files.newBufferedReader(Paths.get(fileName), java.nio.charset.StandardCharsets.ISO_8859_1)) {
 
-				parseJson(br.readLine());
+					parseJson(br.readLine());
 
-			} catch (IOException ioe) {
-				LOGGER.error("Error occurred when reading the file, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+				} catch (IOException ioe) {
+					LOGGER.error("Error occurred when reading the file, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+				}
+			} else {
+				LOGGER.warn("A non-json file was found. All model files must be in .json format.");
 			}
 		}
 	}
