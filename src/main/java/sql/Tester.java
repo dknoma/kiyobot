@@ -1,8 +1,6 @@
 package sql;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import javafx.geometry.Pos;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sql.jdbc.JDBCEnum;
@@ -13,8 +11,6 @@ import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
 
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -40,6 +36,10 @@ public class Tester {
 		}
 		builder.readFiles();
 
+		if(!builder.areModelsFormattedCorrectly()) {
+			return;
+		}
+
 		Map<String, SQLModel> models = builder.getCopyOfModels();
 //		for(Map.Entry<String, SQLModel> entry : models.entrySet()) {
 //			SQLModel copy = entry.getValue();
@@ -58,6 +58,7 @@ public class Tester {
 			handler.createTables();
 			System.out.println(handler.getTable(TODO));
 			System.out.println(handler.getTable(TODO_ITEM));
+			System.out.println(handler.getTable("exgfx"));
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -78,19 +79,19 @@ public class Tester {
 //				STRING, "todoid", 2, INTEGER, "completed", false, BOOLEAN));
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
-		String referenceKey = "todoid";
-		int referenceId = 1;
-		String referenceInfo = ResultSetHandler.getInfoFromReference(handler, TODO, referenceKey, referenceId);
-
-		// This is the result that will be received by other service
-		System.out.println(referenceInfo);
-//		JsonObject obj = ResultSetHandler.getInfoFromJson(referenceInfo);
-////		String referencePrimaryKey = obj.get("primaryKey").getAsString();
-////		int id = obj.get("id").getAsInt();
-		String referencePrimaryKey = ResultSetHandler.getTableNameFromJson(referenceInfo);
-		int id = ResultSetHandler.getTableIdFromJson(referenceInfo);
-
-		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, id));
-		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, 2));
+//		String referenceKey = "todoid";
+//		int referenceId = 1;
+//		String referenceInfo = ResultSetHandler.getInfoFromReference(handler, TODO, referenceKey, referenceId);
+//
+//		// This is the result that will be received by other service
+//		System.out.println(referenceInfo);
+////		JsonObject obj = ResultSetHandler.getInfoFromJson(referenceInfo);
+//////		String referencePrimaryKey = obj.get("primaryKey").getAsString();
+//////		int id = obj.get("id").getAsInt();
+//		String referencePrimaryKey = ResultSetHandler.getTableNameFromJson(referenceInfo);
+//		int id = ResultSetHandler.getTableIdFromJson(referenceInfo);
+//
+//		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, id));
+//		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, 2));
 	}
 }

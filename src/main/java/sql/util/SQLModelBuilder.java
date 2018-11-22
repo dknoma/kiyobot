@@ -1,9 +1,6 @@
 package sql.util;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sql.jdbc.JDBCEnum;
@@ -25,6 +22,7 @@ public class SQLModelBuilder {
 	private String[] modelFiles;
 	private Gson gson;
 	private Map<String, SQLModel> models;
+	private boolean modelsCorrectlyFormatted;
 
 	private static final String STRING = "STRING";
 	private static final String INTEGER = "INTEGER";
@@ -34,6 +32,7 @@ public class SQLModelBuilder {
 	public SQLModelBuilder() {
 		this.gson = new Gson();
 		this.models = new HashMap<>();
+		this.modelsCorrectlyFormatted = false;
 	}
 
 	/**
@@ -62,24 +61,34 @@ public class SQLModelBuilder {
 		}
 		for(String fileName : this.modelFiles) {
 			if(fileName.endsWith(".json")) {
-				try (BufferedReader br = Files.newBufferedReader(Paths.get(fileName), java.nio.charset.StandardCharsets.ISO_8859_1)) {
+				try (BufferedReader br = Files.newBufferedReader(Paths.get(fileName),
+						java.nio.charset.StandardCharsets.ISO_8859_1)) {
 
 					parseJson(br.readLine());
 
 				} catch (IOException ioe) {
-					LOGGER.error("Error occurred when reading the file, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+					LOGGER.error("Error occurred when reading the file, {},\n{}",
+							ioe.getMessage(), ioe.getStackTrace());
+					this.modelsCorrectlyFormatted = false;
+					return;
+				} catch (JsonSyntaxException jse) {
+					LOGGER.error("MalformedJsonException; Make sure the models are formatted correctly: {},\n{}",
+							jse.getMessage(), jse.getStackTrace());
+					this.modelsCorrectlyFormatted = false;
+					return;
 				}
 			} else {
 				LOGGER.warn("A non-json file was found. All model files must be in .json format.");
 			}
 		}
+		this.modelsCorrectlyFormatted = true;
 	}
 
 	/**
 	 * Helper method to parse a string in json format
 	 * @param json
 	 */
-	private void parseJson(String json) {
+	private void parseJson(String json) throws JsonSyntaxException {
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if(!obj.has("name")) {
 			LOGGER.error("No model name was found.");
@@ -157,5 +166,9 @@ public class SQLModelBuilder {
 
 	public Map<String, SQLModel> getCopyOfModels() {
 		return this.models;
+	}
+
+	public boolean areModelsFormattedCorrectly() {
+		return this.modelsCorrectlyFormatted;
 	}
 }
