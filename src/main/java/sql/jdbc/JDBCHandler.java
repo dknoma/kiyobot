@@ -28,12 +28,12 @@ public interface JDBCHandler {
 	 */
 	public Connection getConnection();
 
-	/**
-	 * Regular select from table
-	 * @param table name
-	 * @return resultset of query
-	 */
-	public ResultSet select(String table, String column);
+//	/**
+//	 * Regular select from table
+//	 * @param table name
+//	 * @return resultset of query
+//	 */
+//	public ResultSet select(String table, String column);
 
 	/**
 	 * Inserts a string value into column key of a table
@@ -53,28 +53,30 @@ public interface JDBCHandler {
 	 */
 	public void insertString(String table, String key, String value, String type, String typeValue);
 
-	public String getQuery(String name);
-
-	public void newQuery();
-
 	public String getTable(String tableName);
 
-	public JDBCHandler select(String value);
+	public String select(String value, String query);
 
-	public JDBCHandler from(String location);
+	public String from(String location, String query);
 
-	public <T> JDBCHandler where(String key, Object value, Class<T> typeOf);
+	public <T> String where(String key, Object value, Class<T> typeOf, String query);
 
-	public <T> JDBCHandler insert(String tableName, String column, Object value, Class<T> classOfT);
+	public <T> String and(String key, Object value, Class<T> typeOf, String query);
 
-	public <S, T> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+	public <T> String insert(String tableName, String column, Object value, Class<T> classOfT);
+
+	public <S, T> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
 								  String column2, Object value2, Class<T> classOf2);
 
-	public <S, T, U> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+	public <S, T, U> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
 								  String column2, Object value2, Class<T> classOf2,
 								  String column3, Object value3, Class<U> classOf3);
 
-	public ResultSet executeQuery();
+	public String openParentheses(String outerQuery, String innerQuery);
 
-	public int executeUpdate();
+	public String closeParentheses(String outerQuery, String innerQuery);
+
+	public ResultSet executeQuery(String query);
+
+	public int executeUpdate(String query);
 }

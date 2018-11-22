@@ -17,19 +17,17 @@ import java.util.Map;
  */
 public class PostgresHandler implements JDBCHandler {
 
-	private String query;
 	private Connection dbConn;
 	private Map<String, SQLModel> models;
 
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public PostgresHandler(Map<String, SQLModel> models) {
-		this.query = "";
 		this.models = models;
 		try {
 			Class.forName("org.postgresql.Driver");
 			LOGGER.debug("Got driver.");
-		} catch (java.lang.ClassNotFoundException e) {
+		} catch (ClassNotFoundException e) {
 			LOGGER.error("Class error has occurred: {},\n {}", e.getMessage(), e.getStackTrace());
 		}
 	}
@@ -74,70 +72,107 @@ public class PostgresHandler implements JDBCHandler {
 		}
 	}
 
-	public void newQuery() {
-		this.query = "";
-	}
-
 	@Override
 	public Connection getConnection() {
 		return dbConn;
 	}
 
-	/**
-	 * Regular select from table
-	 * @return resultset of query
-	 */
-	public ResultSet select(String tableName, String column) {
-		String selectStmt = String.format("SELECT %1$s FROM %2$s", column, this.models.get(tableName).getModelName());
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
-			//execute a query, which returns a ResultSet object
-			return stmt.executeQuery();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
+//	/**
+//	 * Regular select from table
+//	 * @return resultset of query
+//	 */
+//	public ResultSet select(String tableName, String column) {
+//		String selectStmt = String.format("SELECT %1$s FROM %2$s", column, this.models.get(tableName).getModelName());
+//		try {
+//			//create a statement object
+//			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
+//			//execute a query, which returns a ResultSet object
+//			return stmt.executeQuery();
+//		} catch (SQLException e) {
+//			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+//		}
+//		return null;
+//	}
+
+//	public ResultSet selectFromInnerJoin(String table, String column, String otherTable, String key, String value,
+//									  boolean valueIsInt, String otherKey, String otherValue, boolean otherValueIsInt) {
+//		if(!valueIsInt) {
+//			value = String.format("'%s'", value);
+//		}
+//		if(!otherValueIsInt) {
+//			otherValue = String.format("'%s'", otherValue);
+//		}
+//		String selectStmt = String.format("SELECT %1$s FROM (%2$s INNER JOIN %3$s ON (%4$s=%5$s AND %6$s=%7$s))",
+//				column, table, otherTable, key, value, otherKey, otherValue);
+//		try {
+//			//create a statement object
+//			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
+//			//execute a query, which returns a ResultSet object
+//			return stmt.executeQuery();
+//		} catch (SQLException e) {
+//			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+//		}
+//		return null;
+//	}
+
+	public String select(String value, String query) {
+		return String.format("SELECT %1$s%2$s", value, query);
 	}
 
-	public ResultSet selectFromInnerJoin(String table, String column, String otherTable, String key, String value,
-									  boolean valueIsInt, String otherKey, String otherValue, boolean otherValueIsInt) {
-		if(!valueIsInt) {
-			value = String.format("'%s'", value);
-		}
-		if(!otherValueIsInt) {
-			otherValue = String.format("'%s'", otherValue);
-		}
-		String selectStmt = String.format("SELECT %1$s FROM (%2$s INNER JOIN %3$s ON (%4$s=%5$s AND %6$s=%7$s))",
-				column, table, otherTable, key, value, otherKey, otherValue);
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(selectStmt);
-			//execute a query, which returns a ResultSet object
-			return stmt.executeQuery();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
+	public String from(String location, String query) {
+		return String.format(" FROM %1$s%2$s", location, query);
 	}
 
-	public JDBCHandler select(String value) {
-		this.query += String.format("SELECT %s", value);
-		return this;
-	}
-
-	public JDBCHandler from(String location) {
-		this.query += String.format(" FROM %s", location);
-		return this;
-	}
-
-	public <T> JDBCHandler where(String key, Object value, Class<T> typeOf) {
+	public <T> String where(String key, Object value, Class<T> typeOf, String query) {
 		if(typeOf.equals(String.class)) {
-			this.query += String.format(" WHERE %1$s='%2$s'", key, value);
+			return String.format(" WHERE %1$s='%2$s'%3$s", key, value, query);
 		} else {
-			this.query += String.format(" WHERE %1$s=%2$s", key, value);
+			return String.format(" WHERE %1$s=%2$s%3$s", key, value, query);
 		}
-		return this;
+	}
+
+	public <T> String and(String key, Object value, Class<T> typeOf, String query) {
+		if(typeOf.equals(String.class)) {
+			return String.format(" AND %1$s='%2$s'%3$s", key, value, query);
+		} else {
+			return String.format(" AND %1$s=%2$s%3$s", key, value, query);
+		}
+	}
+
+//	public JDBCHandler select(String value) {
+//		this.query += String.format("SELECT %s", value);
+//		return this;
+//	}
+//
+//	public JDBCHandler from(String location) {
+//		this.query += String.format(" FROM %s", location);
+//		return this;
+//	}
+//
+//	public <T> JDBCHandler where(String key, Object value, Class<T> typeOf) {
+//		if(typeOf.equals(String.class)) {
+//			this.query += String.format(" WHERE %1$s='%2$s'", key, value);
+//		} else {
+//			this.query += String.format(" WHERE %1$s=%2$s", key, value);
+//		}
+//		return this;
+//	}
+//
+//	public <T> JDBCHandler and(String key, Object value, Class<T> typeOf) {
+//		if(typeOf.equals(String.class)) {
+//			this.query += String.format(" AND %1$s='%2$s'", key, value);
+//		} else {
+//			this.query += String.format(" AND %1$s=%2$s", key, value);
+//		}
+//		return this;
+//	}
+
+	public String openParentheses(String outerQuery, String innerQuery) {
+		return String.format("%1$s(%2$s", outerQuery, innerQuery);
+	}
+
+	public String closeParentheses(String outerQuery, String innerQuery) {
+		return String.format("%1$s)%2$s", outerQuery, innerQuery);
 	}
 
 	/**
@@ -149,10 +184,10 @@ public class PostgresHandler implements JDBCHandler {
 	 * @param <T>
 	 * @return this
 	 */
-	public <T> JDBCHandler insert(String tableName, String column, Object value, Class<T> classOfT) {
+	public <T> String insert(String tableName, String column, Object value, Class<T> classOfT) {
 		try {
 			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(this.query +
+			PreparedStatement stmt = this.dbConn.prepareStatement(
 					String.format("INSERT INTO %1$s (%2$s) VALUES (?)",
 							this.models.get(tableName).getModelName(), column));
 			if(classOfT.equals(String.class)) {
@@ -162,8 +197,7 @@ public class PostgresHandler implements JDBCHandler {
 			} else if(classOfT.equals(Boolean.class)) {
 				stmt.setBoolean(1, (boolean) value);
 			}
-			this.query = stmt.toString();
-			return this;
+			return stmt.toString();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -182,17 +216,16 @@ public class PostgresHandler implements JDBCHandler {
 	 * @param <T>
 	 * @return this
 	 */
-	public <S, T> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+	public <S, T> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
 								  String column2, Object value2, Class<T> classOf2) {
 		try {
 			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(this.query +
+			PreparedStatement stmt = this.dbConn.prepareStatement(
 					String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, ?)",
 							this.models.get(tableName).getModelName(), column1, column2));
 			setStatementValue(stmt, 1, value1, classOf1);
 			setStatementValue(stmt, 2, value2, classOf2);
-			this.query = stmt.toString();
-			return this;
+			return stmt.toString();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -214,57 +247,48 @@ public class PostgresHandler implements JDBCHandler {
 	 * @param <T>
 	 * @return this
 	 */
-	public <S, T, U> JDBCHandler insert(String tableName, String column1, Object value1, Class<S> classOf1,
+	public <S, T, U> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
 								  String column2, Object value2, Class<T> classOf2,
 								  String column3, Object value3, Class<U> classOf3) {
 		try {
 			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(this.query +
+			PreparedStatement stmt = this.dbConn.prepareStatement(
 					String.format("INSERT INTO %1$s (%2$s, %3$s, %4$s) VALUES (?, ?, ?)",
 							this.models.get(tableName).getModelName(), column1, column2, column3));
 			setStatementValue(stmt, 1, value1, classOf1);
 			setStatementValue(stmt, 2, value2, classOf2);
 			setStatementValue(stmt, 3, value3, classOf3);
-			this.query = stmt.toString();
-			return this;
+			return stmt.toString();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return null;
 	}
 
-	public ResultSet executeQuery() {
+	public ResultSet executeQuery(String query) {
 		try {
-			try {
-				//create a statement object
-				PreparedStatement stmt = this.dbConn.prepareStatement(this.query);
-				//execute a query, which returns a ResultSet object
-				LOGGER.debug("Executing query: {}", stmt.toString());
-				return stmt.executeQuery();
-			} catch (SQLException e) {
-				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-			}
-			return null;
-		} finally {
-			newQuery();
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(query);
+			//execute a query, which returns a ResultSet object
+			LOGGER.debug("Executing query: {}", stmt.toString());
+			return stmt.executeQuery();
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
+		return null;
 	}
 
-	public int executeUpdate() {
+	public int executeUpdate(String query) {
 		try {
-			try {
-				//create a statement object
-				PreparedStatement stmt = this.dbConn.prepareStatement(this.query);
-				//execute a query, which returns a ResultSet object
-				LOGGER.debug("Executing query: {}", stmt.toString());
-				return stmt.executeUpdate();
-			} catch (SQLException e) {
-				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-			}
-			return Integer.MIN_VALUE;
-		} finally {
-			newQuery();
+			//create a statement object
+			PreparedStatement stmt = this.dbConn.prepareStatement(query);
+			//execute a query, which returns a ResultSet object
+			LOGGER.debug("Executing query: {}", stmt.toString());
+			return stmt.executeUpdate();
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
+		return Integer.MIN_VALUE;
 	}
 
 	/**
@@ -327,10 +351,6 @@ public class PostgresHandler implements JDBCHandler {
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	public String getQuery(String tableName){
-		return this.query;
 	}
 
 	public String getTable(String tableName) {
