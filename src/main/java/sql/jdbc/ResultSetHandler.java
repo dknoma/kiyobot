@@ -55,11 +55,36 @@ public enum ResultSetHandler {
 	 * @param value value
 	 * @return json
 	 */
-	public static String getResultSet(JDBCHandler handler, String location, String key, int value) {
+	public static <T> String getResultSet(JDBCHandler handler, String location, String key, Object value, Class<T> classOfT) {
+		String whereQuery;
+			if(classOfT.equals(STRING)) {
+				whereQuery = handler.where(key, value, STRING, "");
+			} else if(classOfT.equals(INTEGER)) {
+				whereQuery = handler.where(key, value, INTEGER, "");
+			} else if(classOfT.equals(BOOLEAN)) {
+				whereQuery = handler.where(key, value, BOOLEAN, "");
+			} else {
+				whereQuery = "";
+			}
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
 						handler.from(location,
-								handler.where(key, value, INTEGER, "")
+								whereQuery
+						)
+				)
+		);
+		return getResults(referenceResults);
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @return json
+	 */
+	public static String getAllResults(JDBCHandler handler, String location) {
+		ResultSet referenceResults = handler.executeQuery(
+				handler.select("*",
+						handler.from(location,""
 						)
 				)
 		);

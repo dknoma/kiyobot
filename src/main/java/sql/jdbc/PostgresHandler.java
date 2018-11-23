@@ -192,182 +192,15 @@ public class PostgresHandler implements JDBCHandler {
 	}
 
 	/**
-	 * Insert 1 value into the table
-	 * @param tableName;
-	 * @param column;
-	 * @param value;
-	 * @param classOfT
-	 * @param <T>;
-	 * @return this
+	 * Executes a query on the db
+	 * @param query;
+	 * @return result set
 	 */
-	public <T> String insert(String tableName, String column, Object value, Class<T> classOfT) {
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(
-					String.format("INSERT INTO %1$s (%2$s) VALUES (?)",
-							this.models.get(tableName).getModelName(), column));
-			if(classOfT.equals(STRING)) {
-				stmt.setString(1, (String) value);
-			} else if(classOfT.equals(INTEGER)) {
-				stmt.setInt(1, (int) value);
-			} else if(classOfT.equals(BOOLEAN)) {
-				stmt.setBoolean(1, (boolean) value);
-			}
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
-	}
-
-	/**
-	 * Insert 2 values into the table
-	 * @param tableName;
-	 * @param column1;
-	 * @param value1;
-	 * @param classOf1;
-	 * @param column2;
-	 * @param value2;
-	 * @param classOf2;
-	 * @param <T>;
-	 * @return this
-	 */
-	public <S, T> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-								  String column2, Object value2, Class<T> classOf2) {
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(
-					String.format("INSERT INTO %1$s (%2$s, %3$s) VALUES (?, ?)",
-							this.models.get(tableName).getModelName(), column1, column2));
-			setStatementValue(stmt, 1, value1, classOf1);
-			setStatementValue(stmt, 2, value2, classOf2);
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
-	}
-
-	/**
-	 * Insert 3 values into the table
-	 * @param tableName;
-	 * @param column1;
-	 * @param value1;
-	 * @param classOf1;
-	 * @param column2;
-	 * @param value2;
-	 * @param classOf2;
-	 * @param column3;
-	 * @param value3;
-	 * @param classOf3;
-	 * @param <T>;
-	 * @return this
-	 */
-	public <S, T, U> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-								  String column2, Object value2, Class<T> classOf2,
-								  String column3, Object value3, Class<U> classOf3) {
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(
-					String.format("INSERT INTO %1$s (%2$s, %3$s, %4$s) VALUES (?, ?, ?)",
-							this.models.get(tableName).getModelName(), column1, column2, column3));
-			setStatementValue(stmt, 1, value1, classOf1);
-			setStatementValue(stmt, 2, value2, classOf2);
-			setStatementValue(stmt, 3, value3, classOf3);
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
-	}
-
-	/**
-	 * Insert 4 values into the table
-	 * @param tableName tablename
-	 * @param column1;
-	 * @param value1;
-	 * @param classOf1;
-	 * @param column2;
-	 * @param value2;
-	 * @param classOf2;
-	 * @param column3;
-	 * @param value3;
-	 * @param classOf3;
-	 * @param column4;
-	 * @param value4;
-	 * @param classOf4;
-	 * @param <T>;
-	 * @return this
-	 */
-	public <S, T, U, V> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-									  String column2, Object value2, Class<T> classOf2,
-									  String column3, Object value3, Class<U> classOf3,
-									  String column4, Object value4, Class<V> classOf4) {
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(
-					String.format("INSERT INTO %1$s (%2$s, %3$s, %4$s, %5$s) VALUES (?, ?, ?, ?)",
-							this.models.get(tableName).getModelName(), column1, column2, column3, column4));
-			setStatementValue(stmt, 1, value1, classOf1);
-			setStatementValue(stmt, 2, value2, classOf2);
-			setStatementValue(stmt, 3, value3, classOf3);
-			setStatementValue(stmt, 4, value4, classOf4);
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
-	}
-
-	/**
-	 * Insert 5 values into the table
-	 * @param tableName;
-	 * @param column1;
-	 * @param value1;
-	 * @param classOf1;
-	 * @param column2;
-	 * @param value2;
-	 * @param classOf2;
-	 * @param column3;
-	 * @param value3;
-	 * @param classOf3;
-	 * @param column4;
-	 * @param value4;
-	 * @param classOf4;
-	 * @param column5;
-	 * @param value5;
-	 * @param classOf5;
-	 * @param <T>;
-	 * @return this
-	 */
-	public <S, T, U, V, W> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-										 String column2, Object value2, Class<T> classOf2,
-										 String column3, Object value3, Class<U> classOf3,
-										 String column4, Object value4, Class<V> classOf4,
-										 String column5, Object value5, Class<W> classOf5) {
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(
-					String.format("INSERT INTO %1$s (%2$s, %3$s, %4$s, %5$s, %6$s) VALUES (?, ?, ?, ?, ?)",
-							this.models.get(tableName).getModelName(), column1, column2, column3, column4, column5));
-			setStatementValue(stmt, 1, value1, classOf1);
-			setStatementValue(stmt, 2, value2, classOf2);
-			setStatementValue(stmt, 3, value3, classOf3);
-			setStatementValue(stmt, 4, value4, classOf4);
-			setStatementValue(stmt, 5, value5, classOf5);
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return null;
-	}
-
 	public ResultSet executeQuery(String query) {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
 			//execute a query, which returns a ResultSet object
-//			LOGGER.debug("Executing query: {}", stmt.toString());
 			return stmt.executeQuery();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
@@ -375,12 +208,16 @@ public class PostgresHandler implements JDBCHandler {
 		return null;
 	}
 
+	/**
+	 * Executes an update on the db
+	 * @param query;
+	 * @return result set
+	 */
 	public int executeUpdate(String query) {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
 			//execute a query, which returns a ResultSet object
-//			LOGGER.debug("Executing update: {}", stmt.toString());
 			return stmt.executeUpdate();
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
@@ -394,11 +231,11 @@ public class PostgresHandler implements JDBCHandler {
 
 	/**
 	 * Sets the value of a prepared statement at the given index
-	 * @param statement
-	 * @param index
-	 * @param value
-	 * @param classOfT
-	 * @param <T>
+	 * @param statement;
+	 * @param index;
+	 * @param value;
+	 * @param classOfT;
+	 * @param <T>;
 	 */
 	private <T> void setStatementValue(PreparedStatement statement, int index, Object value, Class<T> classOfT) {
 		try {

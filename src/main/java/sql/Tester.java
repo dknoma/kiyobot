@@ -60,14 +60,15 @@ public class Tester {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 
-		ColumnObject[] columns = new ColumnObject[5];
-		columns[0] = new ColumnObject<String>("filename", "ExGFX100", STRING);
-		columns[1] = new ColumnObject<String>("description", "Test graphics file.", STRING);
-		columns[2] = new ColumnObject<String>("type", "test", STRING);
-		columns[3] = new ColumnObject<Boolean>("completed", false, BOOLEAN);
-		columns[4] = new ColumnObject<String>("imglink", "www.google.com", STRING);
-
-		handler.executeUpdate(handler.insert("exgfx", columns));
+		// Executes update on exgfx insert
+//		ColumnObject[] columns = new ColumnObject[5];
+//		columns[0] = new ColumnObject<String>("filename", "ExGFX100", STRING);
+//		columns[1] = new ColumnObject<String>("description", "Test graphics file.", STRING);
+//		columns[2] = new ColumnObject<String>("type", "test", STRING);
+//		columns[3] = new ColumnObject<Boolean>("completed", false, BOOLEAN);
+//		columns[4] = new ColumnObject<String>("imglink", "www.google.com", STRING);
+//
+//		handler.executeUpdate(handler.insert("exgfx", columns));
 
 //		// insert todolists into table
 //		// inserts and updated need executeUpdate as no data is returned
