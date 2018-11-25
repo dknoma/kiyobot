@@ -1,20 +1,18 @@
 package sql.jdbc;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import sql.model.SQLModel;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 
-/**
- * A handler for PostgreSQL queries.
- *
- * NOTE: Postgres uses 'single quotes' for queries rather than "double quotes".
- *
- * @author dk
- */
-public class PostgresHandler implements JDBCHandler {
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import sql.model.SQLModel;
+
+public class MySQLHandler implements JDBCHandler {
 
 	private Connection dbConn;
 	private Map<String, SQLModel> models;
@@ -24,10 +22,10 @@ public class PostgresHandler implements JDBCHandler {
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	public PostgresHandler(Map<String, SQLModel> models) {
+	public MySQLHandler(Map<String, SQLModel> models) {
 		this.models = models;
 		try {
-			Class.forName("org.postgresql.Driver");
+			Class.forName("com.mysql.cj.jdbc.Driver");
 			LOGGER.debug("Got driver.");
 		} catch (ClassNotFoundException e) {
 			LOGGER.error("Class error has occurred: {},\n {}", e.getMessage(), e.getStackTrace());
@@ -46,8 +44,9 @@ public class PostgresHandler implements JDBCHandler {
 	public void setConnection(String db, String host, String port, String username, String password) {
 		try {
 			// format: jdbc:postgresql://host:port/pathOrDatabaseName
-			String dbURL = String.format("jdbc:postgresql://%1$s:%2$s/%3$s", host, port, db);
-			this.dbConn = DriverManager.getConnection(dbURL, username, password);
+			String dbURL = String.format("jdbc:mysql://%1$s:%2$s/%3$s", host, port, db);
+			String timeZoneSettings = "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+			this.dbConn = DriverManager.getConnection(dbURL + timeZoneSettings, username, password);
 			LOGGER.info("Connected to sql successfully!");
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
@@ -159,37 +158,6 @@ public class PostgresHandler implements JDBCHandler {
 		return String.format("(%s", query);
 	}
 
-	//SELECT event.description FROM
-	//((user INNER JOIN tickets ON (user.userId=tickets.userId AND user.name="Bob"))
-	//INNER JOIN event ON ticket.eventId=event.eventId);
-
-	/**
-	 * Adds ) query to a string
-	 * @param table1 left side of query
-	 * @param table2 right side of query
-	 * @return query
-	 */
-	@Override
-	public String innerJoin(String table1, String table2, String query) {
-		return String.format("%1$s INNER JOIN %2$s%3$s", table1, table2, query);
-	}
-
-	/**
-	 * Adds an AND query to a string
-	 * @param value value
-	 * @param classOfT Class type of query
-	 * @param query rest of query
-	 * @return query
-	 */
-	@Override
-	public <T> String on(String key, Object value, Class<T> classOfT, String query) {
-		if (classOfT.equals(STRING)) {
-			return String.format(" ON %1$s='%2$s'%3$s", key, value, query);
-		} else {
-			return String.format(" ON %1$s=%2$s%3$s", key, value, query);
-		}
-	}
-
 	/**
 	 * Insert values into the table
 	 * @param tableName;
@@ -231,6 +199,33 @@ public class PostgresHandler implements JDBCHandler {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return null;
+	}
+
+	/**
+	 * Adds ) query to a string
+	 * @param table1 left side of query
+	 * @param table2 right side of query
+	 * @return query
+	 */
+	@Override
+	public String innerJoin(String table1, String table2, String query) {
+		return String.format("%1$s INNER JOIN %2$s%3$s", table1, table2, query);
+	}
+
+	/**
+	 * Adds an AND query to a string
+	 * @param value value
+	 * @param classOfT Class type of query
+	 * @param query rest of query
+	 * @return query
+	 */
+	@Override
+	public <T> String on(String key, Object value, Class<T> classOfT, String query) {
+		if (classOfT.equals(STRING)) {
+			return String.format(" ON %1$s='%2$s'%3$s", key, value, query);
+		} else {
+			return String.format(" ON %1$s=%2$s%3$s", key, value, query);
+		}
 	}
 
 	/**

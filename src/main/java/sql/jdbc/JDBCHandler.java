@@ -64,19 +64,17 @@ public interface JDBCHandler {
 
 	/**
 	 * Adds ( query to a string
-	 * @param outerQuery left side of query
-	 * @param innerQuery right side of query
+	 * @param query;
 	 * @return query
 	 */
-	public String openParentheses(String outerQuery, String innerQuery);
+	public String openParentheses(String query);
 
 	/**
 	 * Adds ) query to a string
-	 * @param outerQuery left side of query
-	 * @param innerQuery right side of query
+	 * @param query;
 	 * @return query
 	 */
-	public String closeParentheses(String outerQuery, String innerQuery);
+	public String closeParentheses(String query);
 
 	/**
 	 * Insert values into the table
@@ -84,6 +82,23 @@ public interface JDBCHandler {
 	 * @return this
 	 */
 	public <T> String insert(String tableName, ColumnObject<?>... columns);
+
+	/**
+	 * Adds ) query to a string
+	 * @param table1 left side of query
+	 * @param table2 right side of query
+	 * @return query
+	 */
+	public String innerJoin(String table1, String table2, String query);
+
+	/**
+	 * Adds an AND query to a string
+	 * @param value value
+	 * @param classOfT Class type of query
+	 * @param query rest of query
+	 * @return query
+	 */
+	public <T> String on(String key, Object value, Class<T> classOfT, String query);
 
 	/**
 	 * Executes a query on the db
