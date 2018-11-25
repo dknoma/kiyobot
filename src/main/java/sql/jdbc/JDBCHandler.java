@@ -18,7 +18,7 @@ public interface JDBCHandler {
 
 	/**
 	 * Actually creates and puts it into the database
-	 * @throws SQLException s
+	 * @throws SQLException;
 	 */
 	public void createTables() throws SQLException;
 
@@ -28,43 +28,81 @@ public interface JDBCHandler {
 	 */
 	public Connection getConnection();
 
-	public String getTable(String tableName);
-
+	/**
+	 * Adds a SELECT query to a string
+	 * @param value value
+	 * @param query rest of query
+	 * @return query
+	 */
 	public String select(String value, String query);
 
+	/**
+	 * Adds a FROM query to a string
+	 * @param location location of search
+	 * @param query rest of query
+	 * @return query
+	 */
 	public String from(String location, String query);
 
-	public <T> String where(String key, Object value, Class<T> typeOf, String query);
+	/**
+	 * Adds a WHERE query to a string
+	 * @param value value
+	 * @param classOfT Class type of query
+	 * @param query rest of query
+	 * @return query
+	 */
+	public <T> String where(String key, Object value, Class<T> classOfT, String query);
 
-	public <T> String and(String key, Object value, Class<T> typeOf, String query);
+	/**
+	 * Adds an AND query to a string
+	 * @param value value
+	 * @param classOfT Class type of query
+	 * @param query rest of query
+	 * @return query
+	 */
+	public <T> String and(String key, Object value, Class<T> classOfT, String query);
 
-	public <T> String insert(String tableName, ColumnObject<?>... columns);
-
-//	public <T> String insert(String tableName, String column, Object value, Class<T> classOfT);
-//
-//	public <S, T> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-//								  String column2, Object value2, Class<T> classOf2);
-//
-//	public <S, T, U> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-//								   String column2, Object value2, Class<T> classOf2,
-//								   String column3, Object value3, Class<U> classOf3);
-//
-//	public <S, T, U, V> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-//									  String column2, Object value2, Class<T> classOf2,
-//									  String column3, Object value3, Class<U> classOf3,
-//									  String column4, Object value4, Class<V> classOf4);
-//
-//	public <S, T, U, V, W> String insert(String tableName, String column1, Object value1, Class<S> classOf1,
-//									  String column2, Object value2, Class<T> classOf2,
-//									  String column3, Object value3, Class<U> classOf3,
-//									  String column4, Object value4, Class<V> classOf4,
-//									  String column5, Object value5, Class<W> classOf5);
-
+	/**
+	 * Adds ( query to a string
+	 * @param outerQuery left side of query
+	 * @param innerQuery right side of query
+	 * @return query
+	 */
 	public String openParentheses(String outerQuery, String innerQuery);
 
+	/**
+	 * Adds ) query to a string
+	 * @param outerQuery left side of query
+	 * @param innerQuery right side of query
+	 * @return query
+	 */
 	public String closeParentheses(String outerQuery, String innerQuery);
 
+	/**
+	 * Insert values into the table
+	 * @param tableName;
+	 * @return this
+	 */
+	public <T> String insert(String tableName, ColumnObject<?>... columns);
+
+	/**
+	 * Executes a query on the db
+	 * @param query;
+	 * @return result set
+	 */
 	public ResultSet executeQuery(String query);
 
+	/**
+	 * Executes an update on the db
+	 * @param query;
+	 * @return result set
+	 */
 	public int executeUpdate(String query);
+
+	/**
+	 * Gets the table from the table name
+	 * @param tableName;
+	 * @return String representation
+	 */
+	public String getTable(String tableName);
 }

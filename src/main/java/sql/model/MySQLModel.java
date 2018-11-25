@@ -14,7 +14,7 @@ import java.util.Map;
  * Foreign key:
  * 	"table, <foreignid> int, FOREIGN KEY (<foreignid>) REFERENCES <foreigntable> (<foreignid>) ON DELETE CASCADE"
  */
-public class MySQLModel {
+public class MySQLModel implements  SQLModel {
 
 	private String modelName;
 	private String primaryKey;
@@ -30,8 +30,11 @@ public class MySQLModel {
 	private Map<String, Boolean> hasDefaultValue;
 	private Map<String, Object> defaultValues;
 
-	private static final String INT = "INT";
-	private static final String BOOLEAN = "BOOLEAN";
+	private static final Class<String> STRING = String.class;
+	private static final Class<Integer> INTEGER = Integer.class;
+	private static final Class<Boolean> BOOLEAN = Boolean.class;
+	private static final String DATATYPE_INT = "INT";
+	private static final String DATATYPE_BOOLEAN = "BOOLEAN";
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	/**
@@ -83,10 +86,11 @@ public class MySQLModel {
 	 * @param isNotNull if key can be null
 	 * @param  keyIsVar if string can have variable length
 	 */
+	@Override
 	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength,
 						  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
-		this.columnType.put(key, String.class);
+		this.columnType.put(key, STRING);
 		this.columnCanBeNull.put(key, isNotNull);
 		this.keyIsVar.put(key, keyIsVar);
 		this.keyLengths.put(key, keyLength);
@@ -100,6 +104,7 @@ public class MySQLModel {
 	 * @param isNotNull if key can be null
 	 * @param classOfT class of the key
 	 */
+	@Override
 	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT,
 							  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
@@ -112,6 +117,7 @@ public class MySQLModel {
 	/**
 	 * Creates the query to create the table
 	 */
+	@Override
 	public void createTableQuery() {
 		StringBuilder sb = new StringBuilder();
 		if(this.autoIncrement) {
@@ -122,7 +128,7 @@ public class MySQLModel {
 		// adds the keys to the query
 		for(String key : this.columns) {
 			Class classOfKey = this.columnType.get(key);
-			if(classOfKey.equals(String.class)) {
+			if(classOfKey.equals(STRING)) {
 				if(this.keyIsVar.get(key)) {
 					sb.append(String.format(", %1$s VARCHAR(%2$s)", key, this.keyLengths.get(key)));
 				} else {
@@ -131,13 +137,13 @@ public class MySQLModel {
 				if(this.columnCanBeNull.get(key)) {
 					sb.append(" NOT NULL");
 				}
-			} else if(classOfKey.equals(Integer.class)) {
-				sb.append(String.format(", %1$s %2$s", key, INT));
+			} else if(classOfKey.equals(INTEGER)) {
+				sb.append(String.format(", %1$s %2$s", key, DATATYPE_INT));
 				if(this.hasDefaultValue.get(key)) {
 					sb.append(String.format(" DEFAULT %s", this.defaultValues.get(key)));
 				}
-			} else if(classOfKey.equals(Boolean.class)) {
-				sb.append(String.format(", %1$s %2$s", key, BOOLEAN));
+			} else if(classOfKey.equals(BOOLEAN)) {
+				sb.append(String.format(", %1$s %2$s", key, DATATYPE_BOOLEAN));
 				if(this.hasDefaultValue.get(key)) {
 					sb.append(String.format(" DEFAULT %b", this.defaultValues.get(key)));
 				}
@@ -145,7 +151,7 @@ public class MySQLModel {
 		}
 		// if has foreign key, add to query
 		if(this.foreignKey != null && !this.foreignKey.isEmpty()) {
-			sb.append(String.format("%1$s int, FOREIGN KEY (%1$s) REFERENCES %2$s (%1$s) ON DELETE CASCADE",
+			sb.append(String.format(", %1$s int, FOREIGN KEY (%1$s) REFERENCES %2$s (%1$s) ON DELETE CASCADE",
 					this.foreignKey, this.foreignModelName));
 		}
 		sb.append(")");
@@ -153,7 +159,6 @@ public class MySQLModel {
 	}
 
 	public String getQuery() {
-		System.out.println(this.query);
 		return this.query;
 	}
 
@@ -173,29 +178,33 @@ public class MySQLModel {
 		return foreignKey;
 	}
 
+	@Override
 	public void newQuery() {
 		this.query = "";
 	}
 
+
+	@Override
 	public void select() {
 		this.query = String.format("%sSELECT", this.query);
 	}
 
-//	public SQLModel deepCopy() {
-//		MySQLModel model = new MySQLModel(this.modelName, this.autoIncrement);
-//		model.query = this.query;
-//		model.foreignKey = this.foreignKey;
-//		model.foreignModelName = this.foreignModelName;
-//		model.columnCanBeNull = this.columnCanBeNull;
-//		model.columns.addAll(this.columns);
-//		model.columnCanBeNull.putAll(this.columnCanBeNull);
-//		model.columnType.putAll(this.columnType);
-//		model.keyIsVar.putAll(this.keyIsVar);
-//		model.keyLengths.putAll(this.keyLengths);
-//		model.hasDefaultValue.putAll(this.hasDefaultValue);
-//		model.defaultValues.putAll(this.defaultValues);
-//		return model;
-//	}
+	@Override
+	public SQLModel deepCopy() {
+		MySQLModel model = new MySQLModel(this.modelName, this.autoIncrement);
+		model.query = this.query;
+		model.foreignKey = this.foreignKey;
+		model.foreignModelName = this.foreignModelName;
+		model.columnCanBeNull = this.columnCanBeNull;
+		model.columns.addAll(this.columns);
+		model.columnCanBeNull.putAll(this.columnCanBeNull);
+		model.columnType.putAll(this.columnType);
+		model.keyIsVar.putAll(this.keyIsVar);
+		model.keyLengths.putAll(this.keyLengths);
+		model.hasDefaultValue.putAll(this.hasDefaultValue);
+		model.defaultValues.putAll(this.defaultValues);
+		return model;
+	}
 
 	/**
 	 * Returns a String representation of this model.

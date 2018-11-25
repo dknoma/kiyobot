@@ -138,8 +138,9 @@ public class BasicMessageBot {
 							messageEvent.getChannel().sendTextMessage(errorMessage);
 							break;
 						}
-						String botOutput = getExGFXInfo(ResultSetHandler
-								.getResultSet(pghandler, EXGFX, FILENAME, messageArgs[1], STRING));
+						JsonObject obj = GSON.fromJson(ResultSetHandler
+								.getResultSet(pghandler, EXGFX, FILENAME, messageArgs[1], STRING), JsonObject.class);
+						String botOutput = getExGFXInfo(obj);
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;
 					case "!commands":
@@ -171,11 +172,10 @@ public class BasicMessageBot {
 
 	/**
 	 * Turns a json string from db output into a readable string for the bot to output
-	 * @param json;
+	 * @param obj;
 	 * @return bot message
 	 */
-	private static String getExGFXInfo(String json) {
-		JsonObject obj = GSON.fromJson(json, JsonObject.class);
+	private static String getExGFXInfo(JsonObject obj) {
 		return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
 				obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
 	}

@@ -55,7 +55,7 @@ public class PostgresHandler implements JDBCHandler {
 
 	/**
 	 * Actually creates and puts it into the database
-	 * @throws SQLException
+	 * @throws SQLException;
 	 */
 	public void createTables() throws SQLException {
 		PreparedStatement stmt = null;
@@ -74,7 +74,10 @@ public class PostgresHandler implements JDBCHandler {
 		}
 	}
 
-	@Override
+	/**
+	 * Gets the JDBC connection
+	 * @return connection
+	 */
 	public Connection getConnection() {
 		return dbConn;
 	}
@@ -225,6 +228,11 @@ public class PostgresHandler implements JDBCHandler {
 		return Integer.MIN_VALUE;
 	}
 
+	/**
+	 * Gets the table from the table name
+	 * @param tableName;
+	 * @return String representation
+	 */
 	public String getTable(String tableName) {
 		return this.models.get(tableName).toString();
 	}
