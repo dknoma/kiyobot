@@ -41,7 +41,7 @@ public class Tester {
 		Map<String, SQLModel> models = builder.getCopyOfModels();
 
 		String dbName = sqlparser.getDbName();
-		PostgresHandler pghandler = new PostgresHandler(models);
+		JDBCHandler pghandler = new PostgresHandler(models);
 		JDBCEnum.addJDBCHandler(dbName, pghandler);
 
 		JDBCHandler handler = JDBCEnum.getJDBCHandler(dbName);
