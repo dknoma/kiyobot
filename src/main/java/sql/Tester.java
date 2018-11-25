@@ -8,6 +8,8 @@ import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -64,20 +66,60 @@ public class Tester {
 //
 //		handler.executeUpdate(handler.insert("exgfx", columns));
 
-//		// insert todolists into table
-//		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", new ColumnObject<String>("title", "First", STRING)));
-//		handler.executeUpdate(handler.insert("todo", new ColumnObject<String>("title", "Second", STRING)));
 
-//		// insert into first todolist
-//		handler.executeUpdate(handler.insert(TODO_ITEM, "content", "Finish single insert.",
-//				STRING, "todoid", 1, INTEGER, "completed", false, BOOLEAN));
-//		handler.executeUpdate(handler.insert(TODO_ITEM, "content", "Finish double insert.",
+//		ColumnObject[] todoRow1 = new ColumnObject[2];
+//		todoRow1[0] = new ColumnObject<>("title", "First", STRING);
+//		todoRow1[1] = new ColumnObject<>("owner", "Drew", STRING);
+////		// insert todolists into table
+////		// inserts and updated need executeUpdate as no data is returned
+//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//
+//
+//		ColumnObject[] row1 = new ColumnObject[2];
+//		row1[0] = new ColumnObject<>("content", "Finish commands.", STRING);
+//		row1[1] = new ColumnObject<>("todoid", 1, INTEGER);
+//
+//
+//		ColumnObject[] row2 = new ColumnObject[2];
+//		row2[0] = new ColumnObject<>("content", "Test item.", STRING);
+//		row2[1] = new ColumnObject<>("todoid", 1, INTEGER);
+//
+////		// insert into first todolist
+//		handler.executeUpdate(handler.insert(TODO_ITEM, row1));
+//		handler.executeUpdate(handler.insert(TODO_ITEM, row2));
 //				STRING, "todoid", 1, INTEGER, "completed", false, BOOLEAN));
 //
 //		// insert into second todolist
 //		handler.executeUpdate(handler.insert("todoitem", "content", "Finish JDBCHandler.",
 //				STRING, "todoid", 2, INTEGER, "completed", false, BOOLEAN));
+
+
+
+		//SELECT event.description FROM
+		//((user INNER JOIN tickets ON (user.userId=tickets.userId AND user.name="Bob"))
+		//INNER JOIN event ON ticket.eventId=event.eventId);
+// Useful for joining results from multiple tables in the same db
+/*
+		ResultSet results = handler.executeQuery(handler.select("content",
+				handler.from(
+						handler.openParentheses(
+								handler.openParentheses(
+										handler.innerJoin(TODO, TODO_ITEM,
+												handler.on(
+														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
+														handler.and("owner", "Drew", STRING,
+																handler.closeParentheses(handler.closeParentheses(
+																		handler.closeParentheses("")
+																))))
+										)
+								)
+						)
+						, "")
+		));
+
+		String out = ResultSetHandler.getResults(results);
+		System.out.println(out);
+*/
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
 //		String referenceKey = "todoid";

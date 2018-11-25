@@ -142,6 +142,24 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 ```
 
 # Revision History
+## Version 1.0.0
+* Kiyobot:
+	* A basic messaging bot.
+	* It can read in commands from the channel, and output the corresponding message to that channel.
+	* It can also interact with a MySQL or PostgreSQL database.
+		* It uses the below SQLModeler API.
+	* The user will also need to specify their bot's authorization token in a config.json file.
+		* The user needs to create a Discord application before using this API or else the API does nothing.
+		* [Read this first.](https://discordapp.com/developers/docs/intro)
+		* [Link to making a Discord application.](https://discordapp.com/developers/applications)
+		* NOTE: Please DO NOT store your token in a public location as it is against Discords policy (and will allow unintended users to use your bot!).
+* Diskiyord API:
+	* A basic java API that allows users to create their own basic messaging bot for Discord.
+	* The user can make the bot respond to messages in the same channel, or make message output to a different channel if they need something like a debugging channel.
+	* Requires an authorization token from Discord to make a bot with this API.
+* JSQLModeler API:
+	* A basic java API that allows users to interact more easily with SQL databases rather than do raw SQL queries.
+	* Users will create .json files representing the the information of the table they would like to create, and these files will should be put into a models folder. This folder can be specified in the sqlconfig.json file or will default to `./models`.
 ## Version 0.1.0
 * Basic library set up, allows bot to view and send messages to a channel.
 ## Version 0.0.0
@@ -152,10 +170,12 @@ Drew Noma - djknoma@gmail.com
 
 [https://github.com/dknoma](https://github.com/dknoma)
 
-Current Version 0.1.0
-* Basic message viewing and sending.
+Current Version 1.0.0
+* Kiyobot, Diskiyord, and JSQLModeler
 
 # NOTES
-> Since this is implementing a custom library, it may not be finished in time.
+> ~~Since this is implementing a custom library, it may not be finished in time.~~
 
-In the case that this custom library is not finished in time, an existing Discord Java library like Javacord or JDA will be used in its place.
+~~In the case that this custom library is not finished in time, an existing Discord Java library like Javacord or JDA will be used in its place.~~
+
+API was developed on time!

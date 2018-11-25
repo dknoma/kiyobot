@@ -156,7 +156,7 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	@Override
 	public String closeParentheses(String query) {
-		return String.format("(%s", query);
+		return String.format(")%s", query);
 	}
 
 	//SELECT event.description FROM
@@ -243,6 +243,7 @@ public class PostgresHandler implements JDBCHandler {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
+			LOGGER.debug(stmt.toString());
 			//execute a query, which returns a ResultSet object
 			return stmt.executeQuery();
 		} catch (SQLException e) {

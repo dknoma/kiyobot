@@ -119,10 +119,20 @@ public enum ResultSetHandler {
 		return GSON.fromJson(json, JsonObject.class);
 	}
 
+	/**
+	 * Returns the primary key from the json input
+	 * @param json input
+	 * @return string
+	 */
 	public static String getTableNameFromJson(String json) {
 		return GSON.fromJson(json, JsonObject.class).get("primaryKey").getAsString();
 	}
 
+	/**
+	 * Returns the table id from the input json
+	 * @param json input
+	 * @return string
+	 */
 	public static int getTableIdFromJson(String json) {
 		return GSON.fromJson(json, JsonObject.class).get("id").getAsInt();
 	}
@@ -155,7 +165,7 @@ public enum ResultSetHandler {
 	 * @param results query result set
 	 * @return json
 	 */
-	private static String getResults(ResultSet results) {
+	public static String getResults(ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		try {
 			while(results.next()) {
@@ -195,7 +205,7 @@ public enum ResultSetHandler {
 	 * @param results query result set
 	 * @return json
 	 */
-	private static String getAllResults(String referenceKey, int referenceId, ResultSet results) {
+	public static String getAllResults(String referenceKey, int referenceId, ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {

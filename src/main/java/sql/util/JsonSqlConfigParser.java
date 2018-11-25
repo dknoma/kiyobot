@@ -54,10 +54,9 @@ public class JsonSqlConfigParser {
 	 */
 	private void parseJson(String line) {
 		JsonObject obj = gson.fromJson(line, JsonObject.class);
-		if(obj.has("modelDirectory") && obj.has("dbName") && obj.has("db")
+		if(obj.has("dbName") && obj.has("db")
 				&& obj.has("host") && obj.has("port") && obj.has("username")
 				&& obj.has("password")) {
-			this.modelDirectory = obj.get("modelDirectory").getAsString();
 			this.dbName = obj.get("dbName").getAsString();
 			this.db = obj.get("db").getAsString();
 			this.host = obj.get("host").getAsString();
@@ -65,6 +64,7 @@ public class JsonSqlConfigParser {
 			this.username = obj.get("username").getAsString();
 			this.password = obj.get("password").getAsString();
 		}
+		this.modelDirectory = obj.has("modelDirectory") ? obj.get("modelDirectory").getAsString() : "./models";
 	}
 
 	/**

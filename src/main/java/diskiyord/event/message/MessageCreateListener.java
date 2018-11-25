@@ -89,10 +89,18 @@ public class MessageCreateListener extends WebSocketAdapter {
 	}
 
 	/**
-	 * Gets the message from the event
+	 * Gets a Channel object representing the current channel that the message is from
 	 * @return message content
 	 */
 	public Channel getChannel() {
 		return new Channel(this.channelId, this.api);
+	}
+
+	/**
+	 * Gets a Channel object representing a specified channel from its id
+	 * @return message content
+	 */
+	public Channel getChannel(String channelId) {
+		return new Channel(channelId, this.api);
 	}
 }
