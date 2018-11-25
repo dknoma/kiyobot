@@ -51,6 +51,31 @@ public class MessageBot {
 }
 ```
 
+### Sample Commands
+
+The following are some examples of commands you could make the bot do.
+
+```Java
+case "!addexgfx":
+	PINGS = 0;
+	errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
+	//!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>
+	if(messageArgs.length != 6) {
+		messageEvent.getChannel().sendTextMessage(errorMessage);
+		break;
+	}
+	ColumnObject[] columns = new ColumnObject[5];
+	columns[0] = new ColumnObject<>(FILENAME, messageArgs[1], STRING);
+	columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2], STRING);
+	columns[2] = new ColumnObject<>(TYPE, messageArgs[3], STRING);
+	columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]), BOOLEAN);
+	columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5], STRING);
+	dbhandler.executeUpdate(dbhandler.insert(EXGFX, columns));
+
+	messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+	break;
+```
+
 ## SQLModel
 
 The SQLModel class is meant to hold information about a particular table in a database. Its main use is to parse information from a .json file representing the desired model.

@@ -17,20 +17,19 @@ public class Tester {
 	private static final Class<String> STRING = String.class;
 	private static final Class<Integer> INTEGER = Integer.class;
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
+	private static final String EXGFX = "exgfx";
 	private static final String TODO = "todo";
 	private static final String TODO_ITEM = "todoitem";
 	private static final String CONFIG_FILE = "./config/sqlconfig.json";
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public static void main(String[] args) {
-		JsonSqlConfigParser parser = new JsonSqlConfigParser();
-		parser.parseConfig(CONFIG_FILE);
+		JsonSqlConfigParser sqlparser = new JsonSqlConfigParser();
+		sqlparser.parseConfig(CONFIG_FILE);
+		String modelDirectory = sqlparser.getModelDirectory();
 
 		SQLModelBuilder builder = new SQLModelBuilder();
-		builder.findModelFiles("./models");
-		for(String s : builder.getModelFiles()) {
-			System.out.println(s);
-		}
+		builder.findModelFiles(modelDirectory);
 		builder.readFiles();
 
 		if(!builder.areModelsFormattedCorrectly()) {
@@ -38,24 +37,19 @@ public class Tester {
 		}
 
 		Map<String, SQLModel> models = builder.getCopyOfModels();
-//		for(Map.Entry<String, SQLModel> entry : models.entrySet()) {
-//			SQLModel copy = entry.getValue();
-//			System.out.println(copy.toString());
-//			copy.getQuery();
-//		}
 
-		String dbName = parser.getDbName();
+		String dbName = sqlparser.getDbName();
 		PostgresHandler pghandler = new PostgresHandler(models);
 		JDBCEnum.addJDBCHandler(dbName, pghandler);
 
 		JDBCHandler handler = JDBCEnum.getJDBCHandler(dbName);
 		try {
-			handler.setConnection(parser.getDb(), parser.getHost(), parser.getPort(),
-					parser.getUsername(), parser.getPassword());
+			handler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
+					sqlparser.getUsername(), sqlparser.getPassword());
 			handler.createTables();
-			System.out.println(handler.getTable(TODO));
-			System.out.println(handler.getTable(TODO_ITEM));
-			System.out.println(handler.getTable("exgfx"));
+			LOGGER.debug(handler.getTable(TODO));
+			LOGGER.debug(handler.getTable(TODO_ITEM));
+			LOGGER.debug(handler.getTable(EXGFX));
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}

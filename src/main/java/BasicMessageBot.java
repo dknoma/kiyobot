@@ -4,6 +4,7 @@ import com.sun.org.apache.xpath.internal.operations.Bool;
 import diskiyord.api.DiskiyordApi;
 import diskiyord.api.DiskiyordApiBuilder;
 import diskiyord.event.error.MessageArgumentError;
+import diskiyord.event.message.MessageCreateListener;
 import diskiyord.util.JsonConfigArgParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,12 +63,10 @@ public class BasicMessageBot {
 		// db setup
 		JsonSqlConfigParser sqlparser = new JsonSqlConfigParser();
 		sqlparser.parseConfig(SQL_CONFIG_FILE);
+		String modelDirectory = sqlparser.getModelDirectory();
 
 		SQLModelBuilder builder = new SQLModelBuilder();
-		builder.findModelFiles("./models");
-//		for(String s : builder.getModelFiles()) {
-//			System.out.println(s);
-//		}
+		builder.findModelFiles(modelDirectory);
 		builder.readFiles();
 
 		if(!builder.areModelsFormattedCorrectly()) {
@@ -76,14 +75,16 @@ public class BasicMessageBot {
 
 		Map<String, SQLModel> models = builder.getCopyOfModels();
 
-		String dbName = sqlparser.getDbName();
 		PostgresHandler pghandler = new PostgresHandler(models);
-		JDBCEnum.addJDBCHandler(dbName, pghandler);
 
-		JDBCHandler dbhandler = JDBCEnum.getJDBCHandler(dbName);
-		dbhandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
+		// Used if need multiple handlers for different database connections
+//		String dbName = sqlparser.getDbName();
+//		JDBCEnum.addJDBCHandler(dbName, pghandler);
+//		JDBCHandler dbhandler = JDBCEnum.getJDBCHandler(dbName);
+
+		// Connects the PostgreSQLhandler to the Postgres database
+		pghandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
 				sqlparser.getUsername(), sqlparser.getPassword());
-		System.out.println(dbhandler.getTable(EXGFX));
 
 		// Diskiyord setup
 		JsonConfigArgParser parser = new JsonConfigArgParser();
@@ -99,17 +100,16 @@ public class BasicMessageBot {
 					case "!ping":
 						if(PINGS < 3) {
 							messageEvent.getChannel().sendTextMessage("Pong!");
+						} else if(PINGS >= 6) {
+							messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
 						} else {
-							//TODO: add angry react image here
 							messageEvent.getChannel().sendTextMessage("...");
 						}
 						PINGS++;
 						break;
-					case "!addtodo":
+					case "!hewwo":
 						PINGS = 0;
-						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-						String botOutput = String.format("Added TODO: %s.", messageArgs[1]);
-						messageEvent.getChannel().sendTextMessage(botOutput);
+						messageEvent.getChannel().sendTextMessage("*notices command* OwO hewwo");
 						break;
 					case "!addexgfx":
 						PINGS = 0;
@@ -126,7 +126,7 @@ public class BasicMessageBot {
 						columns[2] = new ColumnObject<>(TYPE, messageArgs[3], STRING);
 						columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]), BOOLEAN);
 						columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5], STRING);
-						dbhandler.executeUpdate(dbhandler.insert(EXGFX, columns));
+						pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
 
 						messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
 						break;
@@ -138,19 +138,35 @@ public class BasicMessageBot {
 							messageEvent.getChannel().sendTextMessage(errorMessage);
 							break;
 						}
-						botOutput = getExGFXInfo(ResultSetHandler
-								.getResultSet(dbhandler, EXGFX, FILENAME, messageArgs[1], STRING));
+						String botOutput = getExGFXInfo(ResultSetHandler
+								.getResultSet(pghandler, EXGFX, FILENAME, messageArgs[1], STRING));
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;
+					case "!commands":
+						getCommands(messageEvent);
+						break;
 					default:
-						PINGS = 0;
+						if(messageArgs[0].startsWith("!")) {
+							errorMessage = MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg();
+							messageEvent.getChannel().sendTextMessage(errorMessage);
+						}
 						break;
 				}
 			} catch(ArrayIndexOutOfBoundsException aiobe) {
 				messageEvent.getChannel().sendTextMessage(errorMessage);
 			}
 		});
-		System.out.println("Finished bot stuff?");
+	}
+
+	/**
+	 * Sends unkown command message to the channel
+	 * @param messageEvent;
+	 */
+	private static void getCommands(MessageCreateListener messageEvent) {
+		messageEvent.getChannel().sendTextMessage("!ping\n\t- A generic ping message. Please don't overuse.\n" +
+				"!hewwo\n\t- What's this?\n!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>\n" +
+				"\t- Use this command to add information on an ExGFX file to the database.\n!getexgfx  <filename>\n" +
+				"\t- Use this command to get back the information on an ExGFX file from the database.");
 	}
 
 	/**
@@ -160,12 +176,7 @@ public class BasicMessageBot {
 	 */
 	private static String getExGFXInfo(String json) {
 		JsonObject obj = GSON.fromJson(json, JsonObject.class);
-		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("File: %s\n", obj.get(FILENAME)));
-		sb.append(String.format("Description: %s\n", obj.get(DESCRIPTION)));
-		sb.append(String.format("Type: %s\n", obj.get(TYPE)));
-		sb.append(String.format("Completed: %s\n", obj.get(COMPLETED)));
-		sb.append(String.format("Image Link: %s\n", obj.get(IMG_LINK)));
-		return sb.toString();
+		return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+				obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
 	}
 }

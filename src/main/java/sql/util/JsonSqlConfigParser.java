@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 
 public class JsonSqlConfigParser {
 
+	private String modelDirectory;
 	private String dbName;
 	private String db;
 	private String host;
@@ -22,6 +23,7 @@ public class JsonSqlConfigParser {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public JsonSqlConfigParser() {
+		this.modelDirectory = "";
 		this.dbName = "";
 		this.db = "";
 		this.host = "";
@@ -52,9 +54,10 @@ public class JsonSqlConfigParser {
 	 */
 	private void parseJson(String line) {
 		JsonObject obj = gson.fromJson(line, JsonObject.class);
-		if(obj.has("dbName") && obj.has("db") && obj.has("host")
-				&& obj.has("port") && obj.has("username")
+		if(obj.has("modelDirectory") && obj.has("dbName") && obj.has("db")
+				&& obj.has("host") && obj.has("port") && obj.has("username")
 				&& obj.has("password")) {
+			this.modelDirectory = obj.get("modelDirectory").getAsString();
 			this.dbName = obj.get("dbName").getAsString();
 			this.db = obj.get("db").getAsString();
 			this.host = obj.get("host").getAsString();
@@ -62,6 +65,14 @@ public class JsonSqlConfigParser {
 			this.username = obj.get("username").getAsString();
 			this.password = obj.get("password").getAsString();
 		}
+	}
+
+	/**
+	 * Get directory of models
+	 * @return sql
+	 */
+	public String getModelDirectory() {
+		return  this.modelDirectory;
 	}
 
 	/**

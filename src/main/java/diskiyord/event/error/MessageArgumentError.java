@@ -9,7 +9,8 @@ import java.util.Map;
 
 public enum MessageArgumentError {
 
-	NOT_ENOUGH_ARGUMENTS("Not enough arguments in command.");
+	NOT_ENOUGH_ARGUMENTS("Not enough arguments in command."),
+	UNKNOWN_COMMAND("Unkown command. Use !commands for a list of possible commands.");
 
 	private static final Map<String, GatewayEvent> INSTANCE_BY_ERROR = new HashMap<>();
 	private final String errorMsg;
