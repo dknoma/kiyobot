@@ -155,38 +155,54 @@ public class PostgreSQLModel implements SQLModel{
 		this.query = sb.toString();
 	}
 
-	@Override
+	/**
+	 * Gets the model's query
+	 * @return name
+	 */
 	public String getQuery() {
 		return this.query;
 	}
 
+	/**
+	 * Gets the model's name
+	 * @return name
+	 */
+	@Override
 	public String getModelName() {
 		return modelName;
 	}
 
+	/**
+	 * Gets the model's primary key
+	 * @return name
+	 */
+	@Override
 	public String getPrimaryKey() {
 		return primaryKey;
 	}
 
+	/**
+	 * Gets the model's reference model name
+	 * @return name
+	 */
+	@Override
 	public String getForeignModelName() {
 		return foreignModelName;
 	}
 
+	/**
+	 * Gets the model's reference model primary key
+	 * @return name
+	 */
+	@Override
 	public String getForeignKey() {
 		return foreignKey;
 	}
 
-	@Override
-	public void newQuery() {
-		this.query = "";
-	}
-
-
-	@Override
-	public void select() {
-		this.query = String.format("%sSELECT", this.query);
-	}
-
+	/**
+	 * Makes a deep copy of this model
+	 * @return deep copy
+	 */
 	@Override
 	public SQLModel deepCopy() {
 		PostgreSQLModel model = new PostgreSQLModel(this.modelName, this.autoIncrement);
@@ -206,7 +222,7 @@ public class PostgreSQLModel implements SQLModel{
 
 	/**
 	 * Returns a String representation of this model.
-	 * @return a String
+	 * @return toString
 	 */
 	@Override
 	public String toString() {

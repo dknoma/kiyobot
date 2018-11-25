@@ -29,20 +29,40 @@ public interface SQLModel {
 	 */
 	public void createTableQuery();
 
+	/**
+	 * Gets the model's query
+	 * @return name
+	 */
 	public String getQuery();
 
+	/**
+	 * Gets the model's name
+	 * @return name
+	 */
 	public String getModelName();
 
+	/**
+	 * Gets the model's primary key
+	 * @return name
+	 */
 	public String getPrimaryKey();
 
+	/**
+	 * Gets the model's reference model name
+	 * @return name
+	 */
 	public String getForeignModelName();
 
+	/**
+	 * Gets the model's reference model primary key
+	 * @return name
+	 */
 	public String getForeignKey();
 
-	public void newQuery();
-
-	public void select();
-
+	/**
+	 * Makes a deep copy of this model
+	 * @return deep copy
+	 */
 	public SQLModel deepCopy();
 
 	/**

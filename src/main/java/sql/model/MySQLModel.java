@@ -23,7 +23,7 @@ public class MySQLModel implements  SQLModel {
 	private String query;
 	private boolean autoIncrement;
 	private List<String> columns;
-	private Map<String, Class> columnType;
+	private Map<String, Class<?>> columnType;
 	private Map<String, Boolean> columnCanBeNull;
 	private Map<String, Boolean> keyIsVar;
 	private Map<String, Integer> keyLengths;
@@ -158,37 +158,54 @@ public class MySQLModel implements  SQLModel {
 		this.query = sb.toString();
 	}
 
+	/**
+	 * Gets the model's query
+	 * @return name
+	 */
 	public String getQuery() {
 		return this.query;
 	}
 
+	/**
+	 * Gets the model's name
+	 * @return name
+	 */
+	@Override
 	public String getModelName() {
 		return modelName;
 	}
 
+	/**
+	 * Gets the model's primary key
+	 * @return name
+	 */
+	@Override
 	public String getPrimaryKey() {
 		return primaryKey;
 	}
 
+	/**
+	 * Gets the model's reference model name
+	 * @return name
+	 */
+	@Override
 	public String getForeignModelName() {
 		return foreignModelName;
 	}
 
+	/**
+	 * Gets the model's reference model primary key
+	 * @return name
+	 */
+	@Override
 	public String getForeignKey() {
 		return foreignKey;
 	}
 
-	@Override
-	public void newQuery() {
-		this.query = "";
-	}
-
-
-	@Override
-	public void select() {
-		this.query = String.format("%sSELECT", this.query);
-	}
-
+	/**
+	 * Makes a deep copy of this model
+	 * @return deep copy
+	 */
 	@Override
 	public SQLModel deepCopy() {
 		MySQLModel model = new MySQLModel(this.modelName, this.autoIncrement);
