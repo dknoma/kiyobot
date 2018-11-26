@@ -1,11 +1,7 @@
 package diskiyord.util.channel;
 
-import com.neovisionaries.ws.client.WebSocket;
-import com.neovisionaries.ws.client.WebSocketFrame;
 import diskiyord.api.DiskiyordApi;
 import diskiyord.util.JsonPacket;
-import diskiyord.util.gateway.GatewayEvent;
-import diskiyord.util.gateway.GatewayOpcode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,6 +10,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+/**
+ * A Channel object that represents a specfic Discord channel. Allows messages to be sent to the channel.
+ * @author dk
+ */
 public class Channel {
 
 	private String channelId;
@@ -29,6 +29,10 @@ public class Channel {
 		this.channelURL = String.format("https://discordapp.com/api/channels/%s/messages", channelId);
 	}
 
+	/**
+	 * Creates a JsonPacket for the message being sent to the channel
+	 * @param message;
+	 */
 	public void sendTextMessage(String message) {
 		try {
 			JsonPacket requestBodyPacket = new JsonPacket();
@@ -57,5 +61,13 @@ public class Channel {
 		} catch (IOException ioe) {
 			LOGGER.error("An error occurred when trying to connect to the url, {},\n{}", ioe.getMessage(), ioe.getStackTrace());
 		}
+	}
+
+	/**
+	 * Gets the id of the channel
+	 * @return channel id
+	 */
+	public String getChannelId() {
+		return channelId;
 	}
 }

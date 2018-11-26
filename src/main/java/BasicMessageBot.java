@@ -31,7 +31,9 @@ import java.util.Map;
  *      "t": "GATEWAY_EVENT_NAME"
  *  }
  *
- *  Kiyobot Testing - general: 510555588414144554
+ *  Kiyobot Testing
+ *  	general: 510555588414144554
+ *  	bot-stuff: 516729027734798336
  *
  *  String.format(%[argument_index$][flags][width]conversion);
  *      %s - put string in
@@ -94,7 +96,7 @@ public class BasicMessageBot {
 		api.addMessageCreateListener(messageEvent -> {
 			String message = messageEvent.getMessageContent();
 			String[] messageArgs = message.split(" {2}");
-			String errorMessage = "";
+			String errorMessage = "An error has occurred.";
 			try {
 				switch(messageArgs[0]) {
 					case "!ping":
@@ -109,7 +111,7 @@ public class BasicMessageBot {
 						break;
 					case "!hewwo":
 						PINGS = 0;
-						messageEvent.getChannel().sendTextMessage("*notices command* OwO hewwo");
+						messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
 						break;
 					case "!addexgfx":
 						PINGS = 0;

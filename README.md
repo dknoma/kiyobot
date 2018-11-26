@@ -1,8 +1,9 @@
-# Kiyobot, Diskiyord, & JQL
-> A Java Discord Bot, Java Discord Library, and SQL Library
+# Kiyobot
+> A Java Discord Bot
 
-This is a Discord bot implemented using Java. This bot is a personal side project that is being updated over time. Things may be incomplete or design may not be 100% efficient, but they are being kept track of.
-Diskiyord is the Java API I'm currently developing for my bot to interact with Discord's API. JQL is a SQL API I'm also developing that makes sending queries to a SQL database less time consuming, compared to raw SQL queries.
+This is a Discord bot implemented using Java. This bot is a personal side project that is being updated over time. This bot utilizes a few APIs I'm developing in Java as well.
+Diskiyord, the name of the Java library I've developed, allows the bot to interact with Discord's API. It connects the bot to Discord's Gateway via WebSockets, more specifially through a wss (WebSocket Secure) connection.
+JQL is the SQL library that makes sending queries to a SQL database less time consuming, compared to using raw SQL queries.
 These APIs are being developed to learn more about software development and what goes on behind the scenes when using 3rd party libraries.
 
 # Bot Functionality
@@ -123,6 +124,12 @@ public class MessageBot {
     }
 }
 ```
+
+## Diskiyord
+> Java Discord API
+
+## JQL
+> SQL API
 
 ## SQLModel
 

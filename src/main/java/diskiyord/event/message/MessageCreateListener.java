@@ -55,6 +55,12 @@ public class MessageCreateListener extends WebSocketAdapter {
 
 		switch(gatewayEvent.getObject()) {
 			case MESSAGE_CREATE:
+				String author = messagePacket.get("d").asPacket().get("author").asPacket().get("username").asString();
+				LOGGER.debug("Author of message = {}",author);
+				if(author.equals("Kiyobot")) {
+					LOGGER.debug("Ignoring own message.");
+					return;
+				}
 				LOGGER.debug("Received a message.");
 				this.messageContent = messagePacket.get("d").asPacket().get("content").asString();
 				this.channelId = messagePacket.get("d").asPacket().get("channel_id").asString();
