@@ -73,33 +73,33 @@ public class Tester {
 //		todoRow1[1] = new ColumnObject<>("todoer", "Drew");
 ////		// insert todolists into table
 ////		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//		handler.executeUpdate(handler.insert(TODO, todoRow1));
 //
 //
 //		todoRow1[0] = new ColumnObject<>("title", "Second");
 //		todoRow1[1] = new ColumnObject<>("todoer", "Bobe");
 ////		// insert todolists into table
 ////		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//		handler.executeUpdate(handler.insert(TODO, todoRow1));
 //
 //		todoRow1[0] = new ColumnObject<>("title", "WOW");
 //		todoRow1[1] = new ColumnObject<>("todoer", "Drew");
 ////		// insert todolists into table
 ////		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//		handler.executeUpdate(handler.insert(TODO, todoRow1));
 //
 //		todoRow1[0] = new ColumnObject<>("title", "WEHE");
 //		todoRow1[1] = new ColumnObject<>("todoer", "Bob");
 ////		// insert todolists into table
 ////		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//		handler.executeUpdate(handler.insert(TODO, todoRow1));
 //
 //
 //		todoRow1[0] = new ColumnObject<>("title", "Ehhh");
 //		todoRow1[1] = new ColumnObject<>("todoer", "Drew");
 ////		// insert todolists into table
 ////		// inserts and updated need executeUpdate as no data is returned
-//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//		handler.executeUpdate(handler.insert(TODO, todoRow1));
 //
 //
 //
@@ -111,9 +111,10 @@ public class Tester {
 ////		titleFirst[1] = new ColumnObject<>("owner", "Bob");
 ////		handler.executeUpdate(handler.insert("todo", titleFirst));
 ////
-////		ColumnObject[] row1 = new ColumnObject[2];
-////		row1[0] = new ColumnObject<>("content", "Finish commands.");
-////		row1[1] = new ColumnObject<>("todoid", 1);
+//		ColumnObject[] row1 = new ColumnObject[2];
+//		row1[0] = new ColumnObject<>("content", "Finish commands.");
+//		row1[1] = new ColumnObject<>("todoid", 1);
+//		handler.executeUpdate(handler.insert(TODO_ITEM, row1));
 //
 //
 //		ColumnObject[] row2 = new ColumnObject[2];
@@ -122,7 +123,6 @@ public class Tester {
 //		handler.executeUpdate(handler.insert(TODO_ITEM, row2));
 ////
 //////		// insert into first todolist
-////		handler.executeUpdate(handler.insert(TODO_ITEM, row1));
 //		row2[0] = new ColumnObject<>("content", "Blep.");
 //		row2[1] = new ColumnObject<>("todoid", 3);
 //		handler.executeUpdate(handler.insert(TODO_ITEM, row2));
@@ -146,32 +146,28 @@ public class Tester {
 		//INNER JOIN event ON ticket.eventId=event.eventId);
 
 
-		ResultSet results = ResultSetHandler.getResultSet(handler, "*", TODO, "todoer", "Drew");
-		String out = ResultSetHandler.resultsToString(results);
-		System.out.println(out);
-
-
 		/* Useful for joining results from multiple tables in the same db */
 		ColumnObject[] ands = new ColumnObject[2];
-		ands[0] = new ColumnObject<>("todo.id", "todoitem.todoid");
-		ands[1] = new ColumnObject<>("todo.todoer", "Drew");
-		ResultSet resultss = selectItemFromInnerJoinOn(handler, "*", TODO, TODO_ITEM, ands);
+		ands[0] = new ColumnObject<>("todo.todoid", "todoitem.todoid");
+		ands[1] = new ColumnObject<>("todo.todoid", 1);
+		ResultSet outerResults = ResultSetHandler.getResultSet(handler, "*", TODO, "todo.todoid", 1);
+		ResultSet innerResults = selectItemFromInnerJoinOn(handler, "todoitem.*", TODO, TODO_ITEM, ands);
 
 		// Does a comination of queries to find a specific item meeting the requirements of the and comparison queries
 		// Then takes the result set and outputs json representing all the results and the table they are from
-		String outs = ResultSetHandler.allResultsToString(resultss);
-		System.out.println("asfasf: " + outs);
+//		String outs = ResultSetHandler.allResultsToString(resultss);
+//		System.out.println("asfasf: " + outs);
 
-//		System.out.println(String.format("Includes: %s", ResultSetHandler.getResultsIncluding(results, resultss)));
+		System.out.println(String.format("Includes: %s", ResultSetHandler.getResultsIncluding(outerResults, innerResults)));
 
-//		ColumnObject[] titleFirst = new ColumnObject[2];
-////		titleFirst[0] = new ColumnObject<>("title", "First");
-//		titleFirst[0] = new ColumnObject<>("todoer", "Drew");
-//
-////		ResultSet res = handler.executeQuery();
-////		String s = ResultSetHandler.ge
-//		System.out.println(ResultSetHandler.findAll(handler, TODO, titleFirst));
-//		System.out.println(ResultSetHandler.findAll(handler, TODO));
+		ColumnObject[] titleFirst = new ColumnObject[2];
+//		titleFirst[0] = new ColumnObject<>("title", "First");
+		titleFirst[0] = new ColumnObject<>("todoer", "Drew");
+
+//		ResultSet res = handler.executeQuery();
+//		String s = ResultSetHandler.ge
+		System.out.println(ResultSetHandler.findAll(handler, TODO, titleFirst));
+		System.out.println(ResultSetHandler.findAll(handler, TODO));
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
 //		String referenceKey = "todoid";

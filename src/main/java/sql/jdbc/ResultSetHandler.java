@@ -172,6 +172,7 @@ public enum ResultSetHandler {
 			String tableName = results.getMetaData().getTableName(1);
 				sb.append(tableName.endsWith("x") ? String.format("\"%ses\":[", tableName)
 						: String.format("\"%ss\":[", tableName));
+			String primaryKey = results.getMetaData().getColumnName(1);
 			while(results.next()) {
 				sb.append("{");
 				int resultCount = results.getMetaData().getColumnCount();
@@ -179,6 +180,12 @@ public enum ResultSetHandler {
 				for (int i = 1; i <= resultCount; i++) {
 					String columnType = results.getMetaData().getColumnTypeName(i);
 					String columnName = results.getMetaData().getColumnName(i);
+					if(i == resultCount && columnName.equals(primaryKey)) {
+						LOGGER.info("Duplicate primary key found. No need to put reference key.");
+						int lastIndex = sb.toString().length()-1;
+						sb.delete(lastIndex, lastIndex+1);
+						break;
+					}
 //					System.out.println(String.format("i: %1$s, \ttype: %2$s",
 //							results.getMetaData().getColumnName(i), columnType));
 					if(isString(columnType)) {
@@ -382,7 +389,7 @@ public enum ResultSetHandler {
 			} else if(isBoolean(columnType)) {
 				sb.append(String.format("\"%1$s\":%2$s", columnName, result.getBoolean(columnName)));
 			}
-			if(i < resultCount) {
+			if(i < resultCount || !result.isLast()) {
 				sb.append(",");
 			}
 		}
