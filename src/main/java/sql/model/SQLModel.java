@@ -12,7 +12,7 @@ public interface SQLModel {
 	 * @param isNotNull if key can be null
 	 * @param  keyIsVar if string can have variable length
 	 */
-	public void addColumn(String key, boolean isNotNull, boolean keyIsVar,
+	public void addColumn(String key, boolean isUnique, boolean isNotNull, boolean keyIsVar,
 						  int keyLength, boolean hasDefaultValue, Object defaultValue);
 
 	/**
@@ -21,7 +21,7 @@ public interface SQLModel {
 	 * @param isNotNull if key can be null
 	 * @param classOfT class of the key
 	 */
-	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT,
+	public <T> void addColumn(String key, boolean isUnique, boolean isNotNull, Class<T> classOfT,
 							  boolean hasDefaultValue, Object defaultValue);
 
 	/**

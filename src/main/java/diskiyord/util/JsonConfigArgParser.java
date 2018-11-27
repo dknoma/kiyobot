@@ -13,12 +13,14 @@ import java.nio.file.Paths;
 
 public class JsonConfigArgParser {
 
+	private String botStuff;
 	private String authTok;
 	private Gson gson;
 	private static final String CONFIG_FILE = "./config/config.json";
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public JsonConfigArgParser() {
+		this.botStuff = "";
 		this.authTok = "";
 		this.gson = new Gson();
 	}
@@ -47,6 +49,9 @@ public class JsonConfigArgParser {
 		if(obj.has("authTok")) {
 			this.authTok = obj.get("authTok").getAsString();
 		}
+		if(obj.has("botStuff")) {
+			this.botStuff = obj.get("botStuff").getAsString();
+		}
 	}
 
 	/**
@@ -55,5 +60,13 @@ public class JsonConfigArgParser {
 	 */
 	public String getAuthTok() {
 		return  this.authTok;
+	}
+
+	/**
+	 * Get channel id of bot-stuff
+	 * @return channel id
+	 */
+	public String getBotStuff() {
+		return  this.botStuff;
 	}
 }

@@ -21,6 +21,7 @@ public class PostgreSQLModel implements SQLModel{
 	private boolean autoIncrement;
 	private List<String> columns;
 	private Map<String, Class> columnType;
+	private Map<String, Boolean> keyIsUnique;
 	private Map<String, Boolean> columnCanBeNull;
 	private Map<String, Boolean> keyIsVar;
 	private Map<String, Integer> keyLengths;
@@ -48,6 +49,7 @@ public class PostgreSQLModel implements SQLModel{
 		this.autoIncrement = autoIncrement;
 		this.columns = new ArrayList<>();
 		this.columnType = new HashMap<>();
+		this.keyIsUnique = new HashMap<>();
 		this.columnCanBeNull = new HashMap<>();
 		this.keyIsVar = new HashMap<>();
 		this.keyLengths = new HashMap<>();
@@ -70,6 +72,7 @@ public class PostgreSQLModel implements SQLModel{
 		this.autoIncrement = autoIncrement;
 		this.columns = new ArrayList<>();
 		this.columnType = new HashMap<>();
+		this.keyIsUnique = new HashMap<>();
 		this.columnCanBeNull = new HashMap<>();
 		this.keyIsVar = new HashMap<>();
 		this.keyLengths = new HashMap<>();
@@ -84,10 +87,11 @@ public class PostgreSQLModel implements SQLModel{
 	 * @param  keyIsVar if string can have variable length
 	 */
 	@Override
-	public void addColumn(String key, boolean isNotNull, boolean keyIsVar, int keyLength,
+	public void addColumn(String key, boolean keyIsUnique, boolean isNotNull, boolean keyIsVar, int keyLength,
 						  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
 		this.columnType.put(key, STRING);
+		this.keyIsUnique.put(key, keyIsUnique);
 		this.columnCanBeNull.put(key, isNotNull);
 		this.keyIsVar.put(key, keyIsVar);
 		this.keyLengths.put(key, keyLength);
@@ -102,10 +106,11 @@ public class PostgreSQLModel implements SQLModel{
 	 * @param classOfT class of the key
 	 */
 	@Override
-	public <T> void addColumn(String key, boolean isNotNull, Class<T> classOfT,
+	public <T> void addColumn(String key, boolean keyIsUnique, boolean isNotNull, Class<T> classOfT,
 							  boolean hasDefaultValue, Object defaultValue) {
 		this.columns.add(key);
 		this.columnType.put(key, classOfT);
+		this.keyIsUnique.put(key, keyIsUnique);
 		this.columnCanBeNull.put(key, isNotNull);
 		this.hasDefaultValue.put(key, hasDefaultValue);
 		this.defaultValues.put(key, defaultValue);
@@ -209,8 +214,8 @@ public class PostgreSQLModel implements SQLModel{
 		model.query = this.query;
 		model.foreignKey = this.foreignKey;
 		model.foreignModelName = this.foreignModelName;
-		model.columnCanBeNull = this.columnCanBeNull;
 		model.columns.addAll(this.columns);
+		model.keyIsUnique.putAll(this.keyIsUnique);
 		model.columnCanBeNull.putAll(this.columnCanBeNull);
 		model.columnType.putAll(this.columnType);
 		model.keyIsVar.putAll(this.keyIsVar);

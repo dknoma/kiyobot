@@ -31,18 +31,15 @@ import java.util.Map;
  *      "t": "GATEWAY_EVENT_NAME"
  *  }
  *
- *  Kiyobot Testing
- *  	general: 510555588414144554
- *  	bot-stuff: 516729027734798336
- *
  *  String.format(%[argument_index$][flags][width]conversion);
  *      %s - put string in
+ *      %1$s - put the first string arg here
  *
  *
  */
 public class BasicMessageBot {
 
-	private static int PINGS;
+	private static int PINGS = 0;
 
 	private static final Gson GSON = new Gson();
 	private static final Class<String> STRING = String.class;
@@ -56,10 +53,6 @@ public class BasicMessageBot {
 	private static final String IMG_LINK = "imglink";
 	private static final String SQL_CONFIG_FILE = "./config/sqlconfig.json";
 	private static final Logger LOGGER = LogManager.getLogger();
-
-	public BasicMessageBot() {
-		PINGS = 0;
-	}
 
 	public static void main(String[] args) {
 		// db setup
@@ -91,6 +84,7 @@ public class BasicMessageBot {
 		// Diskiyord setup
 		JsonConfigArgParser parser = new JsonConfigArgParser();
 		parser.parseConfig();
+		String botStuffId = parser.getBotStuff();
 		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
 
 		api.addMessageCreateListener(messageEvent -> {
@@ -102,7 +96,7 @@ public class BasicMessageBot {
 					case "!ping":
 						if(PINGS < 3) {
 							messageEvent.getChannel().sendTextMessage("Pong!");
-						} else if(PINGS >= 6) {
+						} else if(PINGS >= 5) {
 							messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
 						} else {
 							messageEvent.getChannel().sendTextMessage("...");
@@ -122,6 +116,7 @@ public class BasicMessageBot {
 							messageEvent.getChannel().sendTextMessage(errorMessage);
 							break;
 						}
+						// Can make Class to handle all exgfx related methods
 						ColumnObject[] columns = new ColumnObject[5];
 						columns[0] = new ColumnObject<>(FILENAME, messageArgs[1], STRING);
 						columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2], STRING);
