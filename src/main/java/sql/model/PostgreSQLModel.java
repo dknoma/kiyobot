@@ -42,7 +42,8 @@ public class PostgreSQLModel implements SQLModel{
 	 */
 	public PostgreSQLModel(String modelName, boolean autoIncrement) {
 		this.modelName = modelName;
-		this.primaryKey = String.format("%sid", this.modelName);
+		this.primaryKey = "id";
+//		this.primaryKey = String.format("%sid", this.modelName).toLowerCase();
 		this.foreignModelName = "";
 		this.foreignKey = "";
 		this.query = "";
@@ -65,7 +66,8 @@ public class PostgreSQLModel implements SQLModel{
 	 */
 	public PostgreSQLModel(String modelName, boolean autoIncrement, String foreignTableName) {
 		this.modelName = modelName;
-		this.primaryKey = String.format("%sid", this.modelName).toLowerCase();
+		this.primaryKey = "id";
+//		this.primaryKey = String.format("%sid", this.modelName).toLowerCase();
 		this.foreignModelName = foreignTableName;
 		this.foreignKey = String.format("%sid", foreignTableName).toLowerCase();
 		this.query = "";
