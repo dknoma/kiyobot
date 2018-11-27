@@ -92,11 +92,10 @@ public interface JDBCHandler {
 	/**
 	 * Adds an AND query to a string
 	 * @param value value
-	 * @param classOfT Class type of query
 	 * @param query rest of query
 	 * @return query
 	 */
-	public <T> String on(String key, Object value, Class<T> classOfT, String query);
+	public <T> String on(String key, T value, String query);
 
 	/**
 	 * Executes a query on the db

@@ -1,1 +1,1 @@
-{"name": "todo", "autoIncrement": true, "columns": [{"key": "title", "attributes": {"type": "STRING", "length": 20, "lengthIsVar": true, "allowNull": false}}, {"key": "owner", "attributes": {"type": "STRING", "length": 20, "lengthIsVar": true, "allowNull": false}}]}
+{"name": "todo", "autoIncrement": true, "columns": [{"key": "title", "attributes": {"type": "STRING", "length": 20, "lengthIsVar": true, "allowNull": false}}, {"key": "todoer", "attributes": {"type": "STRING", "length": 20, "lengthIsVar": true, "allowNull": false}}]}

@@ -70,15 +70,46 @@ public class Tester {
 
 //		ColumnObject[] todoRow1 = new ColumnObject[2];
 //		todoRow1[0] = new ColumnObject<>("title", "First");
-//		todoRow1[1] = new ColumnObject<>("owner", "Drew");
-//		// insert todolists into table
-//		// inserts and updated need executeUpdate as no data is returned
+//		todoRow1[1] = new ColumnObject<>("todoer", "Drew");
+////		// insert todolists into table
+////		// inserts and updated need executeUpdate as no data is returned
 //		handler.executeUpdate(handler.insert("todo", todoRow1));
 //
-//		ColumnObject[] todoRow2 = new ColumnObject[2];
-//		todoRow2[0] = new ColumnObject<>("title", "Second");
-//		todoRow2[1] = new ColumnObject<>("owner", "Bob");
-//		handler.executeUpdate(handler.insert("todo", todoRow2));
+//
+//		todoRow1[0] = new ColumnObject<>("title", "Second");
+//		todoRow1[1] = new ColumnObject<>("todoer", "Bobe");
+////		// insert todolists into table
+////		// inserts and updated need executeUpdate as no data is returned
+//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//
+//		todoRow1[0] = new ColumnObject<>("title", "WOW");
+//		todoRow1[1] = new ColumnObject<>("todoer", "Drew");
+////		// insert todolists into table
+////		// inserts and updated need executeUpdate as no data is returned
+//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//
+//		todoRow1[0] = new ColumnObject<>("title", "WEHE");
+//		todoRow1[1] = new ColumnObject<>("todoer", "Bob");
+////		// insert todolists into table
+////		// inserts and updated need executeUpdate as no data is returned
+//		handler.executeUpdate(handler.insert("todo", todoRow1));
+//
+//
+//		todoRow1[0] = new ColumnObject<>("title", "Ehhh");
+//		todoRow1[1] = new ColumnObject<>("todoer", "Drew");
+////		// insert todolists into table
+////		// inserts and updated need executeUpdate as no data is returned
+//		handler.executeUpdate(handler.insert("todo", todoRow1));
+
+
+
+
+
+//
+//		ColumnObject[] titleFirst = new ColumnObject[2];
+//		titleFirst[0] = new ColumnObject<>("title", "Second");
+//		titleFirst[1] = new ColumnObject<>("owner", "Bob");
+//		handler.executeUpdate(handler.insert("todo", titleFirst));
 //
 //		ColumnObject[] row1 = new ColumnObject[2];
 //		row1[0] = new ColumnObject<>("content", "Finish commands.");
@@ -112,7 +143,7 @@ public class Tester {
 //										handler.innerJoin(TODO, TODO_ITEM,
 //												handler.on(
 //														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
-//														handler.and("owner", "Drew", STRING,
+//														handler.and("todoer", "Drew", STRING,
 //																handler.closeParentheses(handler.closeParentheses(
 //																		handler.closeParentheses("")
 //																))))
@@ -125,44 +156,31 @@ public class Tester {
 //		String out = ResultSetHandler.resultsToString(results);
 //		System.out.println(out);
 //*/
+		ColumnObject[] ands = new ColumnObject[2];
+		ands[0] = new ColumnObject<>("todo.todoid", "todoitem.todoid");
+		ands[1] = new ColumnObject<>("todo.todoer", "Drew");
 
 		ResultSet results = ResultSetHandler.getResultSet(handler, "*", TODO, "owner", "Drew");
 //
 //		String out = ResultSetHandler.resultsToString(results);
 //		System.out.println(out);
 //
-		//TODO: Fix this method. its not returning todos with owner
-		ResultSet resultss = handler.executeQuery(handler.select("todoitem.*",
-				handler.from(
-						handler.openParentheses(
-								handler.openParentheses(
-										handler.innerJoin(TODO, TODO_ITEM,
-												handler.on(
-														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
-//														handler.and("todo.todoid", 1,
-														handler.and("todo.owner", "Drew",
-																handler.closeParentheses(handler.closeParentheses(
-																		handler.closeParentheses("")
-																))))
-										)
-								)
-						)
-				, "")
-		));
+
+		ResultSet resultss = selectItemFromInnerJoinOn(handler, "todoitem.*", TODO, TODO_ITEM, ands);
 
 		String outs = ResultSetHandler.resultsToString(resultss);
 		System.out.println("asfasf: " + outs);
 
 //		System.out.println(String.format("Includes: %s", ResultSetHandler.getResultsIncluding(results, resultss)));
 
-		ColumnObject[] todoRow2 = new ColumnObject[2];
-		todoRow2[0] = new ColumnObject<>("title", "First");
-//		todoRow2[1] = new ColumnObject<>("owner", "Drew");
-
-//		ResultSet res = handler.executeQuery();
-//		String s = ResultSetHandler.ge
-		System.out.println(ResultSetHandler.findAll(handler, TODO, todoRow2));
-		System.out.println(ResultSetHandler.findAll(handler, TODO));
+//		ColumnObject[] titleFirst = new ColumnObject[2];
+////		titleFirst[0] = new ColumnObject<>("title", "First");
+//		titleFirst[0] = new ColumnObject<>("todoer", "Drew");
+//
+////		ResultSet res = handler.executeQuery();
+////		String s = ResultSetHandler.ge
+//		System.out.println(ResultSetHandler.findAll(handler, TODO, titleFirst));
+//		System.out.println(ResultSetHandler.findAll(handler, TODO));
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
 //		String referenceKey = "todoid";
@@ -181,7 +199,38 @@ public class Tester {
 //		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, 2));
 	}
 
-//	private static void returnJoinedResults(JDBCHandler handler, ResultSet result1, ResultSet result2) {
-//		System.out.println(ResultSetHandler.allResultsToString("todo", 1, result2));
-//	}
+	public static ResultSet selectItemFromInnerJoinOn(JDBCHandler handler, String select, String leftJoin, String rightJoin,
+													  ColumnObject... comparisons) {
+//		return handler.executeQuery(handler.select("todoitem.*",
+
+		StringBuilder sb = new StringBuilder();
+		for(int i = 1; i < comparisons.length; i++) {
+			sb.append(handler.and(comparisons[i].getKey(), comparisons[i].getValue(), ""));
+		}
+		String andQueries = sb.toString();
+
+		return handler.executeQuery(handler.select(select,
+				handler.from(
+						handler.openParentheses(
+								handler.openParentheses(
+										handler.innerJoin(leftJoin, rightJoin,
+//										handler.innerJoin(TODO, TODO_ITEM,
+												handler.on(
+														handler.openParentheses(comparisons[0].getKey()), comparisons[0].getValue(),
+//														handler.openParentheses("todo.todoid"), "todoitem.todoid",
+//														handler.and("todo.todoer", "Drew",
+														andQueries +
+																handler.closeParentheses(
+																		handler.closeParentheses(
+																			handler.closeParentheses("")
+																		)
+																)
+//														)
+												)
+										)
+								)
+						)
+						, "")
+		));
+	}
 }
