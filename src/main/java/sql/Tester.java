@@ -75,6 +75,10 @@ public class Tester {
 //		// inserts and updated need executeUpdate as no data is returned
 //		handler.executeUpdate(handler.insert("todo", todoRow1));
 //
+//		ColumnObject[] todoRow2 = new ColumnObject[2];
+//		todoRow2[0] = new ColumnObject<>("title", "Second");
+//		todoRow2[1] = new ColumnObject<>("owner", "Bob");
+//		handler.executeUpdate(handler.insert("todo", todoRow2));
 //
 //		ColumnObject[] row1 = new ColumnObject[2];
 //		row1[0] = new ColumnObject<>("content", "Finish commands.");
@@ -122,47 +126,43 @@ public class Tester {
 //		System.out.println(out);
 //*/
 
-//		ResultSet results = handler.executeQuery(handler.select("*",
-//									handler.from(TODO,
-//											handler.where("owner", "Drew", STRING, "")
-//									)
-//								)
-//							);
+		ResultSet results = ResultSetHandler.getResultSet(handler, "*", TODO, "owner", "Drew");
+//
+//		String out = ResultSetHandler.resultsToString(results);
+//		System.out.println(out);
+//
+		//TODO: Fix this method. its not returning todos with owner
+		ResultSet resultss = handler.executeQuery(handler.select("todoitem.*",
+				handler.from(
+						handler.openParentheses(
+								handler.openParentheses(
+										handler.innerJoin(TODO, TODO_ITEM,
+												handler.on(
+														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
+//														handler.and("todo.todoid", 1,
+														handler.and("todo.owner", "Drew",
+																handler.closeParentheses(handler.closeParentheses(
+																		handler.closeParentheses("")
+																))))
+										)
+								)
+						)
+				, "")
+		));
 
-//		ResultSet results = ResultSetHandler.getResultSet(handler, "*", TODO, "owner", "Drew");
-//
-////		String out = ResultSetHandler.resultsToString(results);
-////		System.out.println(out);
-//
-//		ResultSet resultss = handler.executeQuery(handler.select("todoitem.*",
-//				handler.from(
-//						handler.openParentheses(
-//								handler.openParentheses(
-//										handler.innerJoin(TODO_ITEM, TODO,
-//												handler.on(
-//														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
-//														handler.and("owner", "Drew",
-//																handler.closeParentheses(handler.closeParentheses(
-//																		handler.closeParentheses("")
-//																))))
-//										)
-//								)
-//						)
-//						, "")
-//		));
-//
-////		String outs = ResultSetHandler.resultsToString(resultss);
-////		System.out.println(outs);
-//
-//		System.out.println(ResultSetHandler.getResultsIncluding(results, "todoitems", resultss));
-//
-//		ColumnObject[] todoRow2 = new ColumnObject[2];
-//		todoRow2[0] = new ColumnObject<>("title", "First");
+		String outs = ResultSetHandler.resultsToString(resultss);
+		System.out.println("asfasf: " + outs);
+
+//		System.out.println(String.format("Includes: %s", ResultSetHandler.getResultsIncluding(results, resultss)));
+
+		ColumnObject[] todoRow2 = new ColumnObject[2];
+		todoRow2[0] = new ColumnObject<>("title", "First");
 //		todoRow2[1] = new ColumnObject<>("owner", "Drew");
-//
-////		ResultSet res = handler.executeQuery();
-////		String s = ResultSetHandler.ge
-//		System.out.println(ResultSetHandler.findAll(handler, TODO, todoRow2));
+
+//		ResultSet res = handler.executeQuery();
+//		String s = ResultSetHandler.ge
+		System.out.println(ResultSetHandler.findAll(handler, TODO, todoRow2));
+		System.out.println(ResultSetHandler.findAll(handler, TODO));
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
 //		String referenceKey = "todoid";

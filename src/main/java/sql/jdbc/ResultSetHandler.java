@@ -113,7 +113,7 @@ public enum ResultSetHandler {
 						)
 				)
 		);
-		return resultsToString(referenceResults);
+		return allResultsToString(referenceResults);
 	}
 
 
@@ -149,60 +149,60 @@ public enum ResultSetHandler {
 			}
 		}
 		whereQuery = whereBuilder.toString();
-		System.out.println(whereQuery);
+//		System.out.println(whereQuery);
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
 						handler.from(location, whereQuery
 						)
 				)
 		);
-		return resultsToString(referenceResults);
+		return allResultsToString(referenceResults);
 	}
 
 	/**
-	 * Gets a json string representation of all results of the query; This query is meant to be used to get
-	 * all values from the table of a specific referenceid
-	 * @param handler JDBCHandler
-	 * @param referenceKey reference table primary key
-	 * @param referenceId reference table id
+	 * Returns a json string representation of the data in the result set w/ reference table data
+	 * @param results query result set
 	 * @return json
 	 */
-	public static String getResultSetWithReference(JDBCHandler handler, String location, String referenceKey, int referenceId) {
-		ResultSet results = handler.executeQuery(
-				handler.select("*",
-						handler.from(location,
-								handler.where(referenceKey, referenceId, "")
-						)
-				)
-		);
-		return allResultsToString(referenceKey, referenceId, results);
-	}
-
-	/**
-	 * Returns the JsonObject representation of the input json
-	 * @param json input
-	 * @return string
-	 */
-	public static JsonObject getInfoFromJson(String json) {
-		return GSON.fromJson(json, JsonObject.class);
-	}
-
-	/**
-	 * Returns the primary key from the json input
-	 * @param json input
-	 * @return string
-	 */
-	public static String getTableNameFromJson(String json) {
-		return GSON.fromJson(json, JsonObject.class).get("primaryKey").getAsString();
-	}
-
-	/**
-	 * Returns the table id from the input json
-	 * @param json input
-	 * @return string
-	 */
-	public static int getTableIdFromJson(String json) {
-		return GSON.fromJson(json, JsonObject.class).get("id").getAsInt();
+	public static String allResultsToString(ResultSet results) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		try {
+			// resultset starts BEFORE first row, need to call next for all results
+			String tableName = results.getMetaData().getTableName(1);
+				sb.append(tableName.endsWith("x") ? String.format("\"%ses\":[", tableName)
+						: String.format("\"%ss\":[", tableName));
+			while(results.next()) {
+				sb.append("{");
+				int resultCount = results.getMetaData().getColumnCount();
+//				System.out.println(resultCount);
+				for (int i = 1; i <= resultCount; i++) {
+					String columnType = results.getMetaData().getColumnTypeName(i);
+					String columnName = results.getMetaData().getColumnName(i);
+//					System.out.println(String.format("i: %1$s, \ttype: %2$s",
+//							results.getMetaData().getColumnName(i), columnType));
+					if(isString(columnType)) {
+						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
+					} else if(isInt(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
+					} else if(isBoolean(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
+					}
+					if(i < resultCount) {
+						sb.append(",");
+					}
+				}
+				if(!results.isLast()) {
+					sb.append("},");
+				} else {
+					sb.append("}");
+				}
+			}
+			sb.append("]}");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
 	}
 
 	/**
@@ -270,53 +270,72 @@ public enum ResultSetHandler {
 		return sb.toString();
 	}
 
-	/**
-	 * Returns a json string representation of the data in the result set w/ reference table data
-	 * @param referenceKey reference table primary key
-	 * @param referenceId reference table id
-	 * @param results query result set
-	 * @return json
-	 */
-	public static String allResultsToString(String referenceKey, int referenceId, ResultSet results) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("{");
-		try {
-			sb.append(String.format("\"%1$s\":%2$s,", referenceKey, referenceId));
-			// resultset starts BEFORE first row, need to call next for all results
-			String tableName = results.getMetaData().getTableName(1);
-			sb.append(String.format("\"%s\":[", tableName));
-			while(results.next()) {
-				sb.append("{");
-				int resultCount = results.getMetaData().getColumnCount();
-//				System.out.println(resultCount);
-				for (int i = 1; i <= resultCount; i++) {
-					String columnType = results.getMetaData().getColumnTypeName(i);
-					String columnName = results.getMetaData().getColumnName(i);
-//					System.out.println(String.format("i: %1$s, \ttype: %2$s",
-//							results.getMetaData().getColumnName(i), columnType));
-					if(isString(columnType)) {
-						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
-					} else if(isInt(columnType)) {
-						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
-					} else if(isBoolean(columnType)) {
-						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
-					}
-					if(i < resultCount) {
-						sb.append(",");
-					}
-				}
-				if(!results.isLast()) {
-					sb.append("},");
-				} else {
-					sb.append("}");
-				}
-			}
-			sb.append("]}");
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return sb.toString();
-	}
+
+//	/**
+//	 * Gets a json string representation of all results of the query; This query is meant to be used to get
+//	 * all values from the table of a specific referenceid
+//	 * @param handler JDBCHandler
+//	 * @param referenceKey reference table primary key
+//	 * @param referenceId reference table id
+//	 * @return json
+//	 */
+//	public static String getResultSetWithReference(JDBCHandler handler, String location, String referenceKey, int referenceId) {
+//		ResultSet results = handler.executeQuery(
+//				handler.select("*",
+//						handler.from(location,
+//								handler.where(referenceKey, referenceId, "")
+//						)
+//				)
+//		);
+//		return allResultsToString(referenceKey, referenceId, results);
+//	}
+//	/**
+//	 * Returns a json string representation of the data in the result set w/ reference table data
+//	 * @param referenceKey reference table primary key
+//	 * @param referenceId reference table id
+//	 * @param results query result set
+//	 * @return json
+//	 */
+//	public static String allResultsToString(String referenceKey, int referenceId, ResultSet results) {
+//		StringBuilder sb = new StringBuilder();
+//		sb.append("{");
+//		try {
+//			sb.append(String.format("\"%1$s\":%2$s,", referenceKey, referenceId));
+//			// resultset starts BEFORE first row, need to call next for all results
+//			String tableName = results.getMetaData().getTableName(1);
+//			sb.append(String.format("\"%s\":[", tableName));
+//			while(results.next()) {
+//				sb.append("{");
+//				int resultCount = results.getMetaData().getColumnCount();
+////				System.out.println(resultCount);
+//				for (int i = 1; i <= resultCount; i++) {
+//					String columnType = results.getMetaData().getColumnTypeName(i);
+//					String columnName = results.getMetaData().getColumnName(i);
+////					System.out.println(String.format("i: %1$s, \ttype: %2$s",
+////							results.getMetaData().getColumnName(i), columnType));
+//					if(isString(columnType)) {
+//						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
+//					} else if(isInt(columnType)) {
+//						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
+//					} else if(isBoolean(columnType)) {
+//						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
+//					}
+//					if(i < resultCount) {
+//						sb.append(",");
+//					}
+//				}
+//				if(!results.isLast()) {
+//					sb.append("},");
+//				} else {
+//					sb.append("}");
+//				}
+//			}
+//			sb.append("]}");
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		}
+//		return sb.toString();
+//	}
 
 	/**
 	 * Returns a json string representation of the data in the result set w/ reference table data
@@ -324,14 +343,16 @@ public enum ResultSetHandler {
 	 * @param innerResult query result set
 	 * @return json
 	 */
-	public static String getResultsIncluding(ResultSet outerResult, String innerTableName, ResultSet innerResult) {
+	public static String getResultsIncluding(ResultSet outerResult, ResultSet innerResult) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
 			while(outerResult.next()) {
 				sb.append(resultSetToRawJson(outerResult));
 			}
-			sb.append(String.format(",\"%1$s\":[", innerTableName));
+			String innerTableName = innerResult.getMetaData().getTableName(1);
+			sb.append(innerTableName.endsWith("x") ? String.format(",\"%1$ses\":[", innerTableName)
+					: String.format(",\"%1$ss\":[", innerTableName));
 			while(innerResult.next()) {
 				sb.append(resultSetToJson(innerResult));
 			}
@@ -400,8 +421,37 @@ public enum ResultSetHandler {
 		} else {
 			sb.append("}");
 		}
+		LOGGER.debug(sb.toString());
 		return sb.toString();
 	}
+
+	/**
+	 * Returns the JsonObject representation of the input json
+	 * @param json input
+	 * @return string
+	 */
+	public static JsonObject getInfoFromJson(String json) {
+		return GSON.fromJson(json, JsonObject.class);
+	}
+
+	/**
+	 * Returns the primary key from the json input
+	 * @param json input
+	 * @return string
+	 */
+	public static String getTableNameFromJson(String json) {
+		return GSON.fromJson(json, JsonObject.class).get("primaryKey").getAsString();
+	}
+
+	/**
+	 * Returns the table id from the input json
+	 * @param json input
+	 * @return string
+	 */
+	public static int getTableIdFromJson(String json) {
+		return GSON.fromJson(json, JsonObject.class).get("id").getAsInt();
+	}
+
 
 	/**
 	 * Returns whether or not the sql column type is a valid Java type
