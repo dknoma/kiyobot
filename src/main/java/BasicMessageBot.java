@@ -118,11 +118,11 @@ public class BasicMessageBot {
 						}
 						// Can make Class to handle all exgfx related methods
 						ColumnObject[] columns = new ColumnObject[5];
-						columns[0] = new ColumnObject<>(FILENAME, messageArgs[1], STRING);
-						columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2], STRING);
-						columns[2] = new ColumnObject<>(TYPE, messageArgs[3], STRING);
-						columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]), BOOLEAN);
-						columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5], STRING);
+						columns[0] = new ColumnObject<>(FILENAME, messageArgs[1]);
+						columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
+						columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
+						columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
+						columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
 						pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
 
 						messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
@@ -136,7 +136,7 @@ public class BasicMessageBot {
 							break;
 						}
 						JsonObject obj = GSON.fromJson(ResultSetHandler
-								.resultSetToString(pghandler, "*", EXGFX, FILENAME, messageArgs[1], STRING), JsonObject.class);
+								.resultSetToString(pghandler, "*", EXGFX, FILENAME, messageArgs[1]), JsonObject.class);
 						String botOutput = getExGFXInfo(obj);
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;

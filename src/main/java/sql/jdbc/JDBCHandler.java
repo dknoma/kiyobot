@@ -47,20 +47,18 @@ public interface JDBCHandler {
 	/**
 	 * Adds a WHERE query to a string
 	 * @param value value
-	 * @param classOfT Class type of query
 	 * @param query rest of query
 	 * @return query
 	 */
-	public <T> String where(String key, Object value, Class<T> classOfT, String query);
+	public <T> String where(String key, T value, String query);
 
 	/**
 	 * Adds an AND query to a string
 	 * @param value value
-	 * @param classOfT Class type of query
 	 * @param query rest of query
 	 * @return query
 	 */
-	public <T> String and(String key, Object value, Class<T> classOfT, String query);
+	public <T> String and(String key, T value, String query);
 
 	/**
 	 * Adds ( query to a string

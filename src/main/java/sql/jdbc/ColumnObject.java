@@ -3,13 +3,13 @@ package sql.jdbc;
 public class ColumnObject<T> {
 
 	private String key;
-	private Object value;
-	private Class<T> classOfT;
+	private T value;
+	private Class classOfT;
 
-	public ColumnObject(String key, Object value, Class<T> classOfT) {
+	public ColumnObject(String key, T value) {
 		this.key = key;
 		this.value = value;
-		this.classOfT = classOfT;
+		this.classOfT = value.getClass();
 	}
 
 	public String getKey() {
@@ -20,8 +20,8 @@ public class ColumnObject<T> {
 		return value;
 	}
 
-	public Class<T> getClassOfT() {
-		return classOfT;
+	public Class getClassOfT() {
+		return this.classOfT;
 	}
 
 	public String toString() {

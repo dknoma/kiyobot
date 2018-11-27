@@ -109,13 +109,12 @@ public class MySQLHandler implements JDBCHandler {
 	/**
 	 * Adds a WHERE query to a string
 	 * @param value value
-	 * @param classOfT Class type of query
 	 * @param query rest of query
 	 * @return query
 	 */
 	@Override
-	public <T> String where(String key, Object value, Class<T> classOfT, String query) {
-		if(classOfT.equals(STRING)) {
+	public <T> String where(String key, T value, String query) {
+		if(value.getClass().equals(STRING)) {
 			return String.format(" WHERE %1$s='%2$s'%3$s", key, value, query);
 		} else {
 			return String.format(" WHERE %1$s=%2$s%3$s", key, value, query);
@@ -125,13 +124,12 @@ public class MySQLHandler implements JDBCHandler {
 	/**
 	 * Adds an AND query to a string
 	 * @param value value
-	 * @param classOfT Class type of query
 	 * @param query rest of query
 	 * @return query
 	 */
 	@Override
-	public <T> String and(String key, Object value, Class<T> classOfT, String query) {
-		if(classOfT.equals(STRING)) {
+	public <T> String and(String key, T value, String query) {
+		if(value.getClass().equals(STRING)) {
 			return String.format(" AND %1$s='%2$s'%3$s", key, value, query);
 		} else {
 			return String.format(" AND %1$s=%2$s%3$s", key, value, query);

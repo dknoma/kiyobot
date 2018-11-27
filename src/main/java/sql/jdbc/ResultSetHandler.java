@@ -21,8 +21,6 @@ public enum ResultSetHandler {
 	private static final Class<String> STRING = String.class;
 	private static final Class<Integer> INTEGER = Integer.class;
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
-//	private static final String TODO = "Todo";
-//	private static final String TODO_ITEM = "TodoItem";
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	ResultSetHandler() {
@@ -41,7 +39,7 @@ public enum ResultSetHandler {
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
 						handler.from(referenceLocation,
-								handler.where(referenceKey, referenceId, INTEGER, "")
+								handler.where(referenceKey, referenceId, "")
 						)
 				)
 		);
@@ -55,14 +53,14 @@ public enum ResultSetHandler {
 	 * @param value value
 	 * @return json
 	 */
-	public static <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, Object value, Class<T> classOfT) {
+	public static <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, T value) {
 		String whereQuery;
-		if(classOfT.equals(STRING)) {
-			whereQuery = handler.where(key, value, STRING, "");
-		} else if(classOfT.equals(INTEGER)) {
-			whereQuery = handler.where(key, value, INTEGER, "");
-		} else if(classOfT.equals(BOOLEAN)) {
-			whereQuery = handler.where(key, value, BOOLEAN, "");
+		if(value.getClass().equals(STRING)) {
+			whereQuery = handler.where(key, value, "");
+		} else if(value.getClass().equals(INTEGER)) {
+			whereQuery = handler.where(key, value, "");
+		} else if(value.getClass().equals(BOOLEAN)) {
+			whereQuery = handler.where(key, value, "");
 		} else {
 			whereQuery = "";
 		}
@@ -82,14 +80,14 @@ public enum ResultSetHandler {
 	 * @param value value
 	 * @return json
 	 */
-	public static <T> String resultSetToString(JDBCHandler handler, String what, String location, String key, Object value, Class<T> classOfT) {
+	public static <T> String resultSetToString(JDBCHandler handler, String what, String location, String key, T value) {
 		String whereQuery;
-			if(classOfT.equals(STRING)) {
-				whereQuery = handler.where(key, value, STRING, "");
-			} else if(classOfT.equals(INTEGER)) {
-				whereQuery = handler.where(key, value, INTEGER, "");
-			} else if(classOfT.equals(BOOLEAN)) {
-				whereQuery = handler.where(key, value, BOOLEAN, "");
+			if(value.getClass().equals(STRING)) {
+				whereQuery = handler.where(key, value, "");
+			} else if(value.getClass().equals(INTEGER)) {
+				whereQuery = handler.where(key, value, "");
+			} else if(value.getClass().equals(BOOLEAN)) {
+				whereQuery = handler.where(key, value, "");
 			} else {
 				whereQuery = "";
 			}
@@ -100,7 +98,7 @@ public enum ResultSetHandler {
 						)
 				)
 		);
-		return getResults(referenceResults);
+		return resultsToString(referenceResults);
 	}
 
 	/**
@@ -108,14 +106,57 @@ public enum ResultSetHandler {
 	 * @param handler JDBCHandler
 	 * @return json
 	 */
-	public static String getAllResults(JDBCHandler handler, String location) {
+	public static String findAll(JDBCHandler handler, String location) {
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
 						handler.from(location,""
 						)
 				)
 		);
-		return getResults(referenceResults);
+		return resultsToString(referenceResults);
+	}
+
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @return json
+	 */
+	public static String findAll(JDBCHandler handler, String location, ColumnObject... where) {
+		StringBuilder whereBuilder = new StringBuilder();
+		String whereQuery;
+		if(where[0].getClassOfT().equals(STRING)) {
+			whereBuilder.append(handler.where(where[0].getKey(), where[0].getValue(), ""));
+		} else if(where[0].getClassOfT().equals(INTEGER)) {
+			whereBuilder.append(handler.where(where[0].getKey(), where[0].getValue(), ""));
+		} else if(where[0].getClassOfT().equals(BOOLEAN)) {
+			whereBuilder.append(handler.where(where[0].getKey(), where[0].getValue(), ""));
+		} else {
+			whereBuilder.append("");
+		}
+		for(int i = 1; i < where.length; i++) {
+			if(where[i] == null) {
+				break;
+			}
+			if(where[i].getClassOfT().equals(STRING)) {
+				whereBuilder.append(handler.and(where[i].getKey(), where[i].getValue(), ""));
+			} else if(where[i].getClassOfT().equals(INTEGER)) {
+				whereBuilder.append(handler.and(where[i].getKey(), where[i].getValue(), ""));
+			} else if(where[i].getClassOfT().equals(BOOLEAN)) {
+				whereBuilder.append(handler.and(where[i].getKey(), where[i].getValue(), ""));
+			} else {
+				whereBuilder.append("");
+			}
+		}
+		whereQuery = whereBuilder.toString();
+		System.out.println(whereQuery);
+		ResultSet referenceResults = handler.executeQuery(
+				handler.select("*",
+						handler.from(location, whereQuery
+						)
+				)
+		);
+		return resultsToString(referenceResults);
 	}
 
 	/**
@@ -130,11 +171,11 @@ public enum ResultSetHandler {
 		ResultSet results = handler.executeQuery(
 				handler.select("*",
 						handler.from(location,
-								handler.where(referenceKey, referenceId, INTEGER, "")
+								handler.where(referenceKey, referenceId, "")
 						)
 				)
 		);
-		return getAllResults(referenceKey, referenceId, results);
+		return allResultsToString(referenceKey, referenceId, results);
 	}
 
 	/**
@@ -192,13 +233,14 @@ public enum ResultSetHandler {
 	 * @param results query result set
 	 * @return json
 	 */
-	public static String getResults(ResultSet results) {
+	public static String resultsToString(ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		try {
+			int numRows = 0;
 			while(results.next()) {
+				numRows++;
 				sb.append("{");
 				int resultCount = results.getMetaData().getColumnCount();
-//				System.out.println(resultCount);
 				for (int i = 1; i <= resultCount; i++) {
 					String columnType = results.getMetaData().getColumnTypeName(i);
 					String columnName = results.getMetaData().getColumnName(i);
@@ -219,6 +261,9 @@ public enum ResultSetHandler {
 					sb.append("}");
 				}
 			}
+			if(numRows == 0) {
+				return "{}";
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -232,7 +277,7 @@ public enum ResultSetHandler {
 	 * @param results query result set
 	 * @return json
 	 */
-	public static String getAllResults(String referenceKey, int referenceId, ResultSet results) {
+	public static String allResultsToString(String referenceKey, int referenceId, ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
@@ -279,7 +324,7 @@ public enum ResultSetHandler {
 	 * @param innerResult query result set
 	 * @return json
 	 */
-	public static String getJoinedResults(ResultSet outerResult, String innerTableName, ResultSet innerResult) {
+	public static String getResultsIncluding(ResultSet outerResult, String innerTableName, ResultSet innerResult) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
