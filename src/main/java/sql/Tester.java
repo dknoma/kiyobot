@@ -52,6 +52,7 @@ public class Tester {
 			LOGGER.debug(handler.getTable(TODO));
 			LOGGER.debug(handler.getTable(TODO_ITEM));
 			LOGGER.debug(handler.getTable(EXGFX));
+			LOGGER.debug(handler.getTable("client"));
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -70,8 +71,8 @@ public class Tester {
 //		ColumnObject[] todoRow1 = new ColumnObject[2];
 //		todoRow1[0] = new ColumnObject<>("title", "First", STRING);
 //		todoRow1[1] = new ColumnObject<>("owner", "Drew", STRING);
-////		// insert todolists into table
-////		// inserts and updated need executeUpdate as no data is returned
+//		// insert todolists into table
+//		// inserts and updated need executeUpdate as no data is returned
 //		handler.executeUpdate(handler.insert("todo", todoRow1));
 //
 //
@@ -87,8 +88,7 @@ public class Tester {
 ////		// insert into first todolist
 //		handler.executeUpdate(handler.insert(TODO_ITEM, row1));
 //		handler.executeUpdate(handler.insert(TODO_ITEM, row2));
-//				STRING, "todoid", 1, INTEGER, "completed", false, BOOLEAN));
-//
+
 //		// insert into second todolist
 //		handler.executeUpdate(handler.insert("todoitem", "content", "Finish JDBCHandler.",
 //				STRING, "todoid", 2, INTEGER, "completed", false, BOOLEAN));
@@ -98,13 +98,47 @@ public class Tester {
 		//SELECT event.description FROM
 		//((user INNER JOIN tickets ON (user.userId=tickets.userId AND user.name="Bob"))
 		//INNER JOIN event ON ticket.eventId=event.eventId);
-// Useful for joining results from multiple tables in the same db
-/*
-		ResultSet results = handler.executeQuery(handler.select("content",
+
+		// Useful for joining results from multiple tables in the same db
+///*
+//		ResultSet results = handler.executeQuery(handler.select("*",
+//				handler.from(
+//						handler.openParentheses(
+//								handler.openParentheses(
+//										handler.innerJoin(TODO, TODO_ITEM,
+//												handler.on(
+//														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
+//														handler.and("owner", "Drew", STRING,
+//																handler.closeParentheses(handler.closeParentheses(
+//																		handler.closeParentheses("")
+//																))))
+//										)
+//								)
+//						)
+//						, "")
+//		));
+//
+//		String out = ResultSetHandler.getResults(results);
+//		System.out.println(out);
+//*/
+
+//		ResultSet results = handler.executeQuery(handler.select("*",
+//									handler.from(TODO,
+//											handler.where("owner", "Drew", STRING, "")
+//									)
+//								)
+//							);
+
+		ResultSet results = ResultSetHandler.getResultSet(handler, "*", TODO, "owner", "Drew", STRING);
+
+//		String out = ResultSetHandler.getResults(results);
+//		System.out.println(out);
+
+		ResultSet resultss = handler.executeQuery(handler.select("todoitem.*",
 				handler.from(
 						handler.openParentheses(
 								handler.openParentheses(
-										handler.innerJoin(TODO, TODO_ITEM,
+										handler.innerJoin(TODO_ITEM, TODO,
 												handler.on(
 														handler.openParentheses("todo.todoid"), "todoitem.todoid", INTEGER,
 														handler.and("owner", "Drew", STRING,
@@ -117,9 +151,10 @@ public class Tester {
 						, "")
 		));
 
-		String out = ResultSetHandler.getResults(results);
-		System.out.println(out);
-*/
+//		String outs = ResultSetHandler.getResults(resultss);
+//		System.out.println(outs);
+
+		System.out.println(ResultSetHandler.getJoinedResults(results, "todoitems", resultss));
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
 //		String referenceKey = "todoid";
@@ -137,4 +172,8 @@ public class Tester {
 //		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, id));
 //		System.out.println(ResultSetHandler.getResultSetWithReference(handler, TODO_ITEM, referencePrimaryKey, 2));
 	}
+
+//	private static void returnJoinedResults(JDBCHandler handler, ResultSet result1, ResultSet result2) {
+//		System.out.println(ResultSetHandler.getAllResults("todo", 1, result2));
+//	}
 }

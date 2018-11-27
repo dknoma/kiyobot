@@ -65,6 +65,7 @@ public class PostgresHandler implements JDBCHandler {
 			SQLModel model = entry.getValue();
 			try {
 				stmt = dbConn.prepareStatement(model.getQuery());
+				LOGGER.debug("TABLE: {}", stmt.toString());
 				stmt.executeUpdate();
 			} catch (SQLException e) {
 				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
@@ -243,7 +244,9 @@ public class PostgresHandler implements JDBCHandler {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
-			LOGGER.debug(stmt.toString());
+
+			System.out.println(stmt.toString());
+
 			//execute a query, which returns a ResultSet object
 			return stmt.executeQuery();
 		} catch (SQLException e) {

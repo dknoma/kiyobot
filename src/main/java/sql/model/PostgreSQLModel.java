@@ -131,10 +131,12 @@ public class PostgreSQLModel implements SQLModel{
 		for(String key : this.columns) {
 			Class classOfKey = this.columnType.get(key);
 			if(classOfKey.equals(STRING)) {
-				if(this.keyIsVar.get(key)) {
-					sb.append(String.format(", %1$s VARCHAR(%2$s)", key, this.keyLengths.get(key)));
+				if (this.keyIsVar.get(key)) {
+					sb.append(String.format(", %1$s VARCHAR(%2$s)%3$s", key, this.keyLengths.get(key),
+							this.keyIsUnique.get(key) ? " UNIQUE" : ""));
 				} else {
-					sb.append(String.format(", %1$s CHAR(%2$s)", key, this.keyLengths.get(key)));
+					sb.append(String.format(", %1$s CHAR(%2$s)%3$s", key, this.keyLengths.get(key),
+							this.keyIsUnique.get(key) ? " UNIQUE" : ""));
 				}
 				if(this.columnCanBeNull.get(key)) {
 					sb.append(" NOT NULL");
@@ -144,11 +146,13 @@ public class PostgreSQLModel implements SQLModel{
 				if(this.hasDefaultValue.get(key)) {
 					sb.append(String.format(" DEFAULT %s", this.defaultValues.get(key)));
 				}
+				sb.append(this.keyIsUnique.get(key) ? " UNIQUE" : "");
 			} else if(classOfKey.equals(BOOLEAN)) {
 				sb.append(String.format(", %1$s %2$s", key, DATATYPE_BOOLEAN));
 				if(this.hasDefaultValue.get(key)) {
 					sb.append(String.format(" DEFAULT %b", this.defaultValues.get(key)));
 				}
+				sb.append(this.keyIsUnique.get(key) ? " UNIQUE" : "");
 			}
 		}
 		// if has foreign key, add to query

@@ -37,7 +37,7 @@ public class SQLModelBuilder {
 
 	/**
 	 * Finds all model files in the given directory and creates an array of their file names
-	 * @param modelDirectory
+	 * @param modelDirectory;
 	 */
 	public void findModelFiles(String modelDirectory) {
 		//remove " from input, get input files
@@ -118,6 +118,11 @@ public class SQLModelBuilder {
 		}
 	}
 
+	/**
+	 * Finds the columns from the .json file and puts them into the SQLModel
+	 * @param obj;
+	 * @param model;
+	 */
 	private void addColumns(JsonObject obj, SQLModel model) {
 		JsonArray columns = obj.get("columns").getAsJsonArray();
 		for(JsonElement column : columns) {
@@ -126,37 +131,89 @@ public class SQLModelBuilder {
 			// attributes of the key
 			JsonObject attributes = key.get("attributes").getAsJsonObject();
 			boolean allowNull = attributes.has("allowNull") && attributes.get("allowNull").getAsBoolean();
-			if(attributes.get("type").getAsString().equals(STRING)) {
-				boolean keyLengthIsVar = attributes.has("lengthIsVar")
-						&& attributes.get("lengthIsVar").getAsBoolean();
-				int length = attributes.get("length").getAsInt();
-				if(attributes.has("defaultValue")) {
-					model.addColumn(keyName, allowNull, keyLengthIsVar, length,
-							true, attributes.get("defaultValue"));
-				} else {
-					model.addColumn(keyName, allowNull, keyLengthIsVar, length,
-							false, "");
-				}
-			} else {
-				if(attributes.get("type").getAsString().equals(INTEGER)) {
+			switch(attributes.get("type").getAsString()) {
+				case STRING:
+					boolean keyLengthIsVar = attributes.has("lengthIsVar")
+							&& attributes.get("lengthIsVar").getAsBoolean();
+					int length = attributes.get("length").getAsInt();
 					if(attributes.has("defaultValue")) {
-						model.addColumn(keyName, allowNull, Integer.class,
+						model.addColumn(keyName,
+								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+								allowNull, keyLengthIsVar, length, true, attributes.get("defaultValue"));
+					} else {
+						model.addColumn(keyName,
+								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+								allowNull, keyLengthIsVar, length, false, "");
+					}
+					break;
+				case INTEGER:
+					if(attributes.has("defaultValue")) {
+						model.addColumn(keyName,
+								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+								allowNull, Integer.class, true, attributes.get("defaultValue"));
+					} else {
+						model.addColumn(keyName,
+								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+								allowNull, Integer.class, false, "");
+					}
+					break;
+				case BOOLEAN:
+					if(attributes.has("defaultValue")) {
+						model.addColumn(keyName,
+								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+								allowNull, Boolean.class,
 								true, attributes.get("defaultValue"));
 					} else {
-						model.addColumn(keyName, allowNull, Integer.class, false, "");
+						model.addColumn(keyName,
+								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+								allowNull, Boolean.class, false, "");
 					}
-				} else if(attributes.get("type").getAsString().equals(BOOLEAN)){
-					if(attributes.has("defaultValue")) {
-						model.addColumn(keyName, allowNull, Boolean.class,
-								true, attributes.get("defaultValue"));
-					} else {
-						model.addColumn(keyName, allowNull, Boolean.class, false, "");
-					}
-				} else {
+					break;
+				default:
 					LOGGER.error("There was an error in the format of the json file. Please try again.");
 					return;
-				}
 			}
+//			if(attributes.get("type").getAsString().equals(STRING)) {
+////				boolean keyLengthIsVar = attributes.has("lengthIsVar")
+////						&& attributes.get("lengthIsVar").getAsBoolean();
+////				int length = attributes.get("length").getAsInt();
+////				if(attributes.has("defaultValue")) {
+////					model.addColumn(keyName,
+////							attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+////							allowNull, keyLengthIsVar, length, true, attributes.get("defaultValue"));
+////				} else {
+////					model.addColumn(keyName,
+////							attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+////							allowNull, keyLengthIsVar, length, false, "");
+////				}
+//			} else {
+//				if(attributes.get("type").getAsString().equals(INTEGER)) {
+//					// attributes.has("isUnique") ? attributes.get("isUnique") : false
+//					if(attributes.has("defaultValue")) {
+//						model.addColumn(keyName,
+//							attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+//							allowNull, Integer.class, true, attributes.get("defaultValue"));
+//					} else {
+//						model.addColumn(keyName,
+//								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+//								allowNull, Integer.class, false, "");
+//					}
+//				} else if(attributes.get("type").getAsString().equals(BOOLEAN)){
+//					if(attributes.has("defaultValue")) {
+//						model.addColumn(keyName,
+//								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+//								allowNull, Boolean.class,
+//								true, attributes.get("defaultValue"));
+//					} else {
+//						model.addColumn(keyName,
+//								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
+//								allowNull, Boolean.class, false, "");
+//					}
+//				} else {
+//					LOGGER.error("There was an error in the format of the json file. Please try again.");
+//					return;
+//				}
+//			}
 		}
 	}
 

@@ -55,7 +55,34 @@ public enum ResultSetHandler {
 	 * @param value value
 	 * @return json
 	 */
-	public static <T> String getResultSet(JDBCHandler handler, String location, String key, Object value, Class<T> classOfT) {
+	public static <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, Object value, Class<T> classOfT) {
+		String whereQuery;
+		if(classOfT.equals(STRING)) {
+			whereQuery = handler.where(key, value, STRING, "");
+		} else if(classOfT.equals(INTEGER)) {
+			whereQuery = handler.where(key, value, INTEGER, "");
+		} else if(classOfT.equals(BOOLEAN)) {
+			whereQuery = handler.where(key, value, BOOLEAN, "");
+		} else {
+			whereQuery = "";
+		}
+		return handler.executeQuery(
+				handler.select(what,
+						handler.from(location,
+								whereQuery
+						)
+				)
+		);
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @param key key
+	 * @param value value
+	 * @return json
+	 */
+	public static <T> String resultSetToString(JDBCHandler handler, String what, String location, String key, Object value, Class<T> classOfT) {
 		String whereQuery;
 			if(classOfT.equals(STRING)) {
 				whereQuery = handler.where(key, value, STRING, "");
@@ -67,7 +94,7 @@ public enum ResultSetHandler {
 				whereQuery = "";
 			}
 		ResultSet referenceResults = handler.executeQuery(
-				handler.select("*",
+				handler.select(what,
 						handler.from(location,
 								whereQuery
 						)
@@ -242,6 +269,91 @@ public enum ResultSetHandler {
 			sb.append("]}");
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Returns a json string representation of the data in the result set w/ reference table data
+	 * @param outerResult query result set
+	 * @param innerResult query result set
+	 * @return json
+	 */
+	public static String getJoinedResults(ResultSet outerResult, String innerTableName, ResultSet innerResult) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		try {
+			while(outerResult.next()) {
+				sb.append(resultSetToRawJson(outerResult));
+			}
+			sb.append(String.format(",\"%1$s\":[", innerTableName));
+			while(innerResult.next()) {
+				sb.append(resultSetToJson(innerResult));
+			}
+			sb.append("]}");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Returns string representation of the information in a result set in json format without outer curly brackets
+	 * @param result;
+	 * @return string
+	 * @throws SQLException;
+	 */
+	private static String resultSetToRawJson(ResultSet result) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		int resultCount = result.getMetaData().getColumnCount();
+		for (int i = 1; i <= resultCount; i++) {
+			String columnType = result.getMetaData().getColumnTypeName(i);
+			String columnName = result.getMetaData().getColumnName(i);
+			if(isString(columnType)) {
+				sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, result.getString(columnName)));
+			} else if(isInt(columnType)) {
+				sb.append(String.format("\"%1$s\":%2$s", columnName, result.getInt(columnName)));
+			} else if(isBoolean(columnType)) {
+				sb.append(String.format("\"%1$s\":%2$s", columnName, result.getBoolean(columnName)));
+			}
+			if(i < resultCount) {
+				sb.append(",");
+			}
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Returns string representation of the information in a result set in json format
+	 * @param result;
+	 * @return string
+	 * @throws SQLException;
+	 */
+	private static String resultSetToJson(ResultSet result) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		int resultCount = result.getMetaData().getColumnCount();
+//				System.out.println(resultCount);
+		for (int i = 1; i <= resultCount; i++) {
+			String columnType = result.getMetaData().getColumnTypeName(i);
+			String columnName = result.getMetaData().getColumnName(i);
+//					System.out.println(String.format("i: %1$s, \ttype: %2$s",
+//							results.getMetaData().getColumnName(i), columnType));
+			if(isString(columnType)) {
+				sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, result.getString(columnName)));
+			} else if(isInt(columnType)) {
+				sb.append(String.format("\"%1$s\":%2$s", columnName, result.getInt(columnName)));
+			} else if(isBoolean(columnType)) {
+				sb.append(String.format("\"%1$s\":%2$s", columnName, result.getBoolean(columnName)));
+			}
+			if(i < resultCount) {
+				sb.append(",");
+			}
+		}
+		if(!result.isLast()) {
+			sb.append("},");
+		} else {
+			sb.append("}");
 		}
 		return sb.toString();
 	}

@@ -136,7 +136,7 @@ public class BasicMessageBot {
 							break;
 						}
 						JsonObject obj = GSON.fromJson(ResultSetHandler
-								.getResultSet(pghandler, EXGFX, FILENAME, messageArgs[1], STRING), JsonObject.class);
+								.resultSetToString(pghandler, "*", EXGFX, FILENAME, messageArgs[1], STRING), JsonObject.class);
 						String botOutput = getExGFXInfo(obj);
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;
@@ -173,7 +173,11 @@ public class BasicMessageBot {
 	 * @return bot message
 	 */
 	private static String getExGFXInfo(JsonObject obj) {
-		return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
-				obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
+		if(obj == null || obj.isJsonNull()) {
+			return "File does not exist";
+		} else {
+			return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+					obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
+		}
 	}
 }
