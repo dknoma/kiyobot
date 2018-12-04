@@ -1,16 +1,11 @@
 package sql.jdbc;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import sql.model.SQLModel;
+
+import java.sql.*;
+import java.util.Map;
 
 public class MySQLHandler implements JDBCHandler {
 
@@ -25,8 +20,12 @@ public class MySQLHandler implements JDBCHandler {
 	public MySQLHandler(Map<String, SQLModel> models) {
 		this.models = models;
 		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
+			Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
 			LOGGER.debug("Got driver.");
+		} catch (IllegalAccessException iae) {
+			LOGGER.error("Illegal access error has occurred: {},\n {}", iae.getMessage(), iae.getStackTrace());
+		} catch (InstantiationException ie) {
+			LOGGER.error("Instantiation error has occurred: {},\n {}", ie.getMessage(), ie.getStackTrace());
 		} catch (ClassNotFoundException e) {
 			LOGGER.error("Class error has occurred: {},\n {}", e.getMessage(), e.getStackTrace());
 		}
@@ -43,13 +42,13 @@ public class MySQLHandler implements JDBCHandler {
 	@Override
 	public void setConnection(String db, String host, String port, String username, String password) {
 		try {
-			// format: jdbc:postgresql://host:port/pathOrDatabaseName
+			// format: jdbc:mysql://host:port/pathOrDatabaseName
 			String dbURL = String.format("jdbc:mysql://%1$s:%2$s/%3$s", host, port, db);
 			String timeZoneSettings = "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
 			this.dbConn = DriverManager.getConnection(dbURL + timeZoneSettings, username, password);
 			LOGGER.info("Connected to sql successfully!");
 		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			LOGGER.error("Connection error. If you're using an SSH tunnel, please make sure it's setup correctly: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 	}
 
@@ -66,7 +65,7 @@ public class MySQLHandler implements JDBCHandler {
 				stmt = dbConn.prepareStatement(model.getQuery());
 				stmt.executeUpdate();
 			} catch (SQLException e) {
-				LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+				LOGGER.error("A SQL error has occurred when creating tables: {},\n{}", e.getMessage(), e.getStackTrace());
 			} finally {
 				if (stmt != null) {
 					stmt.close();
@@ -115,7 +114,7 @@ public class MySQLHandler implements JDBCHandler {
 	@Override
 	public <T> String where(String key, T value, String query) {
 		if (value.getClass().equals(STRING) && !value.toString().endsWith("id")) {
-			return String.format(" WHERE %1$s='%2$s'%3$s", key, value, query);
+			return String.format(" WHERE %1$s=\"%2$s\"%3$s", key, value, query);
 		} else {
 			return String.format(" WHERE %1$s=%2$s%3$s", key, value, query);
 		}
@@ -130,7 +129,7 @@ public class MySQLHandler implements JDBCHandler {
 	@Override
 	public <T> String and(String key, T value, String query) {
 		if (value.getClass().equals(STRING) && !value.toString().endsWith("id")) {
-			return String.format(" AND %1$s='%2$s'%3$s", key, value, query);
+			return String.format(" AND %1$s=\"%2$s\"%3$s", key, value, query);
 		} else {
 			return String.format(" AND %1$s=%2$s%3$s", key, value, query);
 		}
@@ -153,50 +152,40 @@ public class MySQLHandler implements JDBCHandler {
 	 */
 	@Override
 	public String closeParentheses(String query) {
-		return String.format("(%s", query);
+		return String.format(")%s", query);
 	}
 
 	/**
-	 * Insert values into the table
+	 * Insert values into the table. Allows the insert of multiple items at a time.
 	 * @param tableName;
 	 * @return this
 	 */
 	@Override
 	public String insert(String tableName, ColumnObject... columns) {
-		try {
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("INSERT INTO %1$s (",
-					this.models.get(tableName).getModelName()));
-			for (int i = 0; i < columns.length; i++) {
-				sb.append(columns[i].getKey());
-				if (i < columns.length - 1) {
-					sb.append(", ");
-				}
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("INSERT INTO %1$s (",
+				this.models.get(tableName).getModelName()));
+		for (int i = 0; i < columns.length; i++) {
+			sb.append(columns[i].getKey());
+			if (i < columns.length - 1) {
+				sb.append(", ");
 			}
-			sb.append(") VALUES (");
-			for (int i = 0; i < columns.length; i++) {
-				sb.append("?");
-				if (i < columns.length - 1) {
-					sb.append(", ");
-				}
-			}
-			sb.append(")");
-			PreparedStatement stmt = this.dbConn.prepareStatement(sb.toString());
-			for(int i = 0; i < columns.length; i++) {
-				if (columns[i].getClassOfT().equals(STRING)) {
-					stmt.setString(i+1, (String) columns[i].getValue());
-				} else if (columns[i].getClassOfT().equals(INTEGER)) {
-					stmt.setInt(i+1, (int) columns[i].getValue());
-				} else if (columns[i].getClassOfT().equals(BOOLEAN)) {
-					stmt.setBoolean(i+1, (boolean) columns[i].getValue());
-				}
-			}
-			LOGGER.debug(stmt.toString());
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
-		return null;
+		sb.append(") VALUES (");
+		for(int i = 0; i < columns.length; i++) {
+			if (columns[i].getClassOfT().equals(STRING)) {
+				sb.append(String.format("\"%s\"",columns[i].getValue().toString()));
+			} else if (columns[i].getClassOfT().equals(INTEGER)) {
+				sb.append((int) columns[i].getValue());
+			} else if (columns[i].getClassOfT().equals(BOOLEAN)) {
+				sb.append((boolean)columns[i].getValue());
+			}
+			if (i < columns.length - 1) {
+				sb.append(", ");
+			}
+		}
+		sb.append(")");
+		return sb.toString();
 	}
 
 	/**
@@ -219,10 +208,47 @@ public class MySQLHandler implements JDBCHandler {
 	@Override
 	public <T> String on(String key, T value, String query) {
 		if (value.getClass().equals(STRING) && !value.toString().endsWith("id")) {
-			return String.format(" ON %1$s='%2$s'%3$s", key, value, query);
+			return String.format(" ON %1$s=\"%2$s\"%3$s", key, value, query);
 		} else {
 			return String.format(" ON %1$s=%2$s%3$s", key, value, query);
 		}
+	}
+
+	/**
+	 * Adds UPDATE query
+	 * @param location target location of query
+	 * @param query;
+	 * @return query string
+	 */
+	@Override
+	public String update(String location, String query) {
+		return String.format("UPDATE %1$s%2$s", location, query);
+	}
+
+	/**
+	 * Adds SET query
+	 * @param query rest of query
+	 * @param columns variable number of columns
+	 * @return query string
+	 */
+	@Override
+	public String set(String query, ColumnObject... columns) {
+		int lastColumnIndex = columns.length - 1;
+		StringBuilder sb = new StringBuilder();
+		sb.append(" SET ");
+		int i = 0;
+		for(ColumnObject column : columns) {
+			if (column.getClassOfT().equals(STRING) && !column.getValue().toString().endsWith("id")) {
+				sb.append(String.format("%1$s=\"%2$s\"%3$s", column.getKey(), column.getValue(), query));
+			} else {
+				sb.append(String.format("%1$s=%2$s%3$s", column.getKey(), column.getValue(), query));
+			}
+			if(i < lastColumnIndex) {
+				sb.append(", ");
+			}
+			i++;
+		}
+		return sb.toString();
 	}
 
 	/**
@@ -231,14 +257,14 @@ public class MySQLHandler implements JDBCHandler {
 	 * @return result set
 	 */
 	@Override
-	public ResultSet executeQuery(String query) {
+	public ResultSet executeQuery(String query) throws SQLException {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
 			//execute a query, which returns a ResultSet object
 			return stmt.executeQuery();
 		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			LOGGER.error("A SQL error has occurred when executing query: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return null;
 	}
@@ -249,16 +275,11 @@ public class MySQLHandler implements JDBCHandler {
 	 * @return result set
 	 */
 	@Override
-	public int executeUpdate(String query) {
-		try {
-			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(query);
-			//execute a query, which returns a ResultSet object
-			return stmt.executeUpdate();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return Integer.MIN_VALUE;
+	public int executeUpdate(String query) throws SQLException {
+		PreparedStatement stmt = this.dbConn.prepareStatement(query);
+		LOGGER.debug("OUT: {}", stmt.toString());
+		//execute a query, which returns a ResultSet object
+		return stmt.executeUpdate();
 	}
 
 	/**
@@ -282,14 +303,14 @@ public class MySQLHandler implements JDBCHandler {
 	private <T> void setStatementValue(PreparedStatement statement, int index, Object value, Class<T> classOfT) {
 		try {
 			if(classOfT.equals(STRING)) {
-				statement.setString(index, (String) value);
+				statement.setString(index, value.toString());
 			} else if(classOfT.equals(INTEGER)) {
 				statement.setInt(index, (int) value);
 			} else if(classOfT.equals(BOOLEAN)) {
 				statement.setBoolean(index, (boolean) value);
 			}
 		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			LOGGER.error("A SQL error has occurred when setting statement value: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 	}
 }

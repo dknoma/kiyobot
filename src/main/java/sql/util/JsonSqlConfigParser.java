@@ -19,6 +19,7 @@ public class JsonSqlConfigParser {
 	private String port;
 	private String username;
 	private String password;
+	private boolean isPostgres;
 	private Gson gson;
 	private static final Logger LOGGER = LogManager.getLogger();
 
@@ -65,6 +66,7 @@ public class JsonSqlConfigParser {
 			this.password = obj.get("password").getAsString();
 		}
 		this.modelDirectory = obj.has("modelDirectory") ? obj.get("modelDirectory").getAsString() : "./models";
+		this.isPostgres = obj.has("isPostgres") && obj.get("isPostgres").getAsBoolean();
 	}
 
 	/**
@@ -121,5 +123,13 @@ public class JsonSqlConfigParser {
 	 */
 	public String getPassword() {
 		return password;
+	}
+
+	/**
+	 * Returns if the db is postgres or not
+	 * @return ;
+	 */
+	public boolean isPostgres() {
+		return isPostgres;
 	}
 }

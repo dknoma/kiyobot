@@ -8,7 +8,6 @@ import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
@@ -42,9 +41,9 @@ public class Tester {
 
 		String dbName = sqlparser.getDbName();
 		JDBCHandler pghandler = new PostgresHandler(models);
-		JDBCEnum.addJDBCHandler(dbName, pghandler);
+		JDBCEnum.addJDBCHandler(dbName, pghandler, models);
 
-		JDBCHandler handler = JDBCEnum.getJDBCHandler(dbName);
+		JDBCHandler handler = JDBCEnum.getJDBCHandler();
 		try {
 			handler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
 					sqlparser.getUsername(), sqlparser.getPassword());
@@ -150,8 +149,14 @@ public class Tester {
 		ColumnObject[] ands = new ColumnObject[2];
 		ands[0] = new ColumnObject<>("todo.todoid", "todoitem.todoid");
 		ands[1] = new ColumnObject<>("todo.todoid", 1);
-		ResultSet outerResults = ResultSetHandler.getResultSet(handler, "*", TODO, "todo.todoid", 1);
-		ResultSet innerResults = selectItemFromInnerJoinOn(handler, "todoitem.*", TODO, TODO_ITEM, ands);
+		ResultSet outerResults = null;
+		ResultSet innerResults = null;
+		try {
+			outerResults = ResultSetHandler.getResultSet(handler, "*", TODO, "todo.todoid", 1);
+			innerResults = selectItemFromInnerJoinOn(handler, "todoitem.*", TODO, TODO_ITEM, ands);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
 		// Does a comination of queries to find a specific item meeting the requirements of the and comparison queries
 		// Then takes the result set and outputs json representing all the results and the table they are from
@@ -159,15 +164,15 @@ public class Tester {
 //		System.out.println("asfasf: " + outs);
 
 		System.out.println(String.format("Includes: %s", ResultSetHandler.getResultsIncluding(outerResults, innerResults)));
-
-		ColumnObject[] titleFirst = new ColumnObject[2];
-//		titleFirst[0] = new ColumnObject<>("title", "First");
-		titleFirst[0] = new ColumnObject<>("todoer", "Drew");
-
-//		ResultSet res = handler.executeQuery();
-//		String s = ResultSetHandler.ge
-		System.out.println(ResultSetHandler.findAll(handler, TODO, titleFirst));
-		System.out.println(ResultSetHandler.findAll(handler, TODO));
+//
+//		ColumnObject[] titleFirst = new ColumnObject[2];
+////		titleFirst[0] = new ColumnObject<>("title", "First");
+//		titleFirst[0] = new ColumnObject<>("todoer", "Drew");
+//
+////		ResultSet res = handler.executeQuery();
+////		String s = ResultSetHandler.ge
+//		System.out.println(ResultSetHandler.findAll(handler, TODO, titleFirst));
+//		System.out.println(ResultSetHandler.findAll(handler, TODO));
 
 		// Called in one service; when user POSTs, service will send GET to other service to receive json results
 //		String referenceKey = "todoid";
@@ -187,7 +192,7 @@ public class Tester {
 	}
 
 	public static ResultSet selectItemFromInnerJoinOn(JDBCHandler handler, String select, String leftJoin, String rightJoin,
-													  ColumnObject... comparisons) {
+													  ColumnObject... comparisons) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 1; i < comparisons.length; i++) {
 			sb.append(handler.and(comparisons[i].getKey(), comparisons[i].getValue(), ""));

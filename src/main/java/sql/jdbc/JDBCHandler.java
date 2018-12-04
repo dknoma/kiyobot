@@ -77,9 +77,10 @@ public interface JDBCHandler {
 	/**
 	 * Insert values into the table
 	 * @param tableName;
+	 * @param columns variable number of ColumnObjects
 	 * @return this
 	 */
-	public <T> String insert(String tableName, ColumnObject<?>... columns);
+	public String insert(String tableName, ColumnObject... columns);
 
 	/**
 	 * Adds ) query to a string
@@ -91,25 +92,42 @@ public interface JDBCHandler {
 
 	/**
 	 * Adds an AND query to a string
-	 * @param value value
+	 * @param key;
+	 * @param value;
 	 * @param query rest of query
 	 * @return query
 	 */
 	public <T> String on(String key, T value, String query);
 
 	/**
+	 * Adds an AND query to a string
+	 * @param location;
+	 * @param query rest of query
+	 * @return query
+	 */
+	public <T> String update(String location, String query);
+
+	/**
+	 * Adds an AND query to a string
+	 * @param query rest of query
+	 * @param columns variable number of columns
+	 * @return query
+	 */
+	public String set(String query, ColumnObject... columns);
+
+	/**
 	 * Executes a query on the db
 	 * @param query;
 	 * @return result set
 	 */
-	public ResultSet executeQuery(String query);
+	public ResultSet executeQuery(String query) throws SQLException;
 
 	/**
 	 * Executes an update on the db
 	 * @param query;
 	 * @return result set
 	 */
-	public int executeUpdate(String query);
+	public int executeUpdate(String query) throws SQLException;
 
 	/**
 	 * Gets the table from the table name

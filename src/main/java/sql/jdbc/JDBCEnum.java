@@ -1,32 +1,52 @@
 package sql.jdbc;
 
-import java.util.HashMap;
+import sql.model.SQLModel;
+
 import java.util.Map;
 
 public enum JDBCEnum {
 
 	INSTANCE();
 
-	private static final Map<String, JDBCHandler> HANDLER_MAP = new HashMap<>();
+	private static String DB_NAME;
+	private static JDBCHandler HANDLER;
+	private static Map<String, SQLModel> MODELS;
 
 	JDBCEnum() {
 	}
 
 	/**
 	 * Adds a JDBC handler to the map
-	 * @param dbName
-	 * @param handler
+	 * @param dbName;
+	 * @param handler;
 	 */
-	public static void addJDBCHandler(String dbName, JDBCHandler handler) {
-		HANDLER_MAP.put(dbName, handler);
+	public static void addJDBCHandler(String dbName, JDBCHandler handler, Map<String, SQLModel> models) {
+		DB_NAME = dbName;
+		HANDLER = handler;
+		MODELS = models;
 	}
 
 	/**
 	 * Gets the JDBC handler from the map
-	 * @param dbName
-	 * @return
+	 * @return handler
 	 */
-	public static JDBCHandler getJDBCHandler(String dbName) {
-		return HANDLER_MAP.get(dbName);
+	public static String getDbName() {
+		return DB_NAME;
+	}
+
+	/**
+	 * Gets the JDBC handler from the map
+	 * @return handler
+	 */
+	public static JDBCHandler getJDBCHandler() {
+		return HANDLER;
+	}
+
+	/**
+	 * Gets the SQL models of this database
+	 * @return models
+	 */
+	public static Map<String, SQLModel> getModels() {
+		return MODELS;
 	}
 }

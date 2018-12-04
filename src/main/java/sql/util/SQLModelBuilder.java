@@ -3,7 +3,8 @@ package sql.util;
 import com.google.gson.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sql.jdbc.JDBCEnum;
+import sql.jdbc.JDBCHandler;
+import sql.jdbc.MySQLHandler;
 import sql.jdbc.PostgresHandler;
 import sql.model.PostgreSQLModel;
 import sql.model.SQLModel;
@@ -21,7 +22,7 @@ public class SQLModelBuilder {
 
 	private String[] modelFiles;
 	private Gson gson;
-	private Map<String, SQLModel> models;
+	private Map<String, SQLModel> copyOfModels;
 	private boolean modelsCorrectlyFormatted;
 
 	private static final String STRING = "STRING";
@@ -31,7 +32,7 @@ public class SQLModelBuilder {
 
 	public SQLModelBuilder() {
 		this.gson = new Gson();
-		this.models = new HashMap<>();
+		this.copyOfModels = new HashMap<>();
 		this.modelsCorrectlyFormatted = false;
 	}
 
@@ -72,7 +73,7 @@ public class SQLModelBuilder {
 					this.modelsCorrectlyFormatted = false;
 					return;
 				} catch (JsonSyntaxException jse) {
-					LOGGER.error("MalformedJsonException; Make sure the models are formatted correctly: {},\n{}",
+					LOGGER.error("MalformedJsonException; Make sure the copyOfModels are formatted correctly: {},\n{}",
 							jse.getMessage(), jse.getStackTrace());
 					this.modelsCorrectlyFormatted = false;
 					return;
@@ -99,7 +100,7 @@ public class SQLModelBuilder {
 		addColumns(obj, model);
 		model.createTableQuery();
 		SQLModel copy = model.deepCopy();
-		this.models.put(name, copy);
+		this.copyOfModels.put(name, copy);
 	}
 
 	/**
@@ -173,59 +174,39 @@ public class SQLModelBuilder {
 					LOGGER.error("There was an error in the format of the json file. Please try again.");
 					return;
 			}
-//			if(attributes.get("type").getAsString().equals(STRING)) {
-////				boolean keyLengthIsVar = attributes.has("lengthIsVar")
-////						&& attributes.get("lengthIsVar").getAsBoolean();
-////				int length = attributes.get("length").getAsInt();
-////				if(attributes.has("defaultValue")) {
-////					model.addColumn(keyName,
-////							attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
-////							allowNull, keyLengthIsVar, length, true, attributes.get("defaultValue"));
-////				} else {
-////					model.addColumn(keyName,
-////							attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
-////							allowNull, keyLengthIsVar, length, false, "");
-////				}
-//			} else {
-//				if(attributes.get("type").getAsString().equals(INTEGER)) {
-//					// attributes.has("isUnique") ? attributes.get("isUnique") : false
-//					if(attributes.has("defaultValue")) {
-//						model.addColumn(keyName,
-//							attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
-//							allowNull, Integer.class, true, attributes.get("defaultValue"));
-//					} else {
-//						model.addColumn(keyName,
-//								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
-//								allowNull, Integer.class, false, "");
-//					}
-//				} else if(attributes.get("type").getAsString().equals(BOOLEAN)){
-//					if(attributes.has("defaultValue")) {
-//						model.addColumn(keyName,
-//								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
-//								allowNull, Boolean.class,
-//								true, attributes.get("defaultValue"));
-//					} else {
-//						model.addColumn(keyName,
-//								attributes.has("isUnique") && attributes.get("isUnique").getAsBoolean(),
-//								allowNull, Boolean.class, false, "");
-//					}
-//				} else {
-//					LOGGER.error("There was an error in the format of the json file. Please try again.");
-//					return;
-//				}
-//			}
 		}
 	}
 
+	/**
+	 * Gets the names of the mode files.
+	 * @return names
+	 */
 	public String[] getModelFiles() {
 		return this.modelFiles;
 	}
 
+	/**
+	 * Gets the deep copy of the copyOfModels
+	 * @return copies
+	 */
 	public Map<String, SQLModel> getCopyOfModels() {
-		return this.models;
+		return this.copyOfModels;
 	}
 
+	/**
+	 * Returns if the copyOfModels are formatted correctly or not
+	 * @return ?
+	 */
 	public boolean areModelsFormattedCorrectly() {
 		return this.modelsCorrectlyFormatted;
+	}
+
+	/**
+	 * Returns the correct type of JDBCHandler
+	 * @param isPostgres;
+	 * @return handler
+	 */
+	public JDBCHandler getHandler(boolean isPostgres) {
+		return isPostgres ? new PostgresHandler(this.copyOfModels) : new MySQLHandler(this.copyOfModels);
 	}
 }

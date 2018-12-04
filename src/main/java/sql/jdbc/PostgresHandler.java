@@ -191,40 +191,64 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	@Override
 	public String insert(String tableName, ColumnObject... columns) {
-		try {
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("INSERT INTO %1$s (",
-					this.models.get(tableName).getModelName()));
-			for (int i = 0; i < columns.length; i++) {
-				sb.append(columns[i].getKey());
-				if (i < columns.length - 1) {
-					sb.append(", ");
-				}
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("INSERT INTO %1$s (",
+				this.models.get(tableName).getModelName()));
+		for (int i = 0; i < columns.length; i++) {
+			sb.append(columns[i].getKey());
+			if (i < columns.length - 1) {
+				sb.append(", ");
 			}
-			sb.append(") VALUES (");
-			for (int i = 0; i < columns.length; i++) {
-				sb.append("?");
-				if (i < columns.length - 1) {
-					sb.append(", ");
-				}
-			}
-			sb.append(")");
-			PreparedStatement stmt = this.dbConn.prepareStatement(sb.toString());
-			for(int i = 0; i < columns.length; i++) {
-				if (columns[i].getClassOfT().equals(STRING)) {
-					stmt.setString(i+1, (String) columns[i].getValue());
-				} else if (columns[i].getClassOfT().equals(INTEGER)) {
-					stmt.setInt(i+1, (int) columns[i].getValue());
-				} else if (columns[i].getClassOfT().equals(BOOLEAN)) {
-					stmt.setBoolean(i+1, (boolean) columns[i].getValue());
-				}
-			}
-			LOGGER.debug(stmt.toString());
-			return stmt.toString();
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
-		return null;
+		sb.append(") VALUES (");
+		for(int i = 0; i < columns.length; i++) {
+			if (columns[i].getClassOfT().equals(STRING)) {
+				sb.append(String.format("'%s'",columns[i].getValue().toString()));
+			} else if (columns[i].getClassOfT().equals(INTEGER)) {
+				sb.append((int) columns[i].getValue());
+			} else if (columns[i].getClassOfT().equals(BOOLEAN)) {
+				sb.append((boolean)columns[i].getValue());
+			}
+			if (i < columns.length - 1) {
+				sb.append(", ");
+			}
+		}
+		sb.append(")");
+		return sb.toString();
+	}
+
+	/**
+	 * Adds UPDATE query
+	 * @param location target location of query
+	 * @param query;
+	 * @return query string
+	 */
+	@Override
+	public String update(String location, String query) {
+		return String.format("UPDATE %1$s%2$s", location, query);
+	}
+
+	/**
+	 * Adds SET query
+	 * @param query rest of query
+	 * @param columns variable number of columns
+	 * @return query string
+	 */
+	@Override
+	public String set(String query, ColumnObject... columns) {
+		int lastColumnIndex = columns.length - 1;
+		StringBuilder sb = new StringBuilder();
+		sb.append(" SET ");
+		for(ColumnObject column : columns) {
+			if (column.getClassOfT().equals(STRING) && !column.getValue().toString().endsWith("id")) {
+				sb.append(String.format("%1$s='%2$s'%3$s", column.getKey(), column.getValue(), query));
+			} else {
+				sb.append(String.format("%1$s=%2$s%3$s", column.getKey(), column.getValue(), query));
+			}
+			sb.append(", ");
+		}
+		sb.delete(lastColumnIndex-1, lastColumnIndex+1);
+		return sb.toString();
 	}
 
 	/**
@@ -233,7 +257,7 @@ public class PostgresHandler implements JDBCHandler {
 	 * @return result set
 	 */
 	@Override
-	public ResultSet executeQuery(String query) {
+	public ResultSet executeQuery(String query) throws SQLException {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
@@ -254,7 +278,7 @@ public class PostgresHandler implements JDBCHandler {
 	 * @return result set
 	 */
 	@Override
-	public int executeUpdate(String query) {
+	public int executeUpdate(String query) throws SQLException {
 		try {
 			//create a statement object
 			PreparedStatement stmt = this.dbConn.prepareStatement(query);
