@@ -17,9 +17,7 @@ import sql.util.SQLModelBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.Map;
@@ -54,6 +52,8 @@ public class BasicMessageBot {
 	private static final Class<String> STRING = String.class;
 	private static final Class<Integer> INTEGER = Integer.class;
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
+	private static final int SC_OK = 200;
+	private static final int SC_BAD_REQUEST = 400;
 	private static final String EXGFX = "exgfx";
 	private static final String FILENAME = "filename";
 	private static final String DESCRIPTION = "description";
@@ -79,14 +79,7 @@ public class BasicMessageBot {
 		}
 
 		Map<String, SQLModel> models = builder.getCopyOfModels();
-
-		PostgresHandler pghandler = new PostgresHandler(models);
-
-		// Used if need multiple handlers for different database connections
-//		String dbName = sqlparser.getDbName();
-//		JDBCEnum.addJDBCHandler(dbName, pghandler);
-//		JDBCHandler dbhandler = JDBCEnum.getJDBCHandler(dbName);
-
+		JDBCHandler pghandler = new PostgresHandler(models);
 		// Connects the PostgreSQLhandler to the Postgres database
 		pghandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
 				sqlparser.getUsername(), sqlparser.getPassword());
@@ -97,6 +90,7 @@ public class BasicMessageBot {
 		String botStuffId = parser.getBotStuff();
 		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
 
+		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
 			String message = messageEvent.getMessageContent();
 			String[] messageArgs = message.split(" {2}");
@@ -124,20 +118,7 @@ public class BasicMessageBot {
 						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
 						//!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>
 						//!addexgfx  ExGFX100  Test  test  false  img.link
-						if(messageArgs.length != 6) {
-							messageEvent.getChannel().sendTextMessage(errorMessage);
-							break;
-						}
-						// Can make Class to handle all exgfx related methods
-						ColumnObject[] columns = new ColumnObject[5];
-						columns[0] = new ColumnObject<>(FILENAME, messageArgs[1]);
-						columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
-						columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
-						columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
-						columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
-						pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
-
-						messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+						addExgfx(messageEvent, pghandler, messageArgs, errorMessage);
 						break;
 					case "!getexgfx":
 						PINGS = 0;
@@ -187,6 +168,30 @@ public class BasicMessageBot {
 	}
 
 	/**
+	 * Performs insert of exgfx to database
+	 * @param messageEvent;
+	 * @param pghandler;
+	 * @param messageArgs;
+	 * @param errorMessage;
+	 * @throws SQLException;
+	 */
+	private static void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String[] messageArgs, String errorMessage) throws SQLException{
+		if(messageArgs.length != 6) {
+			messageEvent.getChannel().sendTextMessage(errorMessage);
+			return;
+		}
+		// Can make Class to handle all exgfx related methods
+		ColumnObject[] columns = new ColumnObject[5];
+		columns[0] = new ColumnObject<>(FILENAME, messageArgs[1]);
+		columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
+		columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
+		columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
+		columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
+		pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
+		messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+	}
+
+	/**
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
@@ -197,24 +202,24 @@ public class BasicMessageBot {
 			connection.setRequestMethod("GET");
 			connection.setDoInput(true);
 			connection.connect();
-			try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-				// Read the json line from the service.
-				String line = reader.readLine();
-				// Checks the response code from the events service
-				switch(connection.getResponseCode()) {
-					case 200:
+			switch(connection.getResponseCode()) {
+				case 200:
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
 						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-						break;
-					case 400:
-						messageEvent.getChannel().sendTextMessage("Event not found.");
-						break;
-					default:
-						int responseCode = connection.getResponseCode();
-						messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-						break;
-				}
-			} catch(IOException ioe) {
-				LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+					} catch (IOException ioe) {
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+					}
+					break;
+				case 400:
+					messageEvent.getChannel().sendTextMessage("Event not found :(");
+					break;
+				default:
+					int responseCode = connection.getResponseCode();
+					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
+					break;
 			}
 		} catch (IOException ioe) {
 			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
@@ -232,24 +237,25 @@ public class BasicMessageBot {
 			connection.setRequestMethod("GET");
 			connection.setDoInput(true);
 			connection.connect();
-			try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-				// Read the json line from the service.
-				String line = reader.readLine();
-				// Checks the response code from the events service
-				switch(connection.getResponseCode()) {
-					case 200:
-						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-						break;
-					case 400:
-						messageEvent.getChannel().sendTextMessage("Events not found.");
-						break;
-					default:
-						int responseCode = connection.getResponseCode();
-						messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-						break;
-				}
-			} catch(IOException ioe) {
-				LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+			switch(connection.getResponseCode()) {
+				case SC_OK:
+					try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
+								messageEvent.getChannel().sendTextMessage(prettyJson(line));
+						} catch(IOException ioe) {
+							LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+							messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+						}
+					break;
+				case SC_BAD_REQUEST:
+					messageEvent.getChannel().sendTextMessage("Events not found :(");
+					break;
+				default:
+					int responseCode = connection.getResponseCode();
+					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
+					break;
 			}
 		} catch (IOException ioe) {
 			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
@@ -268,24 +274,26 @@ public class BasicMessageBot {
 			connection.setRequestMethod("GET");
 			connection.setDoInput(true);
 			connection.connect();
-			try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-				// Read the json line from the service.
-				String line = reader.readLine();
-				// Checks the response code from the events service
-				switch(connection.getResponseCode()) {
-					case 200:
+
+			switch (connection.getResponseCode()) {
+				case SC_OK:
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
 						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-						break;
-					case 400:
-						messageEvent.getChannel().sendTextMessage("Event not found.");
-						break;
-					default:
-						int responseCode = connection.getResponseCode();
-						messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-						break;
-				}
-			} catch(IOException ioe) {
-				LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+					} catch(IOException ioe){
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
+					break;
+				case SC_BAD_REQUEST:
+					messageEvent.getChannel().sendTextMessage("User not found :(");
+					break;
+				default:
+					int responseCode = connection.getResponseCode();
+					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
+					break;
 			}
 		} catch (IOException ioe) {
 			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
