@@ -14,9 +14,7 @@ import sql.model.SQLModel;
 import sql.util.JsonSqlConfigParser;
 import sql.util.SQLModelBuilder;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.SQLException;
@@ -134,6 +132,19 @@ public class BasicMessageBot {
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;
 					// Project4 comands
+					case "!createevent":
+						// Gets user info, including the info of all the events the user has tickets to
+						String userid = messageArgs[1];
+						String eventname = messageArgs[2];
+						String maxTickets = messageArgs[3];
+						try {
+							int userId = Integer.parseInt(userid);
+							int numTickets = Integer.parseInt(maxTickets);
+							createEvent(messageEvent, userId, eventname, numTickets);
+						} catch(NumberFormatException nfe) {
+							messageEvent.getChannel().sendTextMessage("User id and numtickets args must be integers.");
+						}
+						break;
 					case "!getevent":
 						// get info on a specific event
 						String eventId = messageArgs[1];
@@ -142,6 +153,11 @@ public class BasicMessageBot {
 					case "!getevents":
 						// list of all events
 						getEvents(messageEvent);
+						break;
+					case "!createuser":
+						// Gets user info, including the info of all the events the user has tickets to
+						String username = messageArgs[1];
+						createUser(messageEvent, username);
 						break;
 					case "!getuser":
 						// Gets user info, including the info of all the events the user has tickets to
@@ -189,6 +205,49 @@ public class BasicMessageBot {
 		columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
 		pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
 		messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+	}
+
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void createEvent(MessageCreateListener messageEvent, int userId, String eventname, int numTickets) {
+		try {
+			URL userService = new URL(PROJECT4_PATH + "/events/create");
+			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setDoOutput(true);
+			connection.setDoInput(true);
+			connection.setRequestProperty("Content-Type", "application/json");
+			OutputStream outstream = connection.getOutputStream();
+			outstream.write(String.format("{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}",
+					userId, eventname, numTickets).getBytes());
+
+			switch (connection.getResponseCode()) {
+				case SC_OK:
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
+						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+					} catch(IOException ioe){
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
+					break;
+				case SC_BAD_REQUEST:
+					messageEvent.getChannel().sendTextMessage("Event could not be created :(");
+					break;
+				default:
+					int responseCode = connection.getResponseCode();
+					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
+					break;
+			}
+			outstream.flush();
+			outstream.close();
+		} catch (IOException ioe) {
+			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+		}
 	}
 
 	/**
@@ -262,6 +321,47 @@ public class BasicMessageBot {
 		}
 	}
 
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void createUser(MessageCreateListener messageEvent, String username) {
+		try {
+			URL userService = new URL(PROJECT4_PATH + "/users/create");
+			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setDoOutput(true);
+			connection.setDoInput(true);
+			connection.setRequestProperty("Content-Type", "application/json");
+			OutputStream outstream = connection.getOutputStream();
+			outstream.write(String.format("{\"username\":\"%s\"}", username).getBytes());
+
+			switch (connection.getResponseCode()) {
+				case SC_OK:
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
+						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+					} catch(IOException ioe){
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
+					break;
+				case SC_BAD_REQUEST:
+					messageEvent.getChannel().sendTextMessage("Username already exists or is invalid :(");
+					break;
+				default:
+					int responseCode = connection.getResponseCode();
+					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
+					break;
+			}
+			outstream.flush();
+			outstream.close();
+		} catch (IOException ioe) {
+			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+		}
+	}
 
 	/**
 	 * Connects to the website and performs the appropriate methods
