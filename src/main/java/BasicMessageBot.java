@@ -147,8 +147,8 @@ public class BasicMessageBot {
 						break;
 					case "!getevent":
 						// get info on a specific event
-						String eventId = messageArgs[1];
-						getEvent(messageEvent, eventId);
+						String eventid = messageArgs[1];
+						getEvent(messageEvent, eventid);
 						break;
 					case "!getevents":
 						// list of all events
@@ -161,8 +161,22 @@ public class BasicMessageBot {
 						break;
 					case "!getuser":
 						// Gets user info, including the info of all the events the user has tickets to
-						String userId = messageArgs[1];
-						getUser(messageEvent, userId);
+						userid = messageArgs[1];
+						getUser(messageEvent, userid);
+						break;
+					case "!purchasetickets":
+						// Gets user info, including the info of all the events the user has tickets to
+						eventid = messageArgs[1];
+						userid = messageArgs[2];
+						String numTickets = messageArgs[3];
+						try {
+							int eventId = Integer.parseInt(eventid);
+							int userId = Integer.parseInt(userid);
+							int tickets = Integer.parseInt(numTickets);
+							purchaseTickets(messageEvent, eventId, userId, tickets);
+						} catch(NumberFormatException nfe) {
+							messageEvent.getChannel().sendTextMessage("Event id, user id, and tickets args must be integers.");
+						}
 						break;
 					// Basic commads
 					case "!commands":
@@ -422,6 +436,48 @@ public class BasicMessageBot {
 		} else {
 			return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
 					obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
+		}
+	}
+
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void purchaseTickets(MessageCreateListener messageEvent, int eventId, int userId, int tickets) {
+		try {
+			URL userService = new URL(String.format("%1$s/events/%2$d/purchase/%3$d", PROJECT4_PATH, eventId, userId));
+			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setDoOutput(true);
+			connection.setDoInput(true);
+			connection.setRequestProperty("Content-Type", "application/json");
+			OutputStream outstream = connection.getOutputStream();
+			outstream.write(String.format("{\"tickets\":%1$d}", tickets).getBytes());
+
+			switch (connection.getResponseCode()) {
+				case SC_OK:
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
+						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+					} catch(IOException ioe){
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
+					break;
+				case SC_BAD_REQUEST:
+					messageEvent.getChannel().sendTextMessage("Tickets could not be purchased :(");
+					break;
+				default:
+					int responseCode = connection.getResponseCode();
+					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
+					break;
+			}
+			outstream.flush();
+			outstream.close();
+		} catch (IOException ioe) {
+			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
 		}
 	}
 
