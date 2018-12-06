@@ -226,42 +226,8 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void createEvent(MessageCreateListener messageEvent, int userId, String eventname, int numTickets) {
-		try {
-			URL userService = new URL(PROJECT4_PATH + "/events/create");
-			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
-			connection.setRequestMethod("POST");
-			connection.setDoOutput(true);
-			connection.setDoInput(true);
-			connection.setRequestProperty("Content-Type", "application/json");
-			OutputStream outstream = connection.getOutputStream();
-			outstream.write(String.format("{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}",
-					userId, eventname, numTickets).getBytes());
-
-			switch (connection.getResponseCode()) {
-				case SC_OK:
-					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-						// Read the json line from the service.
-						String line = reader.readLine();
-						// Checks the response code from the events service
-						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-					} catch(IOException ioe){
-						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-					}
-					break;
-				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage("Event could not be created :(");
-					break;
-				default:
-					int responseCode = connection.getResponseCode();
-					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-					break;
-			}
-			outstream.flush();
-			outstream.close();
-		} catch (IOException ioe) {
-			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-		}
+		postToService(messageEvent, PROJECT4_PATH + "/events/create",
+				"{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}", userId, eventname, numTickets);
 	}
 
 	/**
@@ -269,34 +235,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getEvent(MessageCreateListener messageEvent, String eventId) {
-		try {
-			URL userService = new URL(PROJECT4_PATH + "/events/" + eventId);
-			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
-			connection.setRequestMethod("GET");
-			connection.setDoInput(true);
-			connection.connect();
-			switch(connection.getResponseCode()) {
-				case 200:
-					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-						// Read the json line from the service.
-						String line = reader.readLine();
-						// Checks the response code from the events service
-						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-					} catch (IOException ioe) {
-						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-					}
-					break;
-				case 400:
-					messageEvent.getChannel().sendTextMessage("Event not found :(");
-					break;
-				default:
-					int responseCode = connection.getResponseCode();
-					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-					break;
-			}
-		} catch (IOException ioe) {
-			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-		}
+		getToService(messageEvent, PROJECT4_PATH + "/events/" + eventId);
 	}
 
 	/**
@@ -304,8 +243,42 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getEvents(MessageCreateListener messageEvent) {
+		getToService(messageEvent, PROJECT4_PATH + "/events");
+	}
+
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void createUser(MessageCreateListener messageEvent, String username) {
+		postToService(messageEvent, PROJECT4_PATH + "/users/create", "{\"username\":\"%s\"}", username);
+	}
+
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void getUser(MessageCreateListener messageEvent, String userId) {
+		getToService(messageEvent, PROJECT4_PATH + "/users/" + userId);
+	}
+
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void purchaseTickets(MessageCreateListener messageEvent, int eventId, int userId, int tickets) {
+		postToService(messageEvent, String.format("%1$s/events/%2$d/purchase/%3$d", PROJECT4_PATH, eventId, userId),
+				"{\"tickets\":%1$d}", tickets);
+	}
+
+	/**
+	 * Performs a GET to the service
+	 * @param messageEvent - bots listener
+	 * @param url - url of service
+	 */
+	private static void getToService(MessageCreateListener messageEvent, String url) {
 		try {
-			URL userService = new URL(PROJECT4_PATH + "/events");
+			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
 			connection.setRequestMethod("GET");
 			connection.setDoInput(true);
@@ -316,11 +289,11 @@ public class BasicMessageBot {
 						// Read the json line from the service.
 						String line = reader.readLine();
 						// Checks the response code from the events service
-								messageEvent.getChannel().sendTextMessage(prettyJson(line));
-						} catch(IOException ioe) {
-							LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-							messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-						}
+						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+					} catch(IOException ioe) {
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
 					break;
 				case SC_BAD_REQUEST:
 					messageEvent.getChannel().sendTextMessage("Events not found :(");
@@ -336,19 +309,22 @@ public class BasicMessageBot {
 	}
 
 	/**
-	 * Connects to the website and performs the appropriate methods
-	 * @param messageEvent;
+	 * Performs a POST to the service
+	 * @param messageEvent - bots listener
+	 * @param url - url of service
+	 * @param jsonBodyFormat - Format of the json body to be used in String.format(...)
+	 * @param params - varargs to insert into the json body
 	 */
-	private static void createUser(MessageCreateListener messageEvent, String username) {
+	private static <T> void postToService(MessageCreateListener messageEvent, String url, String jsonBodyFormat, T... params) {
 		try {
-			URL userService = new URL(PROJECT4_PATH + "/users/create");
+			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
 			connection.setRequestMethod("POST");
 			connection.setDoOutput(true);
 			connection.setDoInput(true);
 			connection.setRequestProperty("Content-Type", "application/json");
 			OutputStream outstream = connection.getOutputStream();
-			outstream.write(String.format("{\"username\":\"%s\"}", username).getBytes());
+			outstream.write(String.format(jsonBodyFormat, params).getBytes());
 
 			switch (connection.getResponseCode()) {
 				case SC_OK:
@@ -363,7 +339,7 @@ public class BasicMessageBot {
 					}
 					break;
 				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage("Username already exists or is invalid :(");
+					messageEvent.getChannel().sendTextMessage("Tickets could not be purchased :(");
 					break;
 				default:
 					int responseCode = connection.getResponseCode();
@@ -372,43 +348,6 @@ public class BasicMessageBot {
 			}
 			outstream.flush();
 			outstream.close();
-		} catch (IOException ioe) {
-			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-		}
-	}
-
-	/**
-	 * Connects to the website and performs the appropriate methods
-	 * @param messageEvent;
-	 */
-	private static void getUser(MessageCreateListener messageEvent, String userId) {
-		try {
-			URL userService = new URL(PROJECT4_PATH + "/users/" + userId);
-			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
-			connection.setRequestMethod("GET");
-			connection.setDoInput(true);
-			connection.connect();
-
-			switch (connection.getResponseCode()) {
-				case SC_OK:
-					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-						// Read the json line from the service.
-						String line = reader.readLine();
-						// Checks the response code from the events service
-						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-					} catch(IOException ioe){
-						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-					}
-					break;
-				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage("User not found :(");
-					break;
-				default:
-					int responseCode = connection.getResponseCode();
-					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-					break;
-			}
 		} catch (IOException ioe) {
 			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
 		}
@@ -436,48 +375,6 @@ public class BasicMessageBot {
 		} else {
 			return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
 					obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
-		}
-	}
-
-	/**
-	 * Connects to the website and performs the appropriate methods
-	 * @param messageEvent;
-	 */
-	private static void purchaseTickets(MessageCreateListener messageEvent, int eventId, int userId, int tickets) {
-		try {
-			URL userService = new URL(String.format("%1$s/events/%2$d/purchase/%3$d", PROJECT4_PATH, eventId, userId));
-			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
-			connection.setRequestMethod("POST");
-			connection.setDoOutput(true);
-			connection.setDoInput(true);
-			connection.setRequestProperty("Content-Type", "application/json");
-			OutputStream outstream = connection.getOutputStream();
-			outstream.write(String.format("{\"tickets\":%1$d}", tickets).getBytes());
-
-			switch (connection.getResponseCode()) {
-				case SC_OK:
-					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-						// Read the json line from the service.
-						String line = reader.readLine();
-						// Checks the response code from the events service
-						messageEvent.getChannel().sendTextMessage(prettyJson(line));
-					} catch(IOException ioe){
-						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
-						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
-					}
-					break;
-				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage("Tickets could not be purchased :(");
-					break;
-				default:
-					int responseCode = connection.getResponseCode();
-					messageEvent.getChannel().sendTextMessage("Error=" + responseCode);
-					break;
-			}
-			outstream.flush();
-			outstream.close();
-		} catch (IOException ioe) {
-			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
 		}
 	}
 
