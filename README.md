@@ -212,7 +212,10 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 }
 ```
 
-# Revision History
+# Kiyobot Revision History
+## Version 1.2.1
+    * Fixed error where error inputstream was not being read in by the bot. Will now display the correct error message output form the Eventer service.
+    * Fixed gson wrongly escaping characters with HTML encoding which is not needed for Discord display.
 ## Version 1.2.0
     * Added functionality that integrates Project 4 Eventer: An Event Ticket Service.
         * Eventer is a basic testing webservice that allows clients to create users, create events, purchase tickets, and transfer tickets between users.
@@ -220,36 +223,51 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 ## Version 1.1.0
     * Added ```exgfx``` commands: !addexgfx and !getexgfx that interact with a SQL database
 ## Version 1.0.0
-* __Kiyobot__:
-    * A basic messaging bot.
-    * It can read in commands from the channel, and output the corresponding message to that channel.
-    * It can also interact with a MySQL or PostgreSQL database.
-        * It uses the below SQLModeler API.
-    * The user will also need to specify their bot's authorization token in a config.json file.
-        * The user needs to create a Discord application before using this API or else the API does nothing.
-        * [Read this first.](https://discordapp.com/developers/docs/intro)
-        * [Link to making a Discord application.](https://discordapp.com/developers/applications)
-        * NOTE: Please DO NOT store your token in a public location as it is against Discords policy (and will allow unintended users to use your bot!).
-* __Diskiyord API__:
-    * A basic java API that allows users to create their own basic messaging bot for Discord.
-    * The user can make the bot respond to messages in the same channel, or make message output to a different channel if they need something like a debugging channel.
-    * Requires an authorization token from Discord to make a bot with this API.
-* __JQL API__:
-    * A basic java API that allows users to interact more easily with SQL databases rather than do raw SQL queries.
-    * Users will create .json files representing the the information of the table they would like to create, and these files will should be put into a models folder. This folder can be specified in the sqlconfig.json file or will default to `./models`.
-    * NOTE: This version only allows users to create INTEGER primary keys. STRING primary keys are not yet supported.
+    * __Kiyobot__:
+        * A basic messaging bot.
+        * It can read in commands from the channel, and output the corresponding message to that channel.
+        * It can also interact with a MySQL or PostgreSQL database.
+            * It uses the below SQLModeler API.
+        * The user will also need to specify their bot's authorization token in a config.json file.
+            * The user needs to create a Discord application before using this API or else the API does nothing.
+            * [Read this first.](https://discordapp.com/developers/docs/intro)
+            * [Link to making a Discord application.](https://discordapp.com/developers/applications)
+            * NOTE: Please DO NOT store your token in a public location as it is against Discords policy (and will allow unintended users to use your bot!).
 ## Version 0.1.0
-* Basic library set up, allows bot to view and send messages to a channel.
+    * Basic library testing for the bot.
 ## Version 0.0.0
-* Repository setup.
+    * Repository setup.
+
+# Diskiyord Revision History
+## Version 1.0.0
+    * __Diskiyord API__:
+        * A basic java API that allows users to create their own basic messaging bot for Discord.
+        * The user can make the bot respond to messages in the same channel, or make message output to a different channel if they need something like a debugging channel.
+        * Requires an authorization token from Discord to make a bot with this API.
+## Version 0.1.0
+    * Basic library set up, allows bot to view and send messages to a channel.
+
+# JQL Revision History
+## Version 1.2.0
+    * Renamed ResultSetHandler to SQLManager for better clarity: This class manages all SQL queries for the user.
+## Version 1.1.0
+    * Now has an ResultSetHandler which handles all ResultSet queries for the user, so as to not expose those ResultSets to the clients.
+## Version 1.0.0
+    * __JQL API__:
+        * A basic java API that allows users to interact more easily with SQL databases rather than do raw SQL queries.
+        * Users will create .json files representing the the information of the table they would like to create, and these files will should be put into a models folder. This folder can be specified in the sqlconfig.json file or will default to `./models`.
+        * NOTE: This version only allows users to create INTEGER primary keys. STRING primary keys are not yet supported.
+## Version 0.1.0
+    * JDBCHandler setup. Meant to handle all JDBC queries.
 
 ## Contributions
 Drew Noma - djknoma@gmail.com
 
 [https://github.com/dknoma](https://github.com/dknoma)
 
-Current Version 1.2.0
-* Kiyobot, Diskiyord, and JQL
+Kiyobot Current Version 1.2.1
+Diskiyord Current Version 1.1.0
+JQL Current Version 1.2.0
 
 # NOTES
 > ~~Since this is implementing a custom library, it may not be finished in time.~~
