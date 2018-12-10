@@ -213,6 +213,7 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 ```
 
 # Kiyobot Revision History
+
 ## Version 1.2.1
     * Fixed error where error inputstream was not being read in by the bot. Will now display the correct error message output form the Eventer service.
     * Fixed gson wrongly escaping characters with HTML encoding which is not needed for Discord display.
@@ -239,6 +240,7 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
     * Repository setup.
 
 # Diskiyord Revision History
+
 ## Version 1.0.0
     * __Diskiyord API__:
         * A basic java API that allows users to create their own basic messaging bot for Discord.
@@ -248,6 +250,7 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
     * Basic library set up, allows bot to view and send messages to a channel.
 
 # JQL Revision History
+
 ## Version 1.2.0
     * Renamed ResultSetHandler to SQLManager for better clarity: This class manages all SQL queries for the user.
 ## Version 1.1.0
@@ -268,6 +271,7 @@ Drew Noma - djknoma@gmail.com
 Kiyobot Current Version 1.2.1
 Diskiyord Current Version 1.1.0
 JQL Current Version 1.2.0
+
 
 # NOTES
 > ~~Since this is implementing a custom library, it may not be finished in time.~~
