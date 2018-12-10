@@ -24,6 +24,22 @@ These APIs are being developed to learn more about software development and what
             * Don't overuse the commands though ;)
         * `!commands`
             * Sends a message containing a list of the currently implemented commands to the current channel.
+    * Eventer commands:
+        * `!createuser  <username>`
+            * Sends a POST request to Eventer to create a user
+            * Returns the resulting user id
+        * `!getuser  <userid>`
+            * Sends a GET request to Eventer to get info on a specified user
+        * `!createvent  <userid>  <eventname>  <number_of_tickets_available>`
+            * Sends a POST request to Eventer to purchase tickets to an event for a user
+        * `!getevent  <eventid>`
+            * Sends a GET request to Eventer to get info on a specified event
+        * `!getevents`
+            * Sends a GET request to Eventer to get info on all events
+        * `!purchasetickets  <eventid>  <userid>  <number_of_tickets>`
+            * Sends a POST request to Eventer to purchase a number of tickets to an event for a user
+        * `!transfertickets  <eventid>  <userid>  <targetuser>  <number_of_tickets>`
+            * Sends a POST request to Eventer to transfer a number of tickets to an event to another user
 
 ## Example Bot
 
@@ -197,6 +213,12 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 ```
 
 # Revision History
+## Version 1.2.0
+    * Added functionality that integrates Project 4 Eventer: An Event Ticket Service.
+        * Eventer is a basic testing webservice that allows clients to create users, create events, purchase tickets, and transfer tickets between users.
+        * The bot's commands basically make API calls to the appropriate URLs, sending the appropriate request body, and outputting the response back to the Discord channel the command was called in.
+## Version 1.1.0
+    * Added ```exgfx``` commands: !addexgfx and !getexgfx that interact with a SQL database
 ## Version 1.0.0
 * __Kiyobot__:
     * A basic messaging bot.
@@ -226,8 +248,8 @@ Drew Noma - djknoma@gmail.com
 
 [https://github.com/dknoma](https://github.com/dknoma)
 
-Current Version 1.0.0
-* Kiyobot, Diskiyord, and JSQLModeler
+Current Version 1.2.0
+* Kiyobot, Diskiyord, and JQL
 
 # NOTES
 > ~~Since this is implementing a custom library, it may not be finished in time.~~

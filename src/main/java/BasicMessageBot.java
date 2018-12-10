@@ -85,9 +85,19 @@ public class BasicMessageBot {
 		// Diskiyord setup
 		JsonConfigArgParser parser = new JsonConfigArgParser();
 		parser.parseConfig();
-		String botStuffId = parser.getBotStuff();
+		// Used if need to have bot output to this specific channel
+		String botStuffChannelId = parser.getBotStuff();
 		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
+		// Adds a message listener
+		listenOnMessage(api, pghandler);
+	}
 
+	/**
+	 * Adds message listener to the api, which allows the bot to listen to Discord messages
+	 * @param api - Diskiyord API class
+	 * @param pghandler - JDBCHandler to handle all SQL queries
+	 */
+	private static void listenOnMessage(DiskiyordApi api, JDBCHandler pghandler) {
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
 			String message = messageEvent.getMessageContent();
@@ -115,7 +125,6 @@ public class BasicMessageBot {
 						PINGS = 0;
 						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
 						//!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>
-						//!addexgfx  ExGFX100  Test  test  false  img.link
 						addExgfx(messageEvent, pghandler, messageArgs, errorMessage);
 						break;
 					case "!getexgfx":
@@ -227,7 +236,9 @@ public class BasicMessageBot {
 	 */
 	private static void createEvent(MessageCreateListener messageEvent, int userId, String eventname, int numTickets) {
 		postToService(messageEvent, PROJECT4_PATH + "/events/create",
-				"{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}", userId, eventname, numTickets);
+				"Event could not be created :(",
+				"{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}",
+				userId, eventname, numTickets);
 	}
 
 	/**
@@ -235,7 +246,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getEvent(MessageCreateListener messageEvent, String eventId) {
-		getToService(messageEvent, PROJECT4_PATH + "/events/" + eventId);
+		getToService(messageEvent, PROJECT4_PATH + "/events/" + eventId, "Event could not be found :(");
 	}
 
 	/**
@@ -243,7 +254,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getEvents(MessageCreateListener messageEvent) {
-		getToService(messageEvent, PROJECT4_PATH + "/events");
+		getToService(messageEvent, PROJECT4_PATH + "/events", "Events could not be found :(");
 	}
 
 	/**
@@ -251,7 +262,8 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void createUser(MessageCreateListener messageEvent, String username) {
-		postToService(messageEvent, PROJECT4_PATH + "/users/create", "{\"username\":\"%s\"}", username);
+		postToService(messageEvent, PROJECT4_PATH + "/users/create", "User could not be created :(",
+				"{\"username\":\"%s\"}", username);
 	}
 
 	/**
@@ -259,7 +271,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getUser(MessageCreateListener messageEvent, String userId) {
-		getToService(messageEvent, PROJECT4_PATH + "/users/" + userId);
+		getToService(messageEvent, PROJECT4_PATH + "/users/" + userId, "User could not be found");
 	}
 
 	/**
@@ -268,7 +280,7 @@ public class BasicMessageBot {
 	 */
 	private static void purchaseTickets(MessageCreateListener messageEvent, int eventId, int userId, int tickets) {
 		postToService(messageEvent, String.format("%1$s/events/%2$d/purchase/%3$d", PROJECT4_PATH, eventId, userId),
-				"{\"tickets\":%1$d}", tickets);
+				"Tickets could not be purchased","{\"tickets\":%1$d}", tickets);
 	}
 
 	/**
@@ -276,7 +288,7 @@ public class BasicMessageBot {
 	 * @param messageEvent - bots listener
 	 * @param url - url of service
 	 */
-	private static void getToService(MessageCreateListener messageEvent, String url) {
+	private static void getToService(MessageCreateListener messageEvent, String url, String errorMessage) {
 		try {
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
@@ -296,7 +308,7 @@ public class BasicMessageBot {
 					}
 					break;
 				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage("Events not found :(");
+					messageEvent.getChannel().sendTextMessage(errorMessage);
 					break;
 				default:
 					int responseCode = connection.getResponseCode();
@@ -315,7 +327,9 @@ public class BasicMessageBot {
 	 * @param jsonBodyFormat - Format of the json body to be used in String.format(...)
 	 * @param params - varargs to insert into the json body
 	 */
-	private static <T> void postToService(MessageCreateListener messageEvent, String url, String jsonBodyFormat, T... params) {
+	@SafeVarargs
+	private static <T> void postToService(MessageCreateListener messageEvent, String url, String errorMessage,
+										  String jsonBodyFormat, T... params) {
 		try {
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
@@ -339,7 +353,7 @@ public class BasicMessageBot {
 					}
 					break;
 				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage("Tickets could not be purchased :(");
+					messageEvent.getChannel().sendTextMessage(errorMessage);
 					break;
 				default:
 					int responseCode = connection.getResponseCode();
@@ -351,17 +365,6 @@ public class BasicMessageBot {
 		} catch (IOException ioe) {
 			messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
 		}
-	}
-
-	/**
-	 * Sends unkown command message to the channel
-	 * @param messageEvent;
-	 */
-	private static void getCommands(MessageCreateListener messageEvent) {
-		messageEvent.getChannel().sendTextMessage("!ping\n\t- A generic ping message. Please don't overuse.\n" +
-				"!hewwo\n\t- What's this?\n!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>\n" +
-				"\t- Use this command to add information on an ExGFX file to the database.\n!getexgfx  <filename>\n" +
-				"\t- Use this command to get back the information on an ExGFX file from the database.");
 	}
 
 	/**
@@ -398,4 +401,30 @@ public class BasicMessageBot {
 		}
 		return out;
 	}
+
+	/**
+	 * Sends unkown command message to the channel
+	 * @param messageEvent;
+	 */
+	private static void getCommands(MessageCreateListener messageEvent) {
+		messageEvent.getChannel().sendTextMessage("**General Bot Commands**\n------------------------\n" +
+				"!ping\n\t- A generic ping message. Please don't overuse.\n" +
+				"!hewwo\n\t- What's this?\n" +
+				"**ExGFX Commands**\n------------------\n" +
+				"!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>\n" +
+				"\t- Use this command to add information on an ExGFX file to the database.\n!getexgfx  <filename>\n" +
+				"\t- Use this command to get back the information on an ExGFX file from the database.\n" +
+				"**Eventer: An Event Ticket Service**\n" +
+				"------------------------------------\n" +
+				"!createevent  <userid>  <eventname>  <max_tickets>\n" +
+				"\t- Creates an event in the event service.\n" +
+				"!getevent  <eventid>\n\t- Gets a specific event from the event service.\n" +
+				"!getevents\n\t- Gets all events from the event service.\n" +
+				"!createuser  <username>\n\t- Creates a user in the user service.\n" +
+				"!getuser  <userid>\n\t- Gets a specific user from the user service.\n" +
+				"!purchasetickets  <eventid>  <userid>  <number_to_purchase>\n" +
+				"\t- Purchase a number of tickets to a specific event for a user from the Eventer service."
+		);
+	}
+
 }
