@@ -46,7 +46,7 @@ public class BasicMessageBot {
 	private static int PINGS = 0;
 
 	private static final Gson GSON = new Gson();
-	private static final Gson GSON_PRETTY = new GsonBuilder().setPrettyPrinting().create();
+	private static final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 	private static final Class<String> STRING = String.class;
 	private static final Class<Integer> INTEGER = Integer.class;
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
@@ -187,6 +187,22 @@ public class BasicMessageBot {
 							messageEvent.getChannel().sendTextMessage("Event id, user id, and tickets args must be integers.");
 						}
 						break;
+					case "!transfertickets":
+						// Gets user info, including the info of all the events the user has tickets to
+						eventid = messageArgs[1];
+						userid = messageArgs[2];
+						String targetuser = messageArgs[3];
+						numTickets = messageArgs[4];
+						try {
+							int eventId = Integer.parseInt(eventid);
+							int userId = Integer.parseInt(userid);
+							int targetUser = Integer.parseInt(targetuser);
+							int tickets = Integer.parseInt(numTickets);
+							transferTickets(messageEvent, eventId, userId, targetUser, tickets);
+						} catch(NumberFormatException nfe) {
+							messageEvent.getChannel().sendTextMessage("Event id, user id, target user, and tickets args must be integers.");
+						}
+						break;
 					// Basic commads
 					case "!commands":
 						getCommands(messageEvent);
@@ -236,7 +252,6 @@ public class BasicMessageBot {
 	 */
 	private static void createEvent(MessageCreateListener messageEvent, int userId, String eventname, int numTickets) {
 		postToService(messageEvent, PROJECT4_PATH + "/events/create",
-				"Event could not be created :(",
 				"{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}",
 				userId, eventname, numTickets);
 	}
@@ -246,7 +261,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getEvent(MessageCreateListener messageEvent, String eventId) {
-		getToService(messageEvent, PROJECT4_PATH + "/events/" + eventId, "Event could not be found :(");
+		getToService(messageEvent, PROJECT4_PATH + "/events/" + eventId);
 	}
 
 	/**
@@ -254,7 +269,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getEvents(MessageCreateListener messageEvent) {
-		getToService(messageEvent, PROJECT4_PATH + "/events", "Events could not be found :(");
+		getToService(messageEvent, PROJECT4_PATH + "/events");
 	}
 
 	/**
@@ -262,7 +277,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void createUser(MessageCreateListener messageEvent, String username) {
-		postToService(messageEvent, PROJECT4_PATH + "/users/create", "User could not be created :(",
+		postToService(messageEvent, PROJECT4_PATH + "/users/create",
 				"{\"username\":\"%s\"}", username);
 	}
 
@@ -271,7 +286,7 @@ public class BasicMessageBot {
 	 * @param messageEvent;
 	 */
 	private static void getUser(MessageCreateListener messageEvent, String userId) {
-		getToService(messageEvent, PROJECT4_PATH + "/users/" + userId, "User could not be found");
+		getToService(messageEvent, PROJECT4_PATH + "/users/" + userId);
 	}
 
 	/**
@@ -280,7 +295,16 @@ public class BasicMessageBot {
 	 */
 	private static void purchaseTickets(MessageCreateListener messageEvent, int eventId, int userId, int tickets) {
 		postToService(messageEvent, String.format("%1$s/events/%2$d/purchase/%3$d", PROJECT4_PATH, eventId, userId),
-				"Tickets could not be purchased","{\"tickets\":%1$d}", tickets);
+				"{\"tickets\":%1$d}", tickets);
+	}
+
+	/**
+	 * Connects to the website and performs the appropriate methods
+	 * @param messageEvent;
+	 */
+	private static void transferTickets(MessageCreateListener messageEvent, int eventId, int userId, int targetUser, int tickets) {
+		postToService(messageEvent, String.format("%1$s/users/%2$d/tickets/transfer", PROJECT4_PATH, userId),
+				"{\"eventid\":%1$d,\"tickets\":%2$d,\"targetuser\":%3$d}", eventId, tickets, targetUser);
 	}
 
 	/**
@@ -288,7 +312,7 @@ public class BasicMessageBot {
 	 * @param messageEvent - bots listener
 	 * @param url - url of service
 	 */
-	private static void getToService(MessageCreateListener messageEvent, String url, String errorMessage) {
+	private static void getToService(MessageCreateListener messageEvent, String url) {
 		try {
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
@@ -308,7 +332,15 @@ public class BasicMessageBot {
 					}
 					break;
 				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage(errorMessage);
+					try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
+						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+					} catch(IOException ioe) {
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
 					break;
 				default:
 					int responseCode = connection.getResponseCode();
@@ -328,7 +360,7 @@ public class BasicMessageBot {
 	 * @param params - varargs to insert into the json body
 	 */
 	@SafeVarargs
-	private static <T> void postToService(MessageCreateListener messageEvent, String url, String errorMessage,
+	private static <T> void postToService(MessageCreateListener messageEvent, String url,
 										  String jsonBodyFormat, T... params) {
 		try {
 			URL userService = new URL(url);
@@ -353,7 +385,15 @@ public class BasicMessageBot {
 					}
 					break;
 				case SC_BAD_REQUEST:
-					messageEvent.getChannel().sendTextMessage(errorMessage);
+					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
+						// Read the json line from the service.
+						String line = reader.readLine();
+						// Checks the response code from the events service
+						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+					} catch(IOException ioe){
+						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
+						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					}
 					break;
 				default:
 					int responseCode = connection.getResponseCode();
@@ -423,7 +463,9 @@ public class BasicMessageBot {
 				"!createuser  <username>\n\t- Creates a user in the user service.\n" +
 				"!getuser  <userid>\n\t- Gets a specific user from the user service.\n" +
 				"!purchasetickets  <eventid>  <userid>  <number_to_purchase>\n" +
-				"\t- Purchase a number of tickets to a specific event for a user from the Eventer service."
+				"\t- Purchase a number of tickets to a specific event for a user from the Eventer service.\n" +
+				"!transfertickets  <eventid>  <userid>  <targetuser>  <number_to_purchase>\n" +
+				"\t- Transfer a number of tickets to a specific event from a user to another user from the Eventer service.\n"
 		);
 	}
 
