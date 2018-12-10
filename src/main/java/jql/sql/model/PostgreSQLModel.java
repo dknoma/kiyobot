@@ -1,9 +1,12 @@
-package sql.model;
+package jql.sql.model;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A model representing the structure and data in a SQL database

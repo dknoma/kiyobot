@@ -1,19 +1,20 @@
-package sql.jdbc;
+package jql.sql.jdbc;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import jql.sql.model.SQLModel;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * Handles the information and queries from result sets
- * TODO: make an interface; need a class for each database
  * @author dk
  */
-public enum ResultSetHandler {
+public enum SQLManager {
 
 	INSTANCE();
 
@@ -23,7 +24,7 @@ public enum ResultSetHandler {
 	private static final Class<Boolean> BOOLEAN = Boolean.class;
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	ResultSetHandler() {
+	SQLManager() {
 
 	}
 
@@ -34,7 +35,7 @@ public enum ResultSetHandler {
 	 * @param referenceId reference table id
 	 * @return json
 	 */
-	public static String getInfoFromReference(JDBCHandler handler, String what, String referenceLocation,
+	public String getInfoFromReference(JDBCHandler handler, String what, String referenceLocation,
 											  String referenceKey, int referenceId) throws SQLException {
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select(what,
@@ -49,11 +50,13 @@ public enum ResultSetHandler {
 	/**
 	 * Gets a single json object  w/o any references
 	 * @param handler JDBCHandler
+	 * @param what JDBCHandler
+	 * @param location JDBCHandler
 	 * @param key key
 	 * @param value value
 	 * @return json
 	 */
-	public static <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
+	public <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
 		String whereQuery;
 		if(value.getClass().equals(STRING)) {
 			whereQuery = handler.where(key, value, "");
@@ -73,6 +76,35 @@ public enum ResultSetHandler {
 		);
 	}
 
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @param what JDBCHandler
+	 * @param location JDBCHandler
+	 * @return json
+	 */
+	public ResultSet getResultSet(JDBCHandler handler, String what, String location, ColumnObject... columns) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		int i = 0;
+		for(ColumnObject column : columns) {
+			String key = column.getKey();
+			Object value = column.getValue();
+			if(i == 0) {
+				sb.append(handler.where(key, value, ""));
+			} else {
+				sb.append(handler.and(key, value, ""));
+			}
+			i++;
+		}
+		String whereQuery = sb.toString();
+		return handler.executeQuery(
+				handler.select(what,
+						handler.from(location,
+								whereQuery
+						)
+				)
+		);
+	}
 
 	/**
 	 * Gets a single json object  w/o any references
@@ -81,7 +113,7 @@ public enum ResultSetHandler {
 	 * @param location;
 	 * @return json
 	 */
-	public static <T> ResultSet getResultSet(JDBCHandler handler, String what, String location) throws SQLException {
+	public <T> ResultSet getResultSet(JDBCHandler handler, String what, String location) throws SQLException {
 		return handler.executeQuery(
 				handler.select(what,
 						handler.from(location,
@@ -98,7 +130,7 @@ public enum ResultSetHandler {
 	 * @param value value
 	 * @return json
 	 */
-	public static <T> ResultSet getDesiredColumns(JDBCHandler handler, String location, String key, T value,
+	public <T> ResultSet getDesiredColumns(JDBCHandler handler, String location, String key, T value,
 												   String... columns) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < columns.length; i++) {
@@ -122,7 +154,7 @@ public enum ResultSetHandler {
 	 * @param value value
 	 * @return json
 	 */
-	public static <T> String resultSetToString(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
+	public <T> String resultSetToString(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
 		String whereQuery;
 			if(value.getClass().equals(STRING)) {
 				whereQuery = handler.where(key, value, "");
@@ -148,7 +180,7 @@ public enum ResultSetHandler {
 	 * @param handler JDBCHandler
 	 * @return json
 	 */
-	public static String findAll(JDBCHandler handler, String location) throws SQLException {
+	public String findAll(JDBCHandler handler, String location) throws SQLException {
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
 						handler.from(location,""
@@ -164,7 +196,7 @@ public enum ResultSetHandler {
 	 * @param handler JDBCHandler
 	 * @return json
 	 */
-	public static String findAll(JDBCHandler handler, String location, ColumnObject... where) throws SQLException {
+	public String findAll(JDBCHandler handler, String location, ColumnObject... where) throws SQLException {
 		StringBuilder whereBuilder = new StringBuilder();
 		String whereQuery;
 		if(where[0].getClassOfT().equals(STRING)) {
@@ -191,7 +223,6 @@ public enum ResultSetHandler {
 			}
 		}
 		whereQuery = whereBuilder.toString();
-//		System.out.println(whereQuery);
 		ResultSet referenceResults = handler.executeQuery(
 				handler.select("*",
 						handler.from(location, whereQuery
@@ -206,7 +237,7 @@ public enum ResultSetHandler {
 	 * @param results query result set
 	 * @return json
 	 */
-	public static String allResultsToString(ResultSet results) {
+	public String allResultsToString(ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
@@ -218,7 +249,6 @@ public enum ResultSetHandler {
 			while(results.next()) {
 				sb.append("{");
 				int resultCount = results.getMetaData().getColumnCount();
-//				System.out.println(resultCount);
 				for (int i = 1; i <= resultCount; i++) {
 					String columnType = results.getMetaData().getColumnTypeName(i);
 					String columnName = results.getMetaData().getColumnName(i);
@@ -228,8 +258,6 @@ public enum ResultSetHandler {
 						sb.delete(lastIndex, lastIndex+1);
 						break;
 					}
-//					System.out.println(String.format("i: %1$s, \ttype: %2$s",
-//							results.getMetaData().getColumnName(i), columnType));
 					if(isString(columnType)) {
 						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
 					} else if(isInt(columnType)) {
@@ -259,7 +287,7 @@ public enum ResultSetHandler {
 	 * @param results query result set
 	 * @return json
 	 */
-	private static String createReference(ResultSet results) {
+	private String createReference(ResultSet results) {
 		StringBuilder sb = new StringBuilder();
 		try {
 			while(results.next()) {
@@ -279,14 +307,159 @@ public enum ResultSetHandler {
 
 	/**
 	 * Returns a json string representation of the data in the result set
-	 * @param results query result set
+	 * @param handler JDBCHandler
+	 * @param what JDBCHandler
+	 * @param location JDBCHandler
+	 * @param key key
+	 * @param value value
 	 * @return json
 	 */
-	public static String resultsToString(ResultSet results) {
+	public <T> String resultsToString(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
+		ResultSet results = getResultSet(handler, what, location, key, value);
+		if(results == null) {
+			return "{}";
+		}
 		StringBuilder sb = new StringBuilder();
 		try {
 			int numRows = 0;
 			while(results.next()) {
+				numRows++;
+				sb.append("{");
+				int resultCount = results.getMetaData().getColumnCount();
+				for (int i = 1; i <= resultCount; i++) {
+					String columnType = results.getMetaData().getColumnTypeName(i);
+					String columnName = results.getMetaData().getColumnName(i);
+					if(isString(columnType)) {
+						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
+					} else if(isInt(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
+					} else if(isBoolean(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
+					}
+					if(i < resultCount) {
+						sb.append(",");
+					}
+				}
+				if(!results.isLast()) {
+					sb.append("},");
+				} else {
+					sb.append("}");
+				}
+			}
+			if(numRows == 0) {
+				return "{}";
+			}
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Returns a json string representation of the data in the result set
+	 * @param results query result set
+	 * @return json
+	 */
+	public String resultsToString(ResultSet results) {
+		StringBuilder sb = new StringBuilder();
+		try {
+			int numRows = 0;
+			while(results.next()) {
+				numRows++;
+				sb.append("{");
+				int resultCount = results.getMetaData().getColumnCount();
+				for (int i = 1; i <= resultCount; i++) {
+					String columnType = results.getMetaData().getColumnTypeName(i);
+					String columnName = results.getMetaData().getColumnName(i);
+					if(isString(columnType)) {
+						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
+					} else if(isInt(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
+					} else if(isBoolean(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
+					}
+					if(i < resultCount) {
+						sb.append(",");
+					}
+				}
+				if(!results.isLast()) {
+					sb.append("},");
+				} else {
+					sb.append("}");
+				}
+			}
+			if(numRows == 0) {
+				return "{}";
+			}
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Returns a json string representation of the last row in the result set
+	 * @param handler JDBCHandler
+	 * @param what;
+	 * @param location;
+	 * @return json
+	 */
+	public String lastResultToString(JDBCHandler handler, String what, String location) throws SQLException {
+		ResultSet results = getResultSet(handler, what, location);
+		StringBuilder sb = new StringBuilder();
+		try {
+			int numRows = 0;
+			if(results.isBeforeFirst()) {
+				results.last();
+				numRows++;
+				sb.append("{");
+				int resultCount = results.getMetaData().getColumnCount();
+				for (int i = 1; i <= resultCount; i++) {
+					String columnType = results.getMetaData().getColumnTypeName(i);
+					String columnName = results.getMetaData().getColumnName(i);
+					if(isString(columnType)) {
+						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
+					} else if(isInt(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
+					} else if(isBoolean(columnType)) {
+						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
+					}
+					if(i < resultCount) {
+						sb.append(",");
+					}
+				}
+				if(!results.isLast()) {
+					sb.append("},");
+				} else {
+					sb.append("}");
+				}
+			}
+			if(numRows == 0) {
+				return "{}";
+			}
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		LOGGER.debug(sb.toString());
+		return sb.toString();
+	}
+
+	/**
+	 * Returns a json string representation of the last row in the result set
+	 * @param handler JDBCHandler
+	 * @param what;
+	 * @param location;
+	 * @param key;
+	 * @param value;
+	 * @return json
+	 */
+	public <T> String lastResultToString(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
+		ResultSet results = getResultSet(handler, what, location, key, value);
+		StringBuilder sb = new StringBuilder();
+		try {
+			int numRows = 0;
+			if(results.isBeforeFirst()) {
+				results.last();
 				numRows++;
 				sb.append("{");
 				int resultCount = results.getMetaData().getColumnCount();
@@ -329,7 +502,7 @@ public enum ResultSetHandler {
 	 * @return result set
 	 * @throws SQLException
 	 */
-	public static ResultSet selectItemFromInnerJoinOn(JDBCHandler handler, String[] selects, String leftJoin, String rightJoin,
+	public ResultSet selectItemFromInnerJoinOn(JDBCHandler handler, String[] selects, String leftJoin, String rightJoin,
 													  ColumnObject... comparisons) throws SQLException {
 		StringBuilder sb = new StringBuilder(),
 				sel = new StringBuilder();
@@ -377,7 +550,7 @@ public enum ResultSetHandler {
 	 * @param innerResult query result set
 	 * @return json
 	 */
-	public static String getResultsIncluding(ResultSet outerResult, ResultSet innerResult) {
+	public String getResultsIncluding(ResultSet outerResult, ResultSet innerResult) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
@@ -406,7 +579,7 @@ public enum ResultSetHandler {
 	 * @param innerResult query result set
 	 * @return json
 	 */
-	public static String getDesiredResultsIncluding(ResultSet outerResult, ResultSet innerResult, String excludeKey) {
+	public String getDesiredResultsIncluding(ResultSet outerResult, ResultSet innerResult, String excludeKey) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
@@ -435,7 +608,55 @@ public enum ResultSetHandler {
 	 * @param innerResult query result set
 	 * @return json
 	 */
-	public static String getResultsIncluding(ResultSet outerResult, ResultSet innerResult, String excludeKey) {
+	public String getResultsIncluding(ResultSet outerResult, ResultSet innerResult, String excludeKey) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		try {
+			while(outerResult.next()) {
+				sb.append(resultSetToRawJsonExcluding(outerResult, excludeKey));
+			}
+			if(!sb.toString().endsWith(",") && !sb.toString().endsWith("{")) {
+				sb.append(",");
+			}
+			String innerTableName = innerResult.getMetaData().getTableName(1);
+			sb.append((innerTableName.endsWith("x") || innerTableName.endsWith("s")) ? String.format("\"%1$ses\":[", innerTableName)
+					: String.format("\"%1$ss\":[", innerTableName));
+			while(innerResult.next()) {
+				sb.append(resultSetToJson(innerResult));
+			}
+			sb.append("]}");
+		} catch (SQLException e) {
+			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Returns a json string representation of the data in the result set w/ reference table data
+	 * @param outerResult query result set
+	 * @param innerResult query result set
+	 * @return json
+	 */
+	public <S, T> String getResultsIncluding(JDBCHandler handler, String outerTable, String outerKey, S outerValue,
+											 String outerTableParam, String outerTableParamId, String[] columns,
+											 String excludeKey, Map<String, SQLModel> models,
+											 ColumnObject... innerColumns) throws SQLException {
+		ResultSet outerResult = getDesiredColumns(handler, outerTable, outerKey, outerValue, columns);
+		// Checks if user exists
+		if(!outerResult.isBeforeFirst()) {
+			// ResultSet must be empty, therefore no data is found and should immediately return
+//			LOGGER.warn("User not found");
+//			userNotFound(resp);
+//			return;
+		}
+		String[] select = new String[1];
+		select[0] = String.format("%1$s.%2$s", outerTableParam, outerTableParamId);
+		// Selects <select items> from the results of an inner join on USER and TICKET on the specified column objects
+		ResultSet innerResult = selectItemFromInnerJoinOn(handler, select, outerTable, outerTableParam, innerColumns);
+//		ResultSet innerResult = selectItemFromInnerJoinOn(handler,
+//				select, outerTable, outerTableParam, new ColumnObject<>(userIdKey,
+//						String.format("%1$s.%2$s", outerTableParam, models.get(outerTable).getPrimaryKey())),
+//				new ColumnObject<>(userIdKey, userId));
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
@@ -463,7 +684,7 @@ public enum ResultSetHandler {
 	 * @param outerResult query result set
 	 * @return json
 	 */
-	public static String getResultsIncludingExternalResults(ResultSet outerResult, String externalName, String externalResults) {
+	public String getResultsIncludingExternalResults(ResultSet outerResult, String externalName, String externalResults) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		try {
@@ -484,10 +705,29 @@ public enum ResultSetHandler {
 
 	/**
 	 * Gets a single json object  w/o any references
-	 * @param result;
+	 * @param handler;
+	 * @param what;
+	 * @param location;
 	 * @return json
 	 */
-	public static String getListFromResultSet(ResultSet result) throws SQLException {
+	public String getList(JDBCHandler handler, String what, String location) throws SQLException {
+		ResultSet result = getResultSet(handler, what, location);
+		StringBuilder sb = new StringBuilder();
+		while(result.next()) {
+			sb.append(resultSetToJson(result));
+		}
+		return String.format("[%s]", sb.toString());
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler;
+	 * @param what;
+	 * @param location;
+	 * @return json
+	 */
+	public <T> String getList(JDBCHandler handler, String what, String location, ColumnObject... columns) throws SQLException {
+		ResultSet result = getResultSet(handler, what, location, columns);
 		StringBuilder sb = new StringBuilder();
 		while(result.next()) {
 			sb.append(resultSetToJson(result));
@@ -501,7 +741,7 @@ public enum ResultSetHandler {
 	 * @return string
 	 * @throws SQLException;
 	 */
-	private static String resultSetToRawJson(ResultSet result) throws SQLException {
+	private String resultSetToRawJson(ResultSet result) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		int resultCount = result.getMetaData().getColumnCount();
 		for (int i = 1; i <= resultCount; i++) {
@@ -527,7 +767,7 @@ public enum ResultSetHandler {
 	 * @return string
 	 * @throws SQLException;
 	 */
-	private static String resultSetToRawJsonExcept(ResultSet result, String except) throws SQLException {
+	private String resultSetToRawJsonExcept(ResultSet result, String except) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		int resultCount = result.getMetaData().getColumnCount();
 		for (int i = 1; i <= resultCount; i++) {
@@ -553,7 +793,7 @@ public enum ResultSetHandler {
 	 * @return string
 	 * @throws SQLException;
 	 */
-	private static String resultSetToRawJsonExcluding(ResultSet result, String excludeKey) throws SQLException {
+	private String resultSetToRawJsonExcluding(ResultSet result, String excludeKey) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		int resultCount = result.getMetaData().getColumnCount();
 		for (int i = 1; i <= resultCount; i++) {
@@ -570,9 +810,7 @@ public enum ResultSetHandler {
 					sb.append(String.format("\"%1$s\":%2$s", columnName, result.getBoolean(columnName)));
 				}
 			}
-//			if(i < resultCount || !result.isLast()) {
-				sb.append(",");
-//			}
+			sb.append(",");
 		}
 		sb.deleteCharAt(sb.toString().length()-1);
 		return sb.toString();
@@ -584,16 +822,13 @@ public enum ResultSetHandler {
 	 * @return string
 	 * @throws SQLException;
 	 */
-	private static String resultSetToJson(ResultSet result) throws SQLException {
+	private String resultSetToJson(ResultSet result) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		int resultCount = result.getMetaData().getColumnCount();
-//				System.out.println(resultCount);
 		for (int i = 1; i <= resultCount; i++) {
 			String columnType = result.getMetaData().getColumnTypeName(i);
 			String columnName = result.getMetaData().getColumnName(i);
-//					System.out.println(String.format("i: %1$s, \ttype: %2$s",
-//							results.getMetaData().getColumnName(i), columnType));
 			if(isString(columnType)) {
 				sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, result.getString(columnName)));
 			} else if(isInt(columnType)) {
@@ -619,7 +854,7 @@ public enum ResultSetHandler {
 	 * @param json input
 	 * @return string
 	 */
-	public static JsonObject getInfoFromJson(String json) {
+	public JsonObject getInfoFromJson(String json) {
 		return GSON.fromJson(json, JsonObject.class);
 	}
 
@@ -628,7 +863,7 @@ public enum ResultSetHandler {
 	 * @param json input
 	 * @return string
 	 */
-	public static String getTableNameFromJson(String json) {
+	public String getTableNameFromJson(String json) {
 		return GSON.fromJson(json, JsonObject.class).get("primaryKey").getAsString();
 	}
 
@@ -637,7 +872,7 @@ public enum ResultSetHandler {
 	 * @param json input
 	 * @return string
 	 */
-	public static int getTableIdFromJson(String json) {
+	public int getTableIdFromJson(String json) {
 		return GSON.fromJson(json, JsonObject.class).get("id").getAsInt();
 	}
 
@@ -646,27 +881,36 @@ public enum ResultSetHandler {
 	 * @param list;
 	 * @return if list is empty
 	 */
-	public static boolean isListEmpty(String list) {
+	public boolean isListEmpty(String list) {
 		return list.equals("[{}]") || list.equals("[]") || list.equals("");
 	}
 
 	/**
-	 * Returns whether or not the sql column type is a valid Java type
-	 * @param columnType sql Type
+	 * Method meant to check if a String representation of a resultset output is empty
+	 * @param result;
+	 * @return isempty
+	 */
+	public boolean resultIsNotEmpty(String result) {
+		return result != null && !result.isEmpty() && !result.equals("{}") && !result.equals("[]") && !result.equals("{[]}");
+	}
+
+	/**
+	 * Returns whether or not the jql.sql column type is a valid Java type
+	 * @param columnType jql.sql Type
 	 * @return valid Java type
 	 */
-	private static boolean isString(String columnType) {
+	private boolean isString(String columnType) {
 		columnType = columnType.toLowerCase();
 		return (columnType.equals("character") || columnType.equals("char") || columnType.equals("varchar")
 				|| columnType.equals("longvarchar") || columnType.equals("text"));
 	}
 
 	/**
-	 * Returns whether or not the sql column type is a valid Java Type
-	 * @param columnType sql Type
+	 * Returns whether or not the jql.sql column type is a valid Java Type
+	 * @param columnType jql.sql Type
 	 * @return valid Java type
 	 */
-	private static boolean isInt(String columnType) {
+	private boolean isInt(String columnType) {
 		columnType = columnType.toLowerCase();
 		return (columnType.equals("tinyint") || columnType.equals("smallint") || columnType.equals("int4")
 				|| columnType.equals("int") || columnType.equals("serial") || columnType.equals("BIGINT")
@@ -674,11 +918,11 @@ public enum ResultSetHandler {
 	}
 
 	/**
-	 * Returns whether or not the sql column type is a valid Java Type
-	 * @param columnType sql Type
+	 * Returns whether or not the jql.sql column type is a valid Java Type
+	 * @param columnType jql.sql Type
 	 * @return valid Java type
 	 */
-	private static boolean isBoolean(String columnType) {
+	private boolean isBoolean(String columnType) {
 		columnType = columnType.toLowerCase();
 		return (columnType.equals("bool") || columnType.equals("boolean"));
 	}

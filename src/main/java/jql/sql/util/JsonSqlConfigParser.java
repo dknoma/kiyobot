@@ -1,4 +1,4 @@
-package sql.util;
+package jql.sql.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -71,39 +71,39 @@ public class JsonSqlConfigParser {
 
 	/**
 	 * Get directory of models
-	 * @return sql
+	 * @return jql.sql
 	 */
 	public String getModelDirectory() {
 		return  this.modelDirectory;
 	}
 
 	/**
-	 * Get sql url
-	 * @return sql
+	 * Get jql.sql url
+	 * @return jql.sql
 	 */
 	public String getDbName() {
 		return  this.dbName;
 	}
 
 	/**
-	 * Get sql url
-	 * @return sql
+	 * Get jql.sql url
+	 * @return jql.sql
 	 */
 	public String getDb() {
 		return  this.db;
 	}
 
 	/**
-	 * Get sql url
-	 * @return sql
+	 * Get jql.sql url
+	 * @return jql.sql
 	 */
 	public String getHost() {
 		return  this.host;
 	}
 
 	/**
-	 * Get sql url
-	 * @return sql
+	 * Get jql.sql url
+	 * @return jql.sql
 	 */
 	public String getPort() {
 		return  this.port;

@@ -1,4 +1,4 @@
-package sql.jdbc;
+package jql.sql.jdbc;
 
 public class ColumnObject<T> {
 
@@ -16,7 +16,7 @@ public class ColumnObject<T> {
 		return key;
 	}
 
-	public Object getValue() {
+	public T getValue() {
 		return value;
 	}
 

@@ -1,6 +1,6 @@
-package sql.jdbc;
+package jql.sql.jdbc;
 
-import sql.model.SQLModel;
+import jql.sql.model.SQLModel;
 
 import java.util.Map;
 

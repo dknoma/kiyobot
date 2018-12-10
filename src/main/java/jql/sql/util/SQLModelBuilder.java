@@ -1,13 +1,13 @@
-package sql.util;
+package jql.sql.util;
 
 import com.google.gson.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sql.jdbc.JDBCHandler;
-import sql.jdbc.MySQLHandler;
-import sql.jdbc.PostgresHandler;
-import sql.model.PostgreSQLModel;
-import sql.model.SQLModel;
+import jql.sql.jdbc.JDBCHandler;
+import jql.sql.jdbc.MySQLHandler;
+import jql.sql.jdbc.PostgresHandler;
+import jql.sql.model.PostgreSQLModel;
+import jql.sql.model.SQLModel;
 
 import java.io.BufferedReader;
 import java.io.File;

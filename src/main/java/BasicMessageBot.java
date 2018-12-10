@@ -9,10 +9,10 @@ import diskiyord.event.message.MessageCreateListener;
 import diskiyord.util.JsonConfigArgParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sql.jdbc.*;
-import sql.model.SQLModel;
-import sql.util.JsonSqlConfigParser;
-import sql.util.SQLModelBuilder;
+import jql.sql.jdbc.*;
+import jql.sql.model.SQLModel;
+import jql.sql.util.JsonSqlConfigParser;
+import jql.sql.util.SQLModelBuilder;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -98,6 +98,7 @@ public class BasicMessageBot {
 	 * @param pghandler - JDBCHandler to handle all SQL queries
 	 */
 	private static void listenOnMessage(DiskiyordApi api, JDBCHandler pghandler) {
+		SQLManager dbManager = SQLManager.INSTANCE;
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
 			String message = messageEvent.getMessageContent();
@@ -135,8 +136,7 @@ public class BasicMessageBot {
 							messageEvent.getChannel().sendTextMessage(errorMessage);
 							break;
 						}
-						JsonObject obj = GSON.fromJson(ResultSetHandler
-								.resultSetToString(pghandler, "*", EXGFX, FILENAME, messageArgs[1]), JsonObject.class);
+						JsonObject obj = GSON.fromJson(dbManager.resultSetToString(pghandler, "*", EXGFX, FILENAME, messageArgs[1]), JsonObject.class);
 						String botOutput = getExGFXInfo(obj);
 						messageEvent.getChannel().sendTextMessage(botOutput);
 						break;

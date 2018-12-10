@@ -1,4 +1,4 @@
-package sql.jdbc;
+package jql.sql.jdbc;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -8,7 +8,7 @@ public interface JDBCHandler {
 
 	/**
 	 * Sets up the connection for JDBC to the database
-	 * @param db sql
+	 * @param db jql.sql
 	 * @param host host
 	 * @param port port
 	 * @param username un
@@ -135,4 +135,10 @@ public interface JDBCHandler {
 	 * @return String representation
 	 */
 	public String getTable(String tableName);
+
+	/**
+	 * Returns if the handler is connected or not
+	 * @return if connected
+	 */
+	public boolean isConnected();
 }

@@ -1,4 +1,4 @@
-package sql.model;
+package jql.sql.model;
 
 /**
  * A model representing the structure and data in a SQL database.

@@ -1,8 +1,8 @@
-package sql.jdbc;
+package jql.sql.jdbc;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import sql.model.SQLModel;
+import jql.sql.model.SQLModel;
 
 import java.sql.*;
 import java.util.Map;
@@ -16,6 +16,7 @@ import java.util.Map;
  */
 public class PostgresHandler implements JDBCHandler {
 
+	private boolean connected;
 	private Connection dbConn;
 	private Map<String, SQLModel> models;
 
@@ -25,6 +26,7 @@ public class PostgresHandler implements JDBCHandler {
 	private static final Logger LOGGER = LogManager.getLogger();
 
 	public PostgresHandler(Map<String, SQLModel> models) {
+		this.connected = false;
 		this.models = models;
 		try {
 			Class.forName("org.postgresql.Driver");
@@ -36,7 +38,7 @@ public class PostgresHandler implements JDBCHandler {
 
 	/**
 	 * Sets up the connection for JDBC to the database
-	 * @param db sql
+	 * @param db jql.sql
 	 * @param host host
 	 * @param port port
 	 * @param username un
@@ -48,9 +50,11 @@ public class PostgresHandler implements JDBCHandler {
 			// format: jdbc:postgresql://host:port/pathOrDatabaseName
 			String dbURL = String.format("jdbc:postgresql://%1$s:%2$s/%3$s", host, port, db);
 			this.dbConn = DriverManager.getConnection(dbURL, username, password);
-			LOGGER.info("Connected to sql successfully!");
+			this.connected = true;
+			LOGGER.info("Connected to jql.sql successfully!");
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			this.connected = false;
 		}
 	}
 
@@ -236,18 +240,19 @@ public class PostgresHandler implements JDBCHandler {
 	 */
 	@Override
 	public String set(String query, ColumnObject... columns) {
-		int lastColumnIndex = columns.length - 1;
 		StringBuilder sb = new StringBuilder();
 		sb.append(" SET ");
 		for(ColumnObject column : columns) {
 			if (column.getClassOfT().equals(STRING) && !column.getValue().toString().endsWith("id")) {
-				sb.append(String.format("%1$s='%2$s'%3$s", column.getKey(), column.getValue(), query));
+				sb.append(String.format("%1$s='%2$s'", column.getKey(), column.getValue()));
 			} else {
-				sb.append(String.format("%1$s=%2$s%3$s", column.getKey(), column.getValue(), query));
+				sb.append(String.format("%1$s=%2$s", column.getKey(), column.getValue()));
 			}
 			sb.append(", ");
 		}
+		int lastColumnIndex = sb.toString().length() - 1;
 		sb.delete(lastColumnIndex-1, lastColumnIndex+1);
+		sb.append(query);
 		return sb.toString();
 	}
 
@@ -257,13 +262,12 @@ public class PostgresHandler implements JDBCHandler {
 	 * @return result set
 	 */
 	@Override
-	public ResultSet executeQuery(String query) throws SQLException {
+	public ResultSet executeQuery(String query) {
 		try {
 			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(query);
-
-			LOGGER.debug("debugging PostgresHandler: {}", stmt.toString());
-
+			PreparedStatement stmt = this.dbConn.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+					ResultSet.CONCUR_UPDATABLE);
+			LOGGER.trace("debugging PostgresHandler: {}", stmt.toString());
 			//execute a query, which returns a ResultSet object
 			return stmt.executeQuery();
 		} catch (SQLException e) {
@@ -278,14 +282,16 @@ public class PostgresHandler implements JDBCHandler {
 	 * @return result set
 	 */
 	@Override
-	public int executeUpdate(String query) throws SQLException {
+	public int executeUpdate(String query) {
 		try {
+			LOGGER.debug("update: {}", query);
 			//create a statement object
-			PreparedStatement stmt = this.dbConn.prepareStatement(query);
+			PreparedStatement stmt = this.dbConn.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE,
+					ResultSet.CONCUR_UPDATABLE);
 			//execute a query, which returns a ResultSet object
 			return stmt.executeUpdate();
 		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
+			LOGGER.error("A SQL error has occurred when executing update: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
 		return Integer.MIN_VALUE;
 	}
@@ -301,24 +307,11 @@ public class PostgresHandler implements JDBCHandler {
 	}
 
 	/**
-	 * Sets the value of a prepared statement at the given index
-	 * @param statement;
-	 * @param index;
-	 * @param value;
-	 * @param classOfT;
-	 * @param <T>;
+	 * Returns if the handler is connected or not
+	 * @return if connected
 	 */
-	private <T> void setStatementValue(PreparedStatement statement, int index, Object value, Class<T> classOfT) {
-		try {
-			if(classOfT.equals(STRING)) {
-				statement.setString(index, (String) value);
-			} else if(classOfT.equals(INTEGER)) {
-				statement.setInt(index, (int) value);
-			} else if(classOfT.equals(BOOLEAN)) {
-				statement.setBoolean(index, (boolean) value);
-			}
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
+	@Override
+	public boolean isConnected() {
+		return connected;
 	}
 }
