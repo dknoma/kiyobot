@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/kiyobot.iml" filepath="$PROJECT_DIR$/kiyobot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Kiyobot.iml" filepath="$PROJECT_DIR$/Kiyobot.iml" />
     </modules>
   </component>
 </project>

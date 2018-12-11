@@ -1,103 +1,51 @@
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+package kiyobot.message;
+
+import com.google.gson.*;
 import diskiyord.api.DiskiyordApi;
-import diskiyord.api.DiskiyordApiBuilder;
 import diskiyord.event.error.MessageArgumentError;
 import diskiyord.event.message.MessageCreateListener;
-import diskiyord.util.JsonConfigArgParser;
+import jql.sql.jdbc.ColumnObject;
+import jql.sql.jdbc.JDBCHandler;
+import jql.sql.jdbc.SQLManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import jql.sql.jdbc.*;
-import jql.sql.model.SQLModel;
-import jql.sql.util.JsonSqlConfigParser;
-import jql.sql.util.SQLModelBuilder;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.Map;
 
+public enum MessageEvent {
 
-/**
- * Packets sent from the client to the Gateway API are encapsulated within a gateway payload
- * object and must have the proper opcode and data object set. The payload object can then be
- * serialized in the format of choice (see ETF/JSON), and sent over the websocket. Payloads to
- * the gateway are limited to a maximum of 4096 bytes sent, going over this will cause a
- * connection termination with error code 4002.
- *
- *  {
- *      "op": 0,
- *      "d": {},
- *      "s": 42,
- *      "t": "GATEWAY_EVENT_NAME"
- *  }
- *
- *  String.format(%[argument_index$][flags][width]conversion);
- *      %s - put string in
- *      %1$s - put the first string arg here
- *
- *
- */
-public class BasicMessageBot {
+	INSTANCE();
 
-	private static int PINGS = 0;
+	MessageEvent(){}
 
-	private static final Gson GSON = new Gson();
-	private static final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
-	private static final Class<String> STRING = String.class;
-	private static final Class<Integer> INTEGER = Integer.class;
-	private static final Class<Boolean> BOOLEAN = Boolean.class;
-	private static final int SC_OK = 200;
-	private static final int SC_BAD_REQUEST = 400;
-	private static final String EXGFX = "exgfx";
-	private static final String FILENAME = "filename";
-	private static final String DESCRIPTION = "description";
-	private static final String TYPE = "type";
-	private static final String COMPLETED = "completed";
-	private static final String IMG_LINK = "imglink";
-	private static final String SQL_CONFIG_FILE = "./config/sqlconfig.json";
-	private static final String PROJECT4_PATH = "http://127.0.0.1:9000/api";
-	private static final Logger LOGGER = LogManager.getLogger();
+	private int PINGS = 0;
 
-	public static void main(String[] args) {
-		// db setup
-		JsonSqlConfigParser sqlparser = new JsonSqlConfigParser();
-		sqlparser.parseConfig(SQL_CONFIG_FILE);
-		String modelDirectory = sqlparser.getModelDirectory();
-
-		SQLModelBuilder builder = new SQLModelBuilder();
-		builder.findModelFiles(modelDirectory);
-		builder.readFiles();
-
-		if(!builder.areModelsFormattedCorrectly()) {
-			return;
-		}
-
-		Map<String, SQLModel> models = builder.getCopyOfModels();
-		JDBCHandler pghandler = new PostgresHandler(models);
-		// Connects the PostgreSQLhandler to the Postgres database
-		pghandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
-				sqlparser.getUsername(), sqlparser.getPassword());
-
-		// Diskiyord setup
-		JsonConfigArgParser parser = new JsonConfigArgParser();
-		parser.parseConfig();
-		// Used if need to have bot output to this specific channel
-		String botStuffChannelId = parser.getBotStuff();
-		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
-		// Adds a message listener
-		listenOnMessage(api, pghandler);
-	}
+	private final Gson GSON = new Gson();
+	private final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+	private final int SC_OK = 200;
+	private final int SC_BAD_REQUEST = 400;
+	private final String EXGFX = "exgfx";
+	private final String FILENAME = "filename";
+	private final String DESCRIPTION = "description";
+	private final String TYPE = "type";
+	private final String COMPLETED = "completed";
+	private final String IMG_LINK = "imglink";
+	// URL of the tunnel connection to the Eventer service
+	private final String PROJECT4_PATH = "http://127.0.0.1:9000/api";
+	private final Logger LOGGER = LogManager.getLogger();
 
 	/**
 	 * Adds message listener to the api, which allows the bot to listen to Discord messages
 	 * @param api - Diskiyord API class
 	 * @param pghandler - JDBCHandler to handle all SQL queries
 	 */
-	private static void listenOnMessage(DiskiyordApi api, JDBCHandler pghandler) {
+	public void listenOnMessage(DiskiyordApi api, JDBCHandler pghandler) {
 		SQLManager dbManager = SQLManager.INSTANCE;
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
@@ -136,9 +84,31 @@ public class BasicMessageBot {
 							messageEvent.getChannel().sendTextMessage(errorMessage);
 							break;
 						}
-						JsonObject obj = GSON.fromJson(dbManager.resultSetToString(pghandler, "*", EXGFX, FILENAME, messageArgs[1]), JsonObject.class);
-						String botOutput = getExGFXInfo(obj);
-						messageEvent.getChannel().sendTextMessage(botOutput);
+						try {
+							int hexadecimal = Integer.parseInt(messageArgs[1], 16);
+							String hexString = Integer.toHexString(hexadecimal).toUpperCase();
+							String exgfxFilename = String.format("ExGFX%s", hexString);
+							LOGGER.debug("exgfx: {}", exgfxFilename);
+							JsonObject obj = GSON.fromJson(dbManager.resultsToString(pghandler, "*", EXGFX, FILENAME, exgfxFilename), JsonObject.class);
+							LOGGER.debug("obj: {}", obj);
+							String botOutput = getExGFXInfo(obj, exgfxFilename);
+							messageEvent.getChannel().sendTextMessage(botOutput);
+						} catch(NumberFormatException nfe) {
+							LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
+							messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+						}
+						break;
+					case "!getallexgfx":
+						PINGS = 0;
+						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
+						//!getallexgfx
+						if(messageArgs.length != 1) {
+							messageEvent.getChannel().sendTextMessage(errorMessage);
+							break;
+						}
+						JsonArray jsonArray = GSON.fromJson(dbManager.getList(pghandler, "*", EXGFX), JsonArray.class);
+						LOGGER.debug("array: {}", jsonArray);
+						getAllExGFX(jsonArray, messageEvent);
 						break;
 					// Project4 comands
 					case "!createevent":
@@ -209,27 +179,66 @@ public class BasicMessageBot {
 	 * @param errorMessage;
 	 * @throws SQLException;
 	 */
-	private static void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String[] messageArgs, String errorMessage) throws SQLException{
+	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String[] messageArgs, String errorMessage) throws SQLException{
 		if(messageArgs.length != 6) {
 			messageEvent.getChannel().sendTextMessage(errorMessage);
 			return;
 		}
-		// Can make Class to handle all exgfx related methods
-		ColumnObject[] columns = new ColumnObject[5];
-		columns[0] = new ColumnObject<>(FILENAME, messageArgs[1]);
-		columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
-		columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
-		columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
-		columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
-		pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
-		messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+		try {
+			int hexadecimal = Integer.parseInt(messageArgs[1], 16);
+			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
+			String exgfxFilename = String.format("ExGFX%s", hexString);
+			// Can make Class to handle all exgfx related methods
+			ColumnObject[] columns = new ColumnObject[5];
+			columns[0] = new ColumnObject<>(FILENAME, exgfxFilename);
+			columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
+			columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
+			columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
+			columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
+			pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
+			messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+		} catch(NumberFormatException nfe) {
+			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
+			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+		}
+	}
+
+	/**
+	 * Turns a json string from db output into a readable string for the bot to output
+	 * @param obj;
+	 * @return bot message
+	 */
+	private String getExGFXInfo(JsonObject obj, String fileNumber) {
+		if(obj == null || obj.isJsonNull() || obj.toString().equals("{}")) {
+			return String.format("File %s does not exist :(", fileNumber);
+		} else {
+			return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+					obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
+		}
+	}
+
+	/**
+	 * Turns a json string from db output into a readable string for the bot to output
+	 * @param array;
+	 */
+	private void getAllExGFX(JsonArray array, MessageCreateListener messageEvent) {
+		SQLManager dbManager = SQLManager.INSTANCE;
+		if(array == null || array.isJsonNull() || dbManager.isListEmpty(array.toString())) {
+			messageEvent.getChannel().sendTextMessage("Files do not exist :(");
+		} else {
+			for(int i = 0; i < array.size(); i++) {
+				JsonObject obj = array.get(i).getAsJsonObject();
+				messageEvent.getChannel().sendTextMessage(String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+						obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK)));
+			}
+		}
 	}
 
 	/**
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void createEvent(MessageCreateListener messageEvent, String userId, String eventname, String numTickets) {
+	private void createEvent(MessageCreateListener messageEvent, String userId, String eventname, String numTickets) {
 		String userIdString;
 		String numTicketsString;
 		Object userid = userId;
@@ -256,7 +265,7 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void getEvent(MessageCreateListener messageEvent, String eventId) {
+	private void getEvent(MessageCreateListener messageEvent, String eventId) {
 		getToService(messageEvent, PROJECT4_PATH + "/events/" + eventId);
 	}
 
@@ -264,7 +273,7 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void getEvents(MessageCreateListener messageEvent) {
+	private void getEvents(MessageCreateListener messageEvent) {
 		getToService(messageEvent, PROJECT4_PATH + "/events");
 	}
 
@@ -272,7 +281,7 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void createUser(MessageCreateListener messageEvent, String username) {
+	private void createUser(MessageCreateListener messageEvent, String username) {
 		postToService(messageEvent, PROJECT4_PATH + "/users/create",
 				"{\"username\":\"%s\"}", username);
 	}
@@ -281,7 +290,7 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void getUser(MessageCreateListener messageEvent, String userId) {
+	private void getUser(MessageCreateListener messageEvent, String userId) {
 		getToService(messageEvent, PROJECT4_PATH + "/users/" + userId);
 	}
 
@@ -289,7 +298,7 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void purchaseTickets(MessageCreateListener messageEvent, String eventId, String userId, String tickets) {
+	private void purchaseTickets(MessageCreateListener messageEvent, String eventId, String userId, String tickets) {
 		String numTicketsString;
 		Object numtickets = tickets;
 		// Check if parameters are Strings or ints, and format the json body accordingly
@@ -307,7 +316,7 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void transferTickets(MessageCreateListener messageEvent, String eventId, String userId,
+	private void transferTickets(MessageCreateListener messageEvent, String eventId, String userId,
 										String targetUser, String tickets) {
 		String eventIdString;
 		String targetUserString;
@@ -335,7 +344,7 @@ public class BasicMessageBot {
 			targetUserString = "\"%3$s\"";
 		}
 		postToService(messageEvent, String.format("%1$s/users/%2$s/tickets/transfer", PROJECT4_PATH, userId),
-		"{\"eventid\":" + eventIdString + ",\"tickets\":" + numTicketsString + ",\"targetuser\":" + targetUserString + "}",
+				"{\"eventid\":" + eventIdString + ",\"tickets\":" + numTicketsString + ",\"targetuser\":" + targetUserString + "}",
 				eventid, numtickets, targetuser);
 	}
 
@@ -344,7 +353,7 @@ public class BasicMessageBot {
 	 * @param messageEvent - bots listener
 	 * @param url - url of service
 	 */
-	private static void getToService(MessageCreateListener messageEvent, String url) {
+	private void getToService(MessageCreateListener messageEvent, String url) {
 		try {
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
@@ -392,8 +401,8 @@ public class BasicMessageBot {
 	 * @param params - varargs to insert into the json body
 	 */
 	@SafeVarargs
-	private static <T> void postToService(MessageCreateListener messageEvent, String url,
-										  String jsonBodyFormat, T... params) {
+	private final <T> void postToService(MessageCreateListener messageEvent, String url,
+										 String jsonBodyFormat, T... params) {
 		try {
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
@@ -440,25 +449,11 @@ public class BasicMessageBot {
 	}
 
 	/**
-	 * Turns a json string from db output into a readable string for the bot to output
-	 * @param obj;
-	 * @return bot message
-	 */
-	private static String getExGFXInfo(JsonObject obj) {
-		if(obj == null || obj.isJsonNull()) {
-			return "File does not exist";
-		} else {
-			return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
-					obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
-		}
-	}
-
-	/**
 	 * Prints pretty json
 	 * @param json;
 	 * @return pretty print
 	 */
-	private static String prettyJson(String json) {
+	private String prettyJson(String json) {
 		JsonElement ele = GSON_PRETTY.fromJson(json, JsonElement.class);
 		String out = "";
 		if(ele.isJsonObject()) {
@@ -478,7 +473,7 @@ public class BasicMessageBot {
 	 * Sends unkown command message to the channel
 	 * @param messageEvent;
 	 */
-	private static void getCommands(MessageCreateListener messageEvent) {
+	private void getCommands(MessageCreateListener messageEvent) {
 		messageEvent.getChannel().sendTextMessage("**General Bot Commands**\n------------------------\n" +
 				"!ping\n\t- A generic ping message. Please don't overuse.\n" +
 				"!hewwo\n\t- What's this?\n" +
@@ -500,5 +495,4 @@ public class BasicMessageBot {
 				"\t- Transfer a number of tickets to a specific event from a user to another user from the Eventer service.\n"
 		);
 	}
-
 }

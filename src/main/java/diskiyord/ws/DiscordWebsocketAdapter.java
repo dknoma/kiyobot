@@ -82,7 +82,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	/**
 	 * Gets the secure websocket from the first connection to the Discord api gateway
 	 * GET /api/gateway
-	 * TODO: maybe make REST classes for convenience? Will make making requests and method calls easier.
 	 */
 	private void getWss() {
 		try {
@@ -93,8 +92,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			connection.setRequestMethod("GET");
 			connection.setRequestProperty("User-Agent", String.format("diskiyord (v%s)", VERSION));
 			connection.setRequestProperty("Content-Type", "application/json");
-
-			InputStream instream = connection.getInputStream();
 
 			LOGGER.info("Status Code: {} {}", connection.getResponseCode(), connection.getResponseMessage());
 			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -208,11 +205,15 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 		}
 	}
 
-
 	@Override
 	public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame,
 							   boolean closedByServer) throws Exception {
-		//TODO: do something on disconnect
+		// If can reconnect, try to reconnect after a delay based on the amount of reconnect attempts
+		if(reconnect) {
+			this.reconnectAttempt.incrementAndGet();
+			this.threadpool.scheduleAtFixedRate(this::connect,
+					0, calculateReconnectDelay(this.reconnectAttempt), TimeUnit.SECONDS);
+		}
 	}
 
 	@Override

@@ -1,13 +1,13 @@
 # Kiyobot
 > A Java Discord Bot
 
-This is a Discord bot implemented using Java. This bot is a personal side project that is being updated over time. This bot utilizes a few APIs I'm developing in Java as well.
-Diskiyord, the name of the Java library I've developed, allows the bot to interact with Discord's API. It connects the bot to Discord's Gateway via WebSockets, more specifially through a wss (WebSocket Secure) connection.
+This is a Discord kiyobot implemented using Java. This kiyobot is a personal side project that is being updated over time. This kiyobot utilizes a few APIs I'm developing in Java as well.
+Diskiyord, the name of the Java library I've developed, allows the kiyobot to interact with Discord's API. It connects the kiyobot to Discord's Gateway via WebSockets, more specifially through a wss (WebSocket Secure) connection.
 JQL is the SQL library that makes sending queries to a SQL database less time consuming, compared to using raw SQL queries.
 These APIs are being developed to learn more about software development and what goes on behind the scenes when using 3rd party libraries.
 
 # Bot Functionality
-* Receive and send messages to channels in the Discord server the bot is present at.
+* Receive and send messages to channels in the Discord server the kiyobot is present at.
 * Receive commands and send messages to the channel these commands are called at.
     * Can be used for meme commands, eg. `+kek`
         * This kind of command could choose a random image link from a pool of links which would have pictures of people laughing or have the word "kek" in them.
@@ -20,7 +20,7 @@ These APIs are being developed to learn more about software development and what
                 * ```!getexgfx  <filename>```
             * These kinds of command would be useful for organizing project information in a workspace with other Discord users.
         * `!ping`
-            * Pings the bot, who responds with "Pong!".
+            * Pings the kiyobot, who responds with "Pong!".
             * Don't overuse the commands though ;)
         * `!commands`
             * Sends a message containing a list of the currently implemented commands to the current channel.
@@ -43,7 +43,7 @@ These APIs are being developed to learn more about software development and what
 
 ## Example Bot
 
-This is an example of how a simple bot can be created using this API. This bot will be able to read messages being sent to a server and respond if a certain command is in that message.
+This is an example of how a simple kiyobot can be created using this API. This kiyobot will be able to read messages being sent to a server and respond if a certain command is in that message.
 
 ```Java
 public class MessageBot {
@@ -52,7 +52,7 @@ public class MessageBot {
         // api token goes here. NOTE* Make sure to store it securely and not in any public repository.
         String token = "api_token";
 
-        // Creates the api for the bot.
+        // Creates the api for the kiyobot.
         DiskiyordApi api = DiskiyordApiBuilder.buildApi(token);
         // Adds an event listener specifically for detecting text messages being sent in a server.
         api.addMessageCreateListener(messageEvent -> {
@@ -63,7 +63,7 @@ public class MessageBot {
             try {
                 // Using switch() for different possible commands.
                 switch (messageArgs[0]) {
-                    // If someone types "!ping", the bot responds with "Pong!"
+                    // If someone types "!ping", the kiyobot responds with "Pong!"
                     case "!ping":
                         messageEvent.getChannel().sendTextMessage("Pong!");
                         break;
@@ -80,7 +80,7 @@ public class MessageBot {
 
 ### Sample Commands
 
-The following are some examples of commands you could make the bot do.
+The following are some examples of commands you could make the kiyobot do.
 
 ```Java
 public class MessageBot {
@@ -106,7 +106,7 @@ public class MessageBot {
 
         // api token goes here. NOTE* Make sure to store it securely and not in any public repository.
         String token = "api_token";
-        // Creates the api for the bot.
+        // Creates the api for the kiyobot.
         DiskiyordApi api = DiskiyordApiBuilder.buildApi(token);
         // Adds an event listener specifically for detecting text messages being sent in a server.
         api.addMessageCreateListener(messageEvent -> {
@@ -145,7 +145,7 @@ public class MessageBot {
 > Java Discord API
 
 Diskiyord is a custom JAVA API that allows communication between Discord's API and a Java program. This was developed specifically for Kiyobot so it has limited functionality. Even though it's basic, other users can still use this library to make other basic messaging bots.
-The library connects to Discord's gateway to obtain the websocket connection. This websocket connection allows bot authentication and communication between the program and Discord's API.
+The library connects to Discord's gateway to obtain the websocket connection. This websocket connection allows kiyobot authentication and communication between the program and Discord's API.
 
 ## JQL
 > SQL API
@@ -257,31 +257,31 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 # Kiyobot Revision History
 
 ## Version 1.2.1
-* Fixed error where error inputstream was not being read in by the bot. Will now display the correct error message output form the Eventer service.
+* Fixed error where error inputstream was not being read in by the kiyobot. Will now display the correct error message output form the Eventer service.
 * Fixed gson wrongly escaping characters with HTML encoding which is not needed for Discord display.
 
 ## Version 1.2.0
 * Added functionality that integrates Project 4 Eventer: An Event Ticket Service.
     * Eventer is a basic testing webservice that allows clients to create users, create events, purchase tickets, and transfer tickets between users.
-    * The bot's commands basically make API calls to the appropriate URLs, sending the appropriate request body, and outputting the response back to the Discord channel the command was called in.
+    * The kiyobot's commands basically make API calls to the appropriate URLs, sending the appropriate request body, and outputting the response back to the Discord channel the command was called in.
 
 ## Version 1.1.0
 * Added ```exgfx``` commands: !addexgfx and !getexgfx that interact with a SQL database
 
 ## Version 1.0.0
 * __Kiyobot__:
-    * A basic messaging bot.
+    * A basic messaging kiyobot.
     * It can read in commands from the channel, and output the corresponding message to that channel.
     * It can also interact with a MySQL or PostgreSQL database.
         * It uses the below SQLModeler API.
-    * The user will also need to specify their bot's authorization token in a config.json file.
+    * The user will also need to specify their kiyobot's authorization token in a config.json file.
         * The user needs to create a Discord application before using this API or else the API does nothing.
         * [Read this first.](https://discordapp.com/developers/docs/intro)
         * [Link to making a Discord application.](https://discordapp.com/developers/applications)
-        * NOTE: Please DO NOT store your token in a public location as it is against Discords policy (and will allow unintended users to use your bot!).
+        * NOTE: Please DO NOT store your token in a public location as it is against Discords policy (and will allow unintended users to use your kiyobot!).
 
 ## Version 0.1.0
-* Basic library testing for the bot.
+* Basic library testing for the kiyobot.
 
 ## Version 0.0.0
 * Repository setup.
@@ -290,12 +290,12 @@ The following is an example of how to setup a SQLModel so that the JDBCHandler c
 
 ## Version 1.0.0
 * __Diskiyord API__:
-    * A basic java API that allows users to create their own basic messaging bot for Discord.
-    * The user can make the bot respond to messages in the same channel, or make message output to a different channel if they need something like a debugging channel.
-    * Requires an authorization token from Discord to make a bot with this API.
+    * A basic java API that allows users to create their own basic messaging kiyobot for Discord.
+    * The user can make the kiyobot respond to messages in the same channel, or make message output to a different channel if they need something like a debugging channel.
+    * Requires an authorization token from Discord to make a kiyobot with this API.
 
 ## Version 0.1.0
-* Basic library set up, allows bot to view and send messages to a channel.
+* Basic library set up, allows kiyobot to view and send messages to a channel.
 
 # JQL Revision History
 
