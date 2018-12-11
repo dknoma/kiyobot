@@ -37,6 +37,7 @@ public enum MessageEvent {
 	private final String COMPLETED = "completed";
 	private final String IMG_LINK = "imglink";
 	// URL of the tunnel connection to the Eventer service
+//	private final String PROJECT4_PATH = "http://mcvm064.cs.usfca.edu:7070/api";
 	private final String PROJECT4_PATH = "http://127.0.0.1:9000/api";
 	private final Logger LOGGER = LogManager.getLogger();
 
@@ -116,11 +117,19 @@ public enum MessageEvent {
 						String userid = messageArgs[1];
 						String eventname = messageArgs[2];
 						String maxTickets = messageArgs[3];
+						if(userid.isEmpty() || eventname.isEmpty() || maxTickets.isEmpty()) {
+							messageEvent.getChannel().sendTextMessage("Command is wrong. Make sure spacing is correct.");
+							return;
+						}
 						createEvent(messageEvent, userid, eventname, maxTickets);
 						break;
 					case "!getevent":
 						// get info on a specific event
 						String eventid = messageArgs[1];
+						if(eventid.isEmpty()) {
+							messageEvent.getChannel().sendTextMessage("Command is wrong. Make sure spacing is correct.");
+							return;
+						}
 						getEvent(messageEvent, eventid);
 						break;
 					case "!getevents":
@@ -130,11 +139,19 @@ public enum MessageEvent {
 					case "!createuser":
 						// Gets user info, including the info of all the events the user has tickets to
 						String username = messageArgs[1];
+						if(username.isEmpty()) {
+							messageEvent.getChannel().sendTextMessage("Command is wrong. Make sure spacing is correct.");
+							return;
+						}
 						createUser(messageEvent, username);
 						break;
 					case "!getuser":
 						// Gets user info, including the info of all the events the user has tickets to
 						userid = messageArgs[1];
+						if(userid.isEmpty()) {
+							messageEvent.getChannel().sendTextMessage("Command is wrong. Make sure spacing is correct.");
+							return;
+						}
 						getUser(messageEvent, userid);
 						break;
 					case "!purchasetickets":
@@ -142,6 +159,10 @@ public enum MessageEvent {
 						eventid = messageArgs[1];
 						userid = messageArgs[2];
 						String numTickets = messageArgs[3];
+						if(userid.isEmpty() || eventid.isEmpty() || numTickets.isEmpty()) {
+							messageEvent.getChannel().sendTextMessage("Command is wrong. Make sure spacing is correct.");
+							return;
+						}
 						purchaseTickets(messageEvent, eventid, userid, numTickets);
 						break;
 					case "!transfertickets":
@@ -150,6 +171,10 @@ public enum MessageEvent {
 						userid = messageArgs[2];
 						String targetuser = messageArgs[3];
 						numTickets = messageArgs[4];
+						if(userid.isEmpty() || eventid.isEmpty() || numTickets.isEmpty() || targetuser.isEmpty()) {
+							messageEvent.getChannel().sendTextMessage("Command is wrong. Make sure spacing is correct.");
+							return;
+						}
 						transferTickets(messageEvent, eventid, userid, targetuser, numTickets);
 						break;
 					// Basic commads
@@ -355,6 +380,7 @@ public enum MessageEvent {
 	 */
 	private void getToService(MessageCreateListener messageEvent, String url) {
 		try {
+			LOGGER.debug("GET URL: {}", url);
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
 			connection.setRequestMethod("GET");
@@ -362,6 +388,7 @@ public enum MessageEvent {
 			connection.connect();
 			switch(connection.getResponseCode()) {
 				case SC_OK:
+					LOGGER.debug("OK");
 					try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
 						// Read the json line from the service.
 						String line = reader.readLine();
@@ -373,14 +400,18 @@ public enum MessageEvent {
 					}
 					break;
 				case SC_BAD_REQUEST:
+					LOGGER.debug("Bad Request");
 					try(BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
 						// Read the json line from the service.
 						String line = reader.readLine();
 						// Checks the response code from the events service
 						messageEvent.getChannel().sendTextMessage(prettyJson(line));
+
 					} catch(IOException ioe) {
 						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
 						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					} catch(JsonSyntaxException jse) {
+						messageEvent.getChannel().sendTextMessage(prettyJson("{\"message\":\"400 Bad request\"}"));
 					}
 					break;
 				default:
@@ -404,6 +435,7 @@ public enum MessageEvent {
 	private final <T> void postToService(MessageCreateListener messageEvent, String url,
 										 String jsonBodyFormat, T... params) {
 		try {
+			LOGGER.debug("POST URL: {}", url);
 			URL userService = new URL(url);
 			HttpURLConnection connection = (HttpURLConnection) userService.openConnection();
 			connection.setRequestMethod("POST");
@@ -415,6 +447,7 @@ public enum MessageEvent {
 
 			switch (connection.getResponseCode()) {
 				case SC_OK:
+					LOGGER.debug("OK");
 					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
 						// Read the json line from the service.
 						String line = reader.readLine();
@@ -426,6 +459,7 @@ public enum MessageEvent {
 					}
 					break;
 				case SC_BAD_REQUEST:
+					LOGGER.debug("Bad Request");
 					try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
 						// Read the json line from the service.
 						String line = reader.readLine();
@@ -434,6 +468,8 @@ public enum MessageEvent {
 					} catch(IOException ioe){
 						LOGGER.error("I/O error has occurred: {},\n{}", ioe.getMessage(), ioe.getStackTrace());
 						messageEvent.getChannel().sendTextMessage(String.format("I/O error: %1$s", ioe.getMessage()));
+					} catch(JsonSyntaxException jse) {
+						messageEvent.getChannel().sendTextMessage(prettyJson("{\"message\":\"400 Bad request\"}"));
 					}
 					break;
 				default:
@@ -454,6 +490,7 @@ public enum MessageEvent {
 	 * @return pretty print
 	 */
 	private String prettyJson(String json) {
+		LOGGER.debug("json: {}", json);
 		JsonElement ele = GSON_PRETTY.fromJson(json, JsonElement.class);
 		String out = "";
 		if(ele.isJsonObject()) {
@@ -478,9 +515,14 @@ public enum MessageEvent {
 				"!ping\n\t- A generic ping message. Please don't overuse.\n" +
 				"!hewwo\n\t- What's this?\n" +
 				"**ExGFX Commands**\n------------------\n" +
-				"!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>\n" +
-				"\t- Use this command to add information on an ExGFX file to the database.\n!getexgfx  <filename>\n" +
+				"!addexgfx  <filenumber>  <description>  <type>  <completed>  <imglink>\n" +
+				"\t- Use this command to add information on an ExGFX file to the database.\n" +
+				"\t- The file number must be in hexadecimal format.\n" +
+				"\n!getexgfx  <filenumber>\n" +
 				"\t- Use this command to get back the information on an ExGFX file from the database.\n" +
+				"\t- The file number must be in hexadecimal format.\n" +
+				"\n!getallexgfx\n" +
+				"\t- Use this command to get back the information on all ExGFX files from the database.\n" +
 				"**Eventer: An Event Ticket Service**\n" +
 				"------------------------------------\n" +
 				"!createevent  <userid>  <eventname>  <max_tickets>\n" +
