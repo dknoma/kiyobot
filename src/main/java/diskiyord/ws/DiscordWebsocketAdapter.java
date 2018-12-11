@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -47,6 +48,9 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	private ScheduledExecutorService threadpool;
 //	private AtomicReference<WebSocketFrame> nextHeartbeatFrame = new AtomicReference<>();
 
+	// When incrementing, need AtomicInteger as volatile will not guarantee atomicity with increments(read+write)
+	private AtomicInteger reconnectAttempt = new AtomicInteger();
+	private volatile int rateLimitDelay = 5432;
 	private volatile int lastSeq = -1;
 	private volatile boolean heartbeatAckReceived;
 	private volatile boolean reconnect;
@@ -80,7 +84,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	 * GET /api/gateway
 	 * TODO: maybe make REST classes for convenience? Will make making requests and method calls easier.
 	 */
-	public void getWss() {
+	private void getWss() {
 		try {
 			URL url = new URL(GET_URL);
 			HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -123,33 +127,33 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
     /**
      * Connect to the cached websocket
      */
-	public void connect() {
+	private void connect() {
 		String wssUri = String.format("%1$s/?v=%2$s&encoding=%3$s", this.wss, GATEWAY_VERSION, ENCODING);
-        try {
-        	// Create a WebSocketFactory instance.
-			WebSocketFactory factory = new WebSocketFactory();
-			try {
-				factory.setSSLContext(SSLContext.getDefault());
-			} catch (NoSuchAlgorithmException e) {
-				LOGGER.warn("An error occurred while setting ssl context", e);
-			}
+		// Create a WebSocketFactory instance.
+		WebSocketFactory factory = new WebSocketFactory();
+		try {
+			factory.setSSLContext(SSLContext.getDefault());
+		} catch (NoSuchAlgorithmException nsae) {
+			LOGGER.warn("An error occurred while setting ssl context", nsae);
+		}
+		try {
 			URI uri = new URI(wssUri);
 			LOGGER.debug("URI: {}", uri);
 			WebSocket ws = factory.createSocket(uri);
 			this.websocket.set(ws);
-			// Register a listener to receive WebSocket events.
+			// Register listeners to receive WebSocket events.
 			ws.addListener(this);
 			ws.addListener(new WebsocketLogger());
 			//TODO: change rate limit from a hard 5.432 seconds
 			rateLimit();
 			ws.connect();
-        } catch (URISyntaxException use) {
-			LOGGER.fatal("Error has occured in URI creation, {},\n{}", use.getMessage(), use.getStackTrace());
-		} catch (IOException ioe) {
-            LOGGER.fatal("Error has occured when attempting connection, {},\n{}", ioe.getMessage(),
-					ioe.getStackTrace());
-        } catch (Exception e) {
-			LOGGER.fatal("Error has occured starting WebSocketClient, {},\n{}", e.getMessage(), e.getStackTrace());
+		} catch(Exception e) {
+			LOGGER.warn("Error has occured when connecting to the websocket, {},\n{}", e.getMessage(), e.getStackTrace());
+			if(reconnect) {
+				this.reconnectAttempt.incrementAndGet();
+				this.threadpool.scheduleAtFixedRate(this::connect,
+						0, calculateReconnectDelay(this.reconnectAttempt), TimeUnit.SECONDS);
+			}
 		}
 	}
 
@@ -158,13 +162,23 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	 */
 	private void rateLimit() {
 		// delay of 5432 milliseconds
-		long delay = 5432;
 		try {
-			Thread.sleep(delay);
+			Thread.sleep(this.rateLimitDelay);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		LOGGER.debug(String.format("Waited for %f seconds", (delay/1000.0)));
+		LOGGER.debug(String.format("Waited for %f seconds", (this.rateLimitDelay/1000.0)));
+	}
+
+	/**
+	 * Calculates the reconnect delay time when bot gets disconnected. The delay time increases when more
+	 * attempts are made to reconnect.
+	 * @param reconnectAttempt;
+	 * @return delay
+	 */
+	private int calculateReconnectDelay(AtomicInteger reconnectAttempt) {
+		int x = reconnectAttempt.get();
+		return (int) Math.floor(2*x - (4*x/(Math.log(x) + 2)));
 	}
 
 	@Override
@@ -204,21 +218,9 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	@Override
 	public void onTextMessage(WebSocket websocket, String message) throws Exception {
 		LOGGER.info("onTextMessage: message={}", message);
-
 		JsonPacket messagePacket = new JsonPacket(message);
-
 		int op = messagePacket.get("op").asInt();
-//		try {
-////			op = obj.get("op").getAsInt();
-//			op = messagePacket.get("op").asInt();
-//		} catch(NumberFormatException nfe) {
-//			LOGGER.info("Received an unknown payload. The value at \"op\" was not a number or does not exist. {}",
-//					nfe.getMessage());
-//			op = -1;
-//		}
-
 		ObjectContainer<GatewayOpcode> gatewayOpcode = GatewayOpcode.fromOpcode(op);
-
 		/*
 		 * Must have gotten an illegal opcode
 		 */
@@ -226,7 +228,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			LOGGER.error("Received an unknown payload. \"op\"={} does not exist.", op);
 			return;
 		}
-
 		/*
 		 * If a client does not receive a heartbeat ack between its attempts at sending heartbeats, it should
 		 * immediately terminate the connection with a non-1000 close code, reconnect, and attempt to resume.
@@ -296,7 +297,6 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 				LOGGER.debug("Received invalid session");
 				break;
 			case HELLO:
-//				int heartbeatInterval = obj.get("d").getAsJsonObject().get("heartbeat_interval").getAsInt();
 				int heartbeatInterval = messagePacket.get("d").asPacket().get("heartbeat_interval").asInt();
 				LOGGER.info("heartbeat_interval: {}", heartbeatInterval);
 				startHeartbeat(websocket, heartbeatInterval);
@@ -329,7 +329,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 	private ScheduledFuture<?> startHeartbeat(final WebSocket websocket, final int heartbeatInterval) {
 		this.heartbeatAckReceived = true;
 		//returns some scheduled future from sending this heartbeat after delay
-		return threadpool.scheduleAtFixedRate(() -> {
+		return this.threadpool.scheduleAtFixedRate(() -> {
 			if(this.heartbeatAckReceived) {
 				this.heartbeatAckReceived = false;
 				sendHeartbeat(websocket);

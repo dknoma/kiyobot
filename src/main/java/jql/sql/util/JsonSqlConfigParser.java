@@ -71,39 +71,39 @@ public class JsonSqlConfigParser {
 
 	/**
 	 * Get directory of models
-	 * @return jql.sql
+	 * @return sql
 	 */
 	public String getModelDirectory() {
 		return  this.modelDirectory;
 	}
 
 	/**
-	 * Get jql.sql url
-	 * @return jql.sql
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getDbName() {
 		return  this.dbName;
 	}
 
 	/**
-	 * Get jql.sql url
-	 * @return jql.sql
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getDb() {
 		return  this.db;
 	}
 
 	/**
-	 * Get jql.sql url
-	 * @return jql.sql
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getHost() {
 		return  this.host;
 	}
 
 	/**
-	 * Get jql.sql url
-	 * @return jql.sql
+	 * Get sql url
+	 * @return sql
 	 */
 	public String getPort() {
 		return  this.port;

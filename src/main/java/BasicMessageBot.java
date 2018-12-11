@@ -146,13 +146,7 @@ public class BasicMessageBot {
 						String userid = messageArgs[1];
 						String eventname = messageArgs[2];
 						String maxTickets = messageArgs[3];
-						try {
-							int userId = Integer.parseInt(userid);
-							int numTickets = Integer.parseInt(maxTickets);
-							createEvent(messageEvent, userId, eventname, numTickets);
-						} catch(NumberFormatException nfe) {
-							messageEvent.getChannel().sendTextMessage("User id and numtickets args must be integers.");
-						}
+						createEvent(messageEvent, userid, eventname, maxTickets);
 						break;
 					case "!getevent":
 						// get info on a specific event
@@ -178,14 +172,7 @@ public class BasicMessageBot {
 						eventid = messageArgs[1];
 						userid = messageArgs[2];
 						String numTickets = messageArgs[3];
-						try {
-							int eventId = Integer.parseInt(eventid);
-							int userId = Integer.parseInt(userid);
-							int tickets = Integer.parseInt(numTickets);
-							purchaseTickets(messageEvent, eventId, userId, tickets);
-						} catch(NumberFormatException nfe) {
-							messageEvent.getChannel().sendTextMessage("Event id, user id, and tickets args must be integers.");
-						}
+						purchaseTickets(messageEvent, eventid, userid, numTickets);
 						break;
 					case "!transfertickets":
 						// Gets user info, including the info of all the events the user has tickets to
@@ -193,15 +180,7 @@ public class BasicMessageBot {
 						userid = messageArgs[2];
 						String targetuser = messageArgs[3];
 						numTickets = messageArgs[4];
-						try {
-							int eventId = Integer.parseInt(eventid);
-							int userId = Integer.parseInt(userid);
-							int targetUser = Integer.parseInt(targetuser);
-							int tickets = Integer.parseInt(numTickets);
-							transferTickets(messageEvent, eventId, userId, targetUser, tickets);
-						} catch(NumberFormatException nfe) {
-							messageEvent.getChannel().sendTextMessage("Event id, user id, target user, and tickets args must be integers.");
-						}
+						transferTickets(messageEvent, eventid, userid, targetuser, numTickets);
 						break;
 					// Basic commads
 					case "!commands":
@@ -250,10 +229,27 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void createEvent(MessageCreateListener messageEvent, int userId, String eventname, int numTickets) {
+	private static void createEvent(MessageCreateListener messageEvent, String userId, String eventname, String numTickets) {
+		String userIdString;
+		String numTicketsString;
+		Object userid = userId;
+		Object numtickets = numTickets;
+		// Check if parameters are Strings or ints, and format the json body accordingly
+		try{
+			userid = Integer.parseInt(userId);
+			userIdString = "%1$d";
+		} catch(NumberFormatException nfe) {
+			userIdString = "\"%1$s\"";
+		}
+		try{
+			numtickets = Integer.parseInt(numTickets);
+			numTicketsString = "%3$d";
+		} catch(NumberFormatException nfe) {
+			numTicketsString = "\"%3$s\"";
+		}
 		postToService(messageEvent, PROJECT4_PATH + "/events/create",
-				"{\"userid\":%1$d,\"eventname\":\"%2$s\",\"numtickets\":%3$d}",
-				userId, eventname, numTickets);
+				"{\"userid\":" + userIdString +",\"eventname\":\"%2$s\",\"numtickets\":" + numTicketsString + "}",
+				userid, eventname, numtickets);
 	}
 
 	/**
@@ -293,18 +289,54 @@ public class BasicMessageBot {
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void purchaseTickets(MessageCreateListener messageEvent, int eventId, int userId, int tickets) {
-		postToService(messageEvent, String.format("%1$s/events/%2$d/purchase/%3$d", PROJECT4_PATH, eventId, userId),
-				"{\"tickets\":%1$d}", tickets);
+	private static void purchaseTickets(MessageCreateListener messageEvent, String eventId, String userId, String tickets) {
+		String numTicketsString;
+		Object numtickets = tickets;
+		// Check if parameters are Strings or ints, and format the json body accordingly
+		try{
+			numtickets = Integer.parseInt(tickets);
+			numTicketsString = "%1$d";
+		} catch(NumberFormatException nfe) {
+			numTicketsString = "\"%1$s\"";
+		}
+		postToService(messageEvent, String.format("%1$s/events/%2$s/purchase/%3$s", PROJECT4_PATH, eventId, userId),
+				"{\"tickets\":" + numTicketsString +"}", numtickets);
 	}
 
 	/**
 	 * Connects to the website and performs the appropriate methods
 	 * @param messageEvent;
 	 */
-	private static void transferTickets(MessageCreateListener messageEvent, int eventId, int userId, int targetUser, int tickets) {
-		postToService(messageEvent, String.format("%1$s/users/%2$d/tickets/transfer", PROJECT4_PATH, userId),
-				"{\"eventid\":%1$d,\"tickets\":%2$d,\"targetuser\":%3$d}", eventId, tickets, targetUser);
+	private static void transferTickets(MessageCreateListener messageEvent, String eventId, String userId,
+										String targetUser, String tickets) {
+		String eventIdString;
+		String targetUserString;
+		String numTicketsString;
+		Object eventid = eventId;
+		Object targetuser = targetUser;
+		Object numtickets = tickets;
+		// Check if parameters are Strings or ints, and format the json body accordingly
+		try{
+			eventid = Integer.parseInt(eventId);
+			eventIdString = "%1$d";
+		} catch(NumberFormatException nfe) {
+			eventIdString = "\"%1$s\"";
+		}
+		try{
+			numtickets = Integer.parseInt(tickets);
+			numTicketsString = "%2$d";
+		} catch(NumberFormatException nfe) {
+			numTicketsString = "\"%2$s\"";
+		}
+		try{
+			targetuser = Integer.parseInt(targetUser);
+			targetUserString = "%3$d";
+		} catch(NumberFormatException nfe) {
+			targetUserString = "\"%3$s\"";
+		}
+		postToService(messageEvent, String.format("%1$s/users/%2$s/tickets/transfer", PROJECT4_PATH, userId),
+		"{\"eventid\":" + eventIdString + ",\"tickets\":" + numTicketsString + ",\"targetuser\":" + targetUserString + "}",
+				eventid, numtickets, targetuser);
 	}
 
 	/**

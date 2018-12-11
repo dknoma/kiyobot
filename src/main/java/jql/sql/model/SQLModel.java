@@ -4,7 +4,7 @@ package jql.sql.model;
  * A model representing the structure and data in a SQL database.
  * Supports key types: STRING, INTEGER, BOOLEAN
  */
-public interface SQLModel {
+ public interface SQLModel {
 
 	/**
 	 * Adds a String key to the column to the table
@@ -12,7 +12,7 @@ public interface SQLModel {
 	 * @param isNotNull if key can be null
 	 * @param  keyIsVar if string can have variable length
 	 */
-	public void addColumn(String key, boolean isUnique, boolean isNotNull, boolean keyIsVar,
+	 void addColumn(String key, boolean isUnique, boolean isNotNull, boolean keyIsVar,
 						  int keyLength, boolean hasDefaultValue, Object defaultValue);
 
 	/**
@@ -21,54 +21,54 @@ public interface SQLModel {
 	 * @param isNotNull if key can be null
 	 * @param classOfT class of the key
 	 */
-	public <T> void addColumn(String key, boolean isUnique, boolean isNotNull, Class<T> classOfT,
+	 <T> void addColumn(String key, boolean isUnique, boolean isNotNull, Class<T> classOfT,
 							  boolean hasDefaultValue, Object defaultValue);
 
 	/**
 	 * Creates the query to create the table
 	 */
-	public void createTableQuery();
+	 void createTableQuery();
 
 	/**
 	 * Gets the model's query
 	 * @return name
 	 */
-	public String getQuery();
+	 String getQuery();
 
 	/**
 	 * Gets the model's name
 	 * @return name
 	 */
-	public String getModelName();
+	 String getModelName();
 
 	/**
 	 * Gets the model's primary key
 	 * @return name
 	 */
-	public String getPrimaryKey();
+	 String getPrimaryKey();
 
 	/**
 	 * Gets the model's reference model name
 	 * @return name
 	 */
-	public String getForeignModelName();
+	 String getForeignModelName();
 
 	/**
 	 * Gets the model's reference model primary key
 	 * @return name
 	 */
-	public String getForeignKey();
+	 String getForeignKey();
 
 	/**
 	 * Makes a deep copy of this model
 	 * @return deep copy
 	 */
-	public SQLModel deepCopy();
+	 SQLModel deepCopy();
 
 	/**
 	 * Returns a String representation of this model.
 	 * @return a String
 	 */
 	@Override
-	public String toString();
+	 String toString();
 }

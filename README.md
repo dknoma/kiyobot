@@ -144,8 +144,50 @@ public class MessageBot {
 ## Diskiyord
 > Java Discord API
 
+Diskiyord is a custom JAVA API that allows communication between Discord's API and a Java program. This was developed specifically for Kiyobot so it has limited functionality. Even though it's basic, other users can still use this library to make other basic messaging bots.
+The library connects to Discord's gateway to obtain the websocket connection. This websocket connection allows bot authentication and communication between the program and Discord's API.
+
 ## JQL
 > SQL API
+
+This API allows users to create SQL tables by utilizing JSON model files. The following is an example of what a model file would look like.
+
+```Json
+{
+	"name": "user",
+	"autoIncrement": true,
+	"columns": [{
+		"key": "username",
+		"attributes": {
+			"type": "STRING",
+			"length": 20,
+			"lengthIsVar": true,
+			"isUnique": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "tickets",
+		"attributes": {
+			"type": "INTEGER",
+			"defaultValue": 0,
+			"allowNull": false
+		}
+	}]
+}
+```
+
+The `name` field determines what the name of the table will be. This will also default the primary key to be <name>id. You can also specify if you want the primary key to auto increment.
+The `columns` field will contain all the information on the column name and its attributes.
+
+These are some of the possible attributes you can use:
+`
+type: Determines the type of value to be stored in the column.
+length: Determines the length of String values.
+lengthIsVar: Determines if the length is variable or fixed.
+isUnique: Can make the column only have unique values.
+allowNull: Determines if the column can have null values or not.
+defaultValue: Sets the value of a new entry into the table to be the specified default value if no value was specified upon insertion.
+`
 
 ## SQLModel
 

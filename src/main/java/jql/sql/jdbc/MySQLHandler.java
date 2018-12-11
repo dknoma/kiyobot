@@ -35,7 +35,7 @@ public class MySQLHandler implements JDBCHandler {
 
 	/**
 	 * Sets up the connection for JDBC to the database
-	 * @param db jql.sql
+	 * @param db sql
 	 * @param host host
 	 * @param port port
 	 * @param username un
@@ -49,7 +49,7 @@ public class MySQLHandler implements JDBCHandler {
 			String timeZoneSettings = "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
 			this.dbConn = DriverManager.getConnection(dbURL + timeZoneSettings, username, password);
 			this.connected = true;
-			LOGGER.info("Connected to jql.sql successfully!");
+			LOGGER.info("Connected to sql successfully!");
 		} catch (SQLException e) {
 			LOGGER.error("Connection error. If you're using an SSH tunnel, please make sure it's setup correctly: {},\n{}", e.getMessage(), e.getStackTrace());
 			this.connected = false;
@@ -177,11 +177,11 @@ public class MySQLHandler implements JDBCHandler {
 		}
 		sb.append(") VALUES (");
 		for(int i = 0; i < columns.length; i++) {
-			if (columns[i].getClassOfT().equals(STRING)) {
+			if (columns[i].getClassOfValue().equals(STRING)) {
 				sb.append(String.format("\"%s\"",columns[i].getValue().toString()));
-			} else if (columns[i].getClassOfT().equals(INTEGER)) {
+			} else if (columns[i].getClassOfValue().equals(INTEGER)) {
 				sb.append((int) columns[i].getValue());
-			} else if (columns[i].getClassOfT().equals(BOOLEAN)) {
+			} else if (columns[i].getClassOfValue().equals(BOOLEAN)) {
 				sb.append((boolean)columns[i].getValue());
 			}
 			if (i < columns.length - 1) {
@@ -242,7 +242,7 @@ public class MySQLHandler implements JDBCHandler {
 		sb.append(" SET ");
 		int i = 0;
 		for(ColumnObject column : columns) {
-			if (column.getClassOfT().equals(STRING) && !column.getValue().toString().endsWith("id")) {
+			if (column.getClassOfValue().equals(STRING) && !column.getValue().toString().endsWith("id")) {
 				sb.append(String.format("%1$s=\"%2$s\"%3$s", column.getKey(), column.getValue(), query));
 			} else {
 				sb.append(String.format("%1$s=%2$s%3$s", column.getKey(), column.getValue(), query));

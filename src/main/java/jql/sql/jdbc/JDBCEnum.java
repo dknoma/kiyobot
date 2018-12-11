@@ -20,7 +20,7 @@ public enum JDBCEnum {
 	 * @param dbName;
 	 * @param handler;
 	 */
-	public static void addJDBCHandler(String dbName, JDBCHandler handler, Map<String, SQLModel> models) {
+	public void addJDBCHandler(String dbName, JDBCHandler handler, Map<String, SQLModel> models) {
 		DB_NAME = dbName;
 		HANDLER = handler;
 		MODELS = models;
@@ -30,7 +30,7 @@ public enum JDBCEnum {
 	 * Gets the JDBC handler from the map
 	 * @return handler
 	 */
-	public static String getDbName() {
+	public String getDbName() {
 		return DB_NAME;
 	}
 
@@ -38,7 +38,7 @@ public enum JDBCEnum {
 	 * Gets the JDBC handler from the map
 	 * @return handler
 	 */
-	public static JDBCHandler getJDBCHandler() {
+	public JDBCHandler getJDBCHandler() {
 		return HANDLER;
 	}
 
@@ -46,7 +46,7 @@ public enum JDBCEnum {
 	 * Gets the SQL models of this database
 	 * @return models
 	 */
-	public static Map<String, SQLModel> getModels() {
+	public Map<String, SQLModel> getModels() {
 		return MODELS;
 	}
 }

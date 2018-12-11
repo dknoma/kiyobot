@@ -38,7 +38,7 @@ public class PostgresHandler implements JDBCHandler {
 
 	/**
 	 * Sets up the connection for JDBC to the database
-	 * @param db jql.sql
+	 * @param db sql
 	 * @param host host
 	 * @param port port
 	 * @param username un
@@ -51,7 +51,7 @@ public class PostgresHandler implements JDBCHandler {
 			String dbURL = String.format("jdbc:postgresql://%1$s:%2$s/%3$s", host, port, db);
 			this.dbConn = DriverManager.getConnection(dbURL, username, password);
 			this.connected = true;
-			LOGGER.info("Connected to jql.sql successfully!");
+			LOGGER.info("Connected to sql successfully!");
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 			this.connected = false;
@@ -206,11 +206,11 @@ public class PostgresHandler implements JDBCHandler {
 		}
 		sb.append(") VALUES (");
 		for(int i = 0; i < columns.length; i++) {
-			if (columns[i].getClassOfT().equals(STRING)) {
+			if (columns[i].getClassOfValue().equals(STRING)) {
 				sb.append(String.format("'%s'",columns[i].getValue().toString()));
-			} else if (columns[i].getClassOfT().equals(INTEGER)) {
+			} else if (columns[i].getClassOfValue().equals(INTEGER)) {
 				sb.append((int) columns[i].getValue());
-			} else if (columns[i].getClassOfT().equals(BOOLEAN)) {
+			} else if (columns[i].getClassOfValue().equals(BOOLEAN)) {
 				sb.append((boolean)columns[i].getValue());
 			}
 			if (i < columns.length - 1) {
@@ -243,7 +243,7 @@ public class PostgresHandler implements JDBCHandler {
 		StringBuilder sb = new StringBuilder();
 		sb.append(" SET ");
 		for(ColumnObject column : columns) {
-			if (column.getClassOfT().equals(STRING) && !column.getValue().toString().endsWith("id")) {
+			if (column.getClassOfValue().equals(STRING) && !column.getValue().toString().endsWith("id")) {
 				sb.append(String.format("%1$s='%2$s'", column.getKey(), column.getValue()));
 			} else {
 				sb.append(String.format("%1$s=%2$s", column.getKey(), column.getValue()));

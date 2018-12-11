@@ -4,12 +4,12 @@ public class ColumnObject<T> {
 
 	private String key;
 	private T value;
-	private Class classOfT;
+	private Class classOfValue;
 
 	public ColumnObject(String key, T value) {
 		this.key = key;
 		this.value = value;
-		this.classOfT = value.getClass();
+		this.classOfValue = value.getClass();
 	}
 
 	public String getKey() {
@@ -20,11 +20,15 @@ public class ColumnObject<T> {
 		return value;
 	}
 
-	public Class getClassOfT() {
-		return this.classOfT;
+	public Class getClassOfValue() {
+		return this.classOfValue;
 	}
 
 	public String toString() {
-		return String.format("{\"key\": %1$s, \"value\": %2$s, \"classType\": %3$s", this.key, this.value, this.classOfT);
+		if(this.classOfValue.equals(String.class)) {
+			return String.format("{\"key\": %1$s, \"value\": \"%2$s\", \"classtype\": \"%3$s\"", this.key, this.value, this.classOfValue);
+		} else {
+			return String.format("{\"key\": %1$s, \"value\": %2$s, \"classtype\": \"%3$s\"", this.key, this.value, this.classOfValue);
+		}
 	}
 }
