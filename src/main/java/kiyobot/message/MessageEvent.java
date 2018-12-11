@@ -37,8 +37,8 @@ public enum MessageEvent {
 	private final String COMPLETED = "completed";
 	private final String IMG_LINK = "imglink";
 	// URL of the tunnel connection to the Eventer service
-//	private final String PROJECT4_PATH = "http://mcvm064.cs.usfca.edu:7070/api";
-	private final String PROJECT4_PATH = "http://127.0.0.1:9000/api";
+	private final String PROJECT4_PATH = "http://mcvm064.cs.usfca.edu:7070/api";
+//	private final String PROJECT4_PATH = "http://127.0.0.1:9000/api";
 	private final Logger LOGGER = LogManager.getLogger();
 
 	/**
