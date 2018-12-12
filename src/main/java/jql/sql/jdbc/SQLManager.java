@@ -24,6 +24,134 @@ public enum SQLManager {
 	}
 
 	/**
+	 * Inserts specified data into the desired table.
+	 * @param handler;
+	 * @param tableName;
+	 * @param columns;
+	 * @throws SQLException;
+	 */
+	public void insertIntoTable(JDBCHandler handler, String tableName, ColumnObject... columns) throws SQLException {
+		handler.executeUpdate(handler.insert(tableName, columns));
+	}
+
+	/**
+	 * Updates the columns of a specified key/value pair
+	 * @param handler;
+	 * @param tableName;
+	 * @param whereKey;
+	 * @param whereValue;
+	 * @param setColumns;
+	 * @param <T>;
+	 * @throws SQLException;
+	 */
+	public <T> void updateWhere(JDBCHandler handler, String tableName, String whereKey, T whereValue, ColumnObject... setColumns) throws SQLException {
+		handler.executeUpdate(handler.update(tableName,
+				handler.set(handler.where(whereKey, whereValue, ""), setColumns)
+				)
+		);
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @param what JDBCHandler
+	 * @param location JDBCHandler
+	 * @param key key
+	 * @param value value
+	 * @return json
+	 */
+	public <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
+		String whereQuery;
+		if(value.getClass().equals(STRING)) {
+			whereQuery = handler.where(key, value, "");
+		} else if(value.getClass().equals(INTEGER)) {
+			whereQuery = handler.where(key, value, "");
+		} else if(value.getClass().equals(BOOLEAN)) {
+			whereQuery = handler.where(key, value, "");
+		} else {
+			whereQuery = "";
+		}
+		return handler.executeQuery(
+				handler.select(what,
+						handler.from(location,
+								whereQuery
+						)
+				)
+		);
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @param what JDBCHandler
+	 * @param location JDBCHandler
+	 * @return json
+	 */
+	public ResultSet getResultSet(JDBCHandler handler, String what, String location, ColumnObject... columns) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		int i = 0;
+		for(ColumnObject column : columns) {
+			String key = column.getKey();
+			Object value = column.getValue();
+			if(i == 0) {
+				sb.append(handler.where(key, value, ""));
+			} else {
+				sb.append(handler.and(key, value, ""));
+			}
+			i++;
+		}
+		String whereQuery = sb.toString();
+		return handler.executeQuery(
+				handler.select(what,
+						handler.from(location,
+								whereQuery
+						)
+				)
+		);
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @param what;
+	 * @param location;
+	 * @return json
+	 */
+	public ResultSet getResultSet(JDBCHandler handler, String what, String location) throws SQLException {
+		return handler.executeQuery(
+				handler.select(what,
+						handler.from(location,
+								""
+						)
+				)
+		);
+	}
+
+	/**
+	 * Gets a single json object  w/o any references
+	 * @param handler JDBCHandler
+	 * @param key key
+	 * @param value value
+	 * @return json
+	 */
+	public <T> ResultSet getDesiredColumns(JDBCHandler handler, String location, String key, T value,
+										   String... columns) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < columns.length; i++) {
+			sb.append(columns[i]);
+			sb.append(",");
+		}
+		sb.deleteCharAt(sb.toString().length()-1);
+		return handler.executeQuery(
+				handler.select(sb.toString(),
+						handler.from(location,
+								handler.where(key, value, "")
+						)
+				)
+		);
+	}
+
+	/**
 	 * Returns a json string representation of the data in the result set w/ reference table data
 	 * @param results query result set
 	 * @return json
@@ -34,8 +162,8 @@ public enum SQLManager {
 		try {
 			// resultset starts BEFORE first row, need to call next for all results
 			String tableName = results.getMetaData().getTableName(1);
-				sb.append(tableName.endsWith("x") ? String.format("\"%ses\":[", tableName)
-						: String.format("\"%ss\":[", tableName));
+			sb.append(tableName.endsWith("x") ? String.format("\"%ses\":[", tableName)
+					: String.format("\"%ss\":[", tableName));
 			String primaryKey = results.getMetaData().getColumnName(1);
 			while(results.next()) {
 				sb.append("{");
@@ -67,54 +195,6 @@ public enum SQLManager {
 				}
 			}
 			sb.append("]}");
-		} catch (SQLException e) {
-			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Returns a json string representation of the data in the result set
-	 * @param handler JDBCHandler
-	 * @param what JDBCHandler
-	 * @param location JDBCHandler
-	 * @return json
-	 */
-	public String resultsToString(JDBCHandler handler, String what, String location) throws SQLException {
-		ResultSet results = getResultSet(handler, what, location);
-		if(results == null) {
-			return "{}";
-		}
-		StringBuilder sb = new StringBuilder();
-		try {
-			int numRows = 0;
-			while(results.next()) {
-				numRows++;
-				sb.append("{");
-				int resultCount = results.getMetaData().getColumnCount();
-				for (int i = 1; i <= resultCount; i++) {
-					String columnType = results.getMetaData().getColumnTypeName(i);
-					String columnName = results.getMetaData().getColumnName(i);
-					if(isString(columnType)) {
-						sb.append(String.format("\"%1$s\":\"%2$s\"", columnName, results.getString(columnName)));
-					} else if(isInt(columnType)) {
-						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getInt(columnName)));
-					} else if(isBoolean(columnType)) {
-						sb.append(String.format("\"%1$s\":%2$s", columnName, results.getBoolean(columnName)));
-					}
-					if(i < resultCount) {
-						sb.append(",");
-					}
-				}
-				if(!results.isLast()) {
-					sb.append("},");
-				} else {
-					sb.append("}");
-				}
-			}
-			if(numRows == 0) {
-				return "{}";
-			}
 		} catch (SQLException e) {
 			LOGGER.error("A SQL error has occurred: {},\n{}", e.getMessage(), e.getStackTrace());
 		}
@@ -319,7 +399,7 @@ public enum SQLManager {
 	 * @throws SQLException
 	 */
 	public ResultSet selectItemFromInnerJoinOn(JDBCHandler handler, String[] selects, String leftJoin, String rightJoin,
-													  ColumnObject... comparisons) throws SQLException {
+											   ColumnObject... comparisons) throws SQLException {
 		StringBuilder sb = new StringBuilder(),
 				sel = new StringBuilder();
 		for(int i = 1; i < comparisons.length; i++) {
@@ -461,8 +541,8 @@ public enum SQLManager {
 	 * @return json
 	 */
 	public <T> String getResultsIncluding(JDBCHandler handler, String outerTable, String outerKey, T outerValue,
-											 String outerTableParam, String outerTableParamId, String[] columns,
-											 String excludeKey, ColumnObject... innerColumns) throws SQLException {
+										  String outerTableParam, String outerTableParamId, String[] columns,
+										  String excludeKey, ColumnObject... innerColumns) throws SQLException {
 		ResultSet outerResult = getDesiredColumns(handler, outerTable, outerKey, outerValue, columns);
 		// Checks if user exists
 		if(!outerResult.isBeforeFirst()) {
@@ -613,106 +693,6 @@ public enum SQLManager {
 		}
 		LOGGER.debug(sb.toString());
 		return sb.toString();
-	}
-
-	/**
-	 * Gets a single json object  w/o any references
-	 * @param handler JDBCHandler
-	 * @param what JDBCHandler
-	 * @param location JDBCHandler
-	 * @param key key
-	 * @param value value
-	 * @return json
-	 */
-	private <T> ResultSet getResultSet(JDBCHandler handler, String what, String location, String key, T value) throws SQLException {
-		String whereQuery;
-		if(value.getClass().equals(STRING)) {
-			whereQuery = handler.where(key, value, "");
-		} else if(value.getClass().equals(INTEGER)) {
-			whereQuery = handler.where(key, value, "");
-		} else if(value.getClass().equals(BOOLEAN)) {
-			whereQuery = handler.where(key, value, "");
-		} else {
-			whereQuery = "";
-		}
-		return handler.executeQuery(
-				handler.select(what,
-						handler.from(location,
-								whereQuery
-						)
-				)
-		);
-	}
-
-	/**
-	 * Gets a single json object  w/o any references
-	 * @param handler JDBCHandler
-	 * @param what JDBCHandler
-	 * @param location JDBCHandler
-	 * @return json
-	 */
-	private ResultSet getResultSet(JDBCHandler handler, String what, String location, ColumnObject... columns) throws SQLException {
-		StringBuilder sb = new StringBuilder();
-		int i = 0;
-		for(ColumnObject column : columns) {
-			String key = column.getKey();
-			Object value = column.getValue();
-			if(i == 0) {
-				sb.append(handler.where(key, value, ""));
-			} else {
-				sb.append(handler.and(key, value, ""));
-			}
-			i++;
-		}
-		String whereQuery = sb.toString();
-		return handler.executeQuery(
-				handler.select(what,
-						handler.from(location,
-								whereQuery
-						)
-				)
-		);
-	}
-
-	/**
-	 * Gets a single json object  w/o any references
-	 * @param handler JDBCHandler
-	 * @param what;
-	 * @param location;
-	 * @return json
-	 */
-	private ResultSet getResultSet(JDBCHandler handler, String what, String location) throws SQLException {
-		return handler.executeQuery(
-				handler.select(what,
-						handler.from(location,
-								""
-						)
-				)
-		);
-	}
-
-	/**
-	 * Gets a single json object  w/o any references
-	 * @param handler JDBCHandler
-	 * @param key key
-	 * @param value value
-	 * @return json
-	 */
-	private <T> ResultSet getDesiredColumns(JDBCHandler handler, String location, String key, T value,
-											String... columns) throws SQLException {
-		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < columns.length; i++) {
-			sb.append(columns[i]);
-			sb.append(",");
-		}
-		sb.deleteCharAt(sb.toString().length()-1);
-		return handler.executeQuery(
-				handler.select(sb.toString(),
-						handler.from(location,
-								handler.where(key, value, "")
-						)
-				)
-		);
 	}
 
 	/**

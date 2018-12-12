@@ -1,0 +1,664 @@
+Kiyobot Log - Principles of Software Development, Side Project, Fall 2018
+
+A project on making a Discord bot from scratch using the Discord API
+
+**----------------**
+**- Nov 9, 2018  -**
+**----------------**
+12:00 PM
+	- created repository
+	- created Maven project
+		- Dependencies: 
+			. Junit
+			. Gson
+			. log4j2
+12:57 PM
+	- read up on Discord API
+		- Packets sent from the client to the Gateway API are encapsulated within a gateway payload object and 
+		  must have the proper opcode and data object set. The payload object can then be serialized in the 
+		  format of choice (see ETF/JSON), and sent over the websocket. Payloads to the gateway are limited to 
+		  a maximum of 4096 bytes sent, going over this will cause a connection termination with error code 4002.
+1:37 PM
+	- When using JSON encoding with payload compression enabled (compress: true in identify), the Gateway may 
+	  optionally send zlib-compressed payloads (see RFC1950 2.2). Your library must detect and decompress these 
+	  payloads to plain-text JSON before attempting to parse them. If you are using payload compression, the 
+	  gateway does not implement a shared compression context between messages sent. Payload compression will be
+	  disabled if you use transport compression (see below).
+	- Currently the only available transport compression option is zlib-stream. You will need to run all received 
+	  packets through a shared zlib context, as seen in the example below. Every connection to the gateway should 
+	  use its own unique zlib context.
+	- Connecting
+		| Gateway URL Params																			  |
+		|------------|---------|------------------------------------------------|-------------------------|
+		| Field		 | Type    | Description								    | Accepted Values		  |
+		|------------|---------|------------------------------------------------|-------------------------|
+		| v			 | integer | Gateway Version to use							| 6 (see Gateway versions)| 
+		| encoding	 | string  | The encoding of recieved gateway packets		| 'json' or 'etf'		  |
+		| compress?	 | string  | The (optional) compression of gateway packets	| 'zlib-stream'			  |
+		|------------|---------|------------------------------------------------|-------------------------|
+		The first step in establishing connectivity to the gateway is requesting a valid websocket endpoint from 
+		the API. This can be done through either the Get Gateway or the Get Gateway Bot endpoint.
+1:50 PM
+	- GET /gateway/bot
+	  This endpoint requires authentication using a valid bot token.
+
+	  Returns an object based on the information in Get Gateway, plus additional metadata that can help during 
+	  the operation of large or sharded bots. Unlike the Get Gateway, this route should not be cached for 
+	  extended periods of time as the value is not guaranteed to be the same per-call, and changes as the bot 
+	  joins/leaves guilds.
+
+	- "https://discordapp.com/api/channels/{}/messages"
+
+2:12 PM
+	- testing config parser and connecting to discord api
+
+3:50 PM
+	- end
+
+-------------------
+-   SESSION : ~4  -
+-------------------
+- TOTAL HOURS: ~4 -
+-------------------
+
+
+6:58 PM
+	- looking into design patterns to build a simple library
+
+
+-------------------
+-   SESSION : 2   -
+------------------
+- TOTAL HOURS: ~6 -
+-------------------
+
+12:40 AM
+	- looking into GET /api/gateway for secure websockets
+
+2:10 AM
+	- cleaned up code and class files
+
+-------------------
+-   SESSION : 2   -
+-------------------
+- TOTAL HOURS: ~8 -
+-------------------
+
+**----------------**
+**- Nov 10, 2018 -**
+**----------------**
+
+11:00 AM
+	- get websocket protocol
+	- connect to the new url w/ gateway version and encoding
+		- eg. wss://gateway.discord.gg/?v=6&encoding=json
+	- Once connected, the client should immediately receive an Opcode 10 Hello payload, with information on 
+		the connections heartbeat interval:
+		-------------------------
+		- Example Gateway Hello -
+		-------------------------
+		{
+		  "heartbeat_interval": 45000,
+		  "_trace": ["discord-gateway-prd-1-99"]
+		}
+
+-------------------
+-   SESSION : 1   -
+-------------------
+- TOTAL HOURS: ~9 -
+-------------------
+
+4:37 PM
+	- using jetty for websocket client interaction to actually connect and use wss protocols
+
+5:30 PM
+	- switching to nv-websocket-client for websockets
+
+6:00 PM
+	- figuring out discord heartbeats
+	- curl -d '{"content": "HELLO CHANNEL"}' -H "Authorization: Bot xyz" 
+			-H "User-Agent: Kiyobot (v0.1)" 
+			-H "Content-Type: application/json" 
+			-X POST https://discordapp.com/api/channels/{channelid}/messages
+		- returns unauthorized
+STOP 6:40
+
+--------------------
+-   SESSION : 2    -
+--------------------
+- TOTAL HOURS: ~11 -
+--------------------
+
+7:20 PM
+	- handling heartbeats op 10 and op 11
+STOP 7:50
+
+----------------------
+-   SESSION : .5     -
+----------------------
+- TOTAL HOURS: ~11.5 -
+----------------------
+
+**----------------**
+**- Nov 11, 2018 -**
+**----------------**
+
+11:00 PM
+	- working on connection to websockets and resending heartbeats
+
+----------------------
+-   SESSION : .5     -
+----------------------
+- TOTAL HOURS: ~12   -
+----------------------
+
+**----------------**
+**- Nov 12, 2018 -**
+**----------------**
+
+11:00 AM
+	- working on GatewayOpcode enum for getting instances of an opcode.
+		- more for convenience and good design
+
+11:20 AM
+	- need to figure out a way to initialize the Map<opcode, GatewayOpcode class> of the enum
+
+12:00 PM
+	- successfully created my GatewayOpcode enum!
+	- all insances from 0 to 11 were successfully added to the Map inside the enum
+	- note from enum:
+		/*
+	     * This static block that puts all instances of this enum into a Map<Integer, GatewayOpcode>
+	     *     
+	     * This gets called after all instances have been created, as by virtue of being an enum;
+	     *      enum values MUST be put before any static call, therefor will ALWAYS come before
+	     *      any static calls/blocks
+	     */
+STOP 12:14 PM
+
+----------------------
+-   SESSION : ~1     -
+----------------------
+- TOTAL HOURS: ~13   -
+----------------------
+
+12:30 PM
+	- putting more TODOs
+	- need to put more cases for ALL opcodes
+	- maybe make a REST classes for convenience? Will make making requests and method calls easier.
+	- rather than coding calls each time, should have a class to format calls/requests for us
+	- packet class, to send formatted responses back to API
+	- turn HTTPRequest into a REST request rather than generic HTTP request. Dealing with wesockets, 
+			json for convenience
+	- heartbeat sending should be in own class
+		- in addition to sending a heartbeat on the first connection to the gateway, the gateway itself 
+		  can ask for a heartbeat; so this code would beb reused in certain cases
+STOP 1:32 PM
+
+----------------------
+-   SESSION :  1     -
+----------------------
+- TOTAL HOURS: ~14   -
+----------------------
+
+2:30 PM
+	- checking websocket payloads, how to send opcode 2 to server, how to continually send heartbeats at 
+	  heartbeat_interval until connection is terminated.
+
+3:11 PM	  
+	- looking into the Future interface for scheduling tasks
+
+4:14
+	- looking into rate limiting tasks to prevent overloading the gateway
+	- use a BlockingQueue to hold threads in a rate limiter?
+		- if queue is full, need to wait until its empty to go on
+	- use ExecutorService threadpool = Executors.newFixedThreadpool(nThreads) which will act as a rate 
+	  limiter by only having a certain amount of threads available
+STOP 4:38
+
+----------------------
+-   SESSION :  2     -
+----------------------
+- TOTAL HOURS: ~16   -
+----------------------
+
+**----------------**
+**- Nov 13, 2018 -**
+**----------------**
+
+1:00 AM
+	- adding scheduled tasks via ScheduledExecutorService
+	- adding json packet class
+
+STOP 2:54 AM
+	- successfully scheduled basic heartbeat task!
+
+----------------------
+-   SESSION : ~2     -
+----------------------
+- TOTAL HOURS: ~18   -
+----------------------
+
+10:00 AM
+	- working on identify packets
+
+STOP 11:00 AM
+
+----------------------
+-   SESSION : ~1     -
+----------------------
+- TOTAL HOURS: ~19   -
+----------------------
+
+1:30 PM
+	- JsonPacket class
+
+2:12 PM
+	- makeshift ratelimiter for identify
+		- 5432 milliseconds
+
+3:27 PM
+	- getting READY from gateway
+		- want compression or no compression?
+
+4:37 PM
+	- adding functionality for JsonPacket to create itself from putting a String into its constructor
+
+STOP 5:00 PM
+
+----------------------
+-   SESSION : ~4     -
+----------------------
+- TOTAL HOURS: ~23   -
+----------------------
+
+6:00 PM 
+	- fixing JsonPacket methods
+		- added unit tests and more logging
+
+7:45 PM 
+	- working on a zlib decompressor class for compressed responses from the gateway
+
+8:47 PM 
+	- Bot connects successfully to the discord server!
+		- can receive various gateway events
+	- Bot functionality:
+		- Message related events
+			- would need a MessageCreateListener
+				- allows bot to see what messages are being sent
+	- Need an API class and a builder for modularity
+
+STOP 9:55 PM
+
+----------------------
+-   SESSION : ~4     -
+----------------------
+- TOTAL HOURS: ~27   -
+----------------------
+
+
+11:23 PM
+	- working on API class and MessageCreateListener
+
+1:45 AM
+	- channelclass to help send messages to server?
+
+----------------------
+-   SESSION : ~2     -
+----------------------
+- TOTAL HOURS: ~29   -
+----------------------
+
+**----------------**
+**- Nov 14, 2018 -**
+**----------------**
+
+8:00 AM
+	- working on sending messages to POST /channels/{channel.id}/messages
+
+9:32 AM
+	- BOT SUCCESSFULLY SENDS A MESSAGE BACK TO THE SERVER!!!
+
+STOP 10:06 AM
+
+----------------------
+-   SESSION : ~2     -
+----------------------
+- TOTAL HOURS: ~31   -
+----------------------
+
+11:07 PM
+	- bot can now send messages;
+		- has basic commands: !ping, !addtodo
+	- Fixed README and added link to the private repository
+
+STOP 2:31 PM
+
+----------------------
+-   SESSION : ~3.5   -
+----------------------
+- TOTAL HOURS: ~34.5 -
+----------------------
+
+**----------------**
+**- Nov 16, 2018 -**
+**----------------**
+
+8:27 AM
+	- Working on ElephantSQL, online PostgreSQL datase
+		- using JDBC
+		- setting up a JDBC singlton to handle all requests
+	- working on a jdbc handler for all sql queries
+
+STOP 10:26 AM
+
+----------------------
+-   SESSION : ~2     -
+----------------------
+- TOTAL HOURS: ~36.5 -
+----------------------
+
+10:24 PM 
+	- updated JDBCHandler for table setup, update, and creation
+
+STOP 11:14 PM
+
+----------------------
+-   SESSION : ~.5    -
+----------------------
+- TOTAL HOURS: ~37   -
+----------------------
+
+**----------------**
+**- Nov 17, 2018 -**
+**----------------**
+
+8:04 PM 
+	- updated JDBCPostgresHandler for table setup, update, and creation
+
+STOP 9:15 PM
+
+----------------------
+-   SESSION : ~1     -
+----------------------
+- TOTAL HOURS: ~38   -
+----------------------
+
+10:11 PM 
+	- created JDBCHandler interface instead, and an enum to hold a map of handlers, rather than having the handler be a singleton intself
+
+STOP 11:08 PM
+
+----------------------
+-   SESSION : ~1     -
+----------------------
+- TOTAL HOURS: ~39   -
+----------------------
+
+**----------------**
+**- Nov 18, 2018 -**
+**----------------**
+
+12:10 AM
+	- creating more methods for the handlers, and using sqlpro for PostgreSQL to check tables with ElephantSQL
+
+1:12 AM
+	- methods seem to work.
+	- keys are SERIAL/AUTO_INCREMENT
+
+STOP 2:01 AM
+
+9:30 AM
+	- fixing queries, postgres likes 'single quote' queries rather than "double"
+
+STOP 10:30 AM
+
+----------------------
+-   SESSION : ~3     -
+----------------------
+- TOTAL HOURS: ~42   -
+----------------------
+
+**----------------**
+**- Nov 20, 2018 -**
+**----------------**
+
+12:00 PM
+	- working on SQLModel for easier table building; more modular than using just JDBCHandler
+
+2:33 PM
+	- working on SQLModelBuilder
+
+5:10 PM
+	- Fixed up SQLModel a little bit
+	- builder seems to be working correctly
+
+5:22 PM
+	- SQLModel interface
+		- have different classes for postgres and mysql
+
+STOP 6:02 PM
+
+----------------------
+-   SESSION : ~6     -
+----------------------
+- TOTAL HOURS: ~48   -
+----------------------
+
+**----------------**
+**- Nov 21, 2018 -**
+**----------------**
+
+6:30 PM
+	- multiple insert queries
+
+
+STOP 7:20 PM
+
+8:24 PM
+	- testing output of queries
+		- SELECT * FROM * WHERE *=*
+
+STOP 10:38
+
+----------------------
+-   SESSION : ~3     -
+----------------------
+- TOTAL HOURS: ~51   -
+----------------------
+
+**----------------**
+**- Nov 22, 2018 -**
+**----------------**
+
+12:00 AM
+	- fixed incorrect json output
+
+STOP 1:39 AM
+
+----------------------
+-   SESSION : ~1.5   -
+----------------------
+- TOTAL HOURS: ~52.5 -
+----------------------
+
+10:11 AM
+	- put result set methods into a resultsethandler
+	- handles all queries
+		- allows to get the name, primary key name, and id of a table for output to another web service
+
+STOP 2:30 PM
+
+----------------------
+-   SESSION : ~4.5   -
+----------------------
+- TOTAL HOURS: ~57   -
+----------------------
+
+**----------------**
+**- Nov 23, 2018 -**
+**----------------**
+
+2:00 AM
+	- testing custom SQL api w/ bot
+		- output seems correct
+		- using !addexgfx command correctly adds to database
+		- !getexgfx  <filename> works as well
+STOP 2:53 AM
+
+----------------------
+-   SESSION : ~1     -
+----------------------
+- TOTAL HOURS: ~58   -
+----------------------
+
+10:23 PM
+	- added more commands
+		- added a !commands command to see all commands
+	- added a default message for unknown commands
+	- Updated javadocs of classes
+
+STOP 12:02 AM
+
+----------------------
+-   SESSION : ~1.5   -
+----------------------
+- TOTAL HOURS: ~59.5 -
+----------------------
+
+**----------------**
+**- Nov 25, 2018 -**
+**----------------**
+
+12:02 PM
+	- updating readme
+	- updated some comands in the JDBCHandlers
+
+STOP 2:42 PM
+
+----------------------
+-   SESSION : ~2.5   -
+----------------------
+- TOTAL HOURS: ~62   -
+----------------------
+
+
+IDEA DECEMBER 3rd
+	- Make bot access Project4 API
+
+
+**----------------**
+**-  Dec 3, 2018 -**
+**----------------**
+
+3:49 PM
+	- integrate Kiyobot to access project 4 API
+
+4:40 PM
+	- works and prettyprints the json representation of the output!
+
+STOP 6:20 PM
+
+----------------------
+-   SESSION : ~3     -
+----------------------
+- TOTAL HOURS: ~65   -
+----------------------
+
+**----------------**
+**-  Dec 9, 2018 -**
+**----------------**
+
+	- added all front end functions to the bot - transfer
+
+----------------------
+-   SESSION : ~3     -
+----------------------
+- TOTAL HOURS: ~68   -
+----------------------
+
+**----------------**
+**- Dec 10, 2018 -**
+**----------------**
+
+12:10 PM
+	- transfer tickets functionality
+	- Fixed the bot not outputting the correct messages
+		- uses errorStream to get error messages from the web service
+	- Working on reconnect functionality
+		- Seems to be working
+	- cleaned up packaging and unused code throughout JQL, Diskiyord, and Kiyobot
+	- Redid packaging on Kiyobot for better clarity
+	- Deployed Kiyobot to the micronode
+
+STOP 12:04 AM
+
+----------------------
+-   SESSION : ~12     -
+----------------------
+- TOTAL HOURS: ~80   -
+----------------------
+
+*  |---------------------|  *
+   |-> -> -> <-> <- <- <-|
+|=-=-=-=-=-=-=-=-=-=-=-=-=-=|
+|** Bot Feature Checklist **|
+|=-=-=-=-=-=-=-=-=-=-=-=-=-=|
+   |-> -> -> <-> <- <- <-|
+*  |---------------------|  *
+
+
+* [x] Basic Java library and Diskiyord API 
+* [x] Basic bot application
+* [x] Commands:
+	- [x] !ping
+		- added different messages based on how many times in a row this comand is called
+	- [x] !commands
+		- tells the user what the available commands are
+	- [x] !addexgfx  <filenumber>  <description>  <type>  <img_link>
+		- adds the name of a exgfx file and its info to the db
+	- [x] !getexgfx  <filenumber>
+		- returns the filename and its info if it exists
+	- [x] !kek
+		- returns the img link randomly from a pool of a laughing images 
+	- [x] default
+		- added messages for unknown commands starting with !
+* [x] SQL Database
+	- [x] connect to database
+	- [x] add to database
+	- [x] update database
+* [x] Connect to Eventer Service
+    - [x] !createevent
+    - [x] !getevent
+    - [x] !getevents
+    - [x] !createuser
+    - [x] !getuser
+    - [x] !purchasetickets
+    - [x] !transfertickets
+
+
+
+!addexgfx  ExGFX114  Mountain BG part1; Flexible tileset  mountain  true  https://i.imgur.com/c2qvFEI.png
+!addexgfx  ExGFX101  Testing a second file update.  test  false  https://i.imgur.com/8AIZ3ud.jpg
+
+
+nohup java -cp Kiyobot.jar kiyobot.bot.BasicMessageBot -config ./config/sqlconfig.json &
+
+Resetting Program
+-----------------
+- Kill program on node: kill -9 <id>
+- cd out
+	- remove that directory
+- scp -r the folder to service again: scp -r file name@name.of.service:file
+- cd to the directory
+- start program again nohup java -cp filename.jar path.to.MainClass -config ./config/serviceconfigs.json &
+
+
+
+
+
+
+
+
+
+
