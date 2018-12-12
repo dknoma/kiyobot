@@ -65,7 +65,13 @@ public class SQLModelBuilder {
 				try (BufferedReader br = Files.newBufferedReader(Paths.get(fileName),
 						java.nio.charset.StandardCharsets.ISO_8859_1)) {
 
-					parseJson(br.readLine());
+					StringBuilder sb = new StringBuilder();
+					String line;
+					// Read in all the lines of the json file to form the json object, then send to parser
+					while((line = br.readLine()) != null) {
+						sb.append(line);
+					}
+					parseJson(sb.toString());
 
 				} catch (IOException ioe) {
 					LOGGER.error("Error occurred when reading the file, {},\n{}",

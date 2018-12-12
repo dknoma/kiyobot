@@ -11,6 +11,7 @@ import jql.sql.model.SQLModel;
 import jql.sql.util.JsonSqlConfigParser;
 import jql.sql.util.SQLModelBuilder;
 
+import java.sql.SQLException;
 import java.util.Map;
 
 
@@ -60,6 +61,11 @@ public class BasicMessageBot {
 		// Connects the PostgreSQLhandler to the Postgres database
 		pghandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
 				sqlparser.getUsername(), sqlparser.getPassword());
+		try {
+			pghandler.createTables();
+		} catch (SQLException e) {
+			LOGGER.fatal("SQL Exception {},\n{}", e.getMessage(), e.getCause());
+		}
 
 		// Diskiyord setup
 		JsonConfigArgParser parser = new JsonConfigArgParser();
