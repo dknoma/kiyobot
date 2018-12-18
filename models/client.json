@@ -1,1 +1,0 @@
-{"name": "client", "autoIncrement": true, "columns": [{"key": "username", "attributes": {"type": "STRING", "length": 20, "lengthIsVar": true, "isUnique": true, "allowNull": false}}, {"key": "tickets", "attributes": {"type": "INTEGER", "defaultValue": 0, "allowNull": false}}]}

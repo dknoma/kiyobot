@@ -144,7 +144,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 			//TODO: change rate limit from a hard 5.432 seconds
 			rateLimit();
 			ws.connect();
-		} catch(Exception e) {
+		} catch(Throwable e) {
 			LOGGER.warn("Error has occured when connecting to the websocket, {},\n{}", e.getMessage(), e.getStackTrace());
 			if(reconnect) {
 				this.reconnectAttempt.incrementAndGet();
@@ -210,6 +210,7 @@ public class DiscordWebsocketAdapter extends WebSocketAdapter {
 							   boolean closedByServer) throws Exception {
 		// If can reconnect, try to reconnect after a delay based on the amount of reconnect attempts
 		if(reconnect) {
+			LOGGER.debug("Attempting to reconnect...");
 			this.reconnectAttempt.incrementAndGet();
 			this.threadpool.scheduleAtFixedRate(this::connect,
 					0, calculateReconnectDelay(this.reconnectAttempt), TimeUnit.SECONDS);

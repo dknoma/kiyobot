@@ -1,45 +1,43 @@
 {
 	"name": "exgfx",
 	"autoIncrement": true,
-	"columns": [
-		{
-			"key": "filename",
-			"attributes": {
-				"type": "STRING",
-				"length": 8,
-				"lengthIsVar": true,
-				"allowNull": false
-			}
-		}, {
-			"key": "description",
-			"attributes": {
-				"type": "STRING",
-				"length": 100,
-				"lengthIsVar": true,
-				"allowNull": false
-			}
-		}, {
-			"key": "type",
-			"attributes": {
-				"type": "STRING",
-				"length": 40,
-				"lengthIsVar": true,
-				"allowNull": false
-			}
-		}, {
-			"key": "completed",
-			"attributes": {
-				"type": "BOOLEAN",
-				"defaultValue": false
-			}
-		}, {
-			"key": "imglink",
-			"attributes": {
-				"type": "STRING",
-				"length": 100,
-				"lengthIsVar": true,
-				"allowNull": false
-			}
+	"columns": [{
+		"key": "filename",
+		"attributes": {
+			"type": "STRING",
+			"length": 8,
+			"lengthIsVar": true,
+			"allowNull": false
 		}
-	]
+	}, {
+		"key": "description",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "type",
+		"attributes": {
+			"type": "STRING",
+			"length": 40,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "completed",
+		"attributes": {
+			"type": "BOOLEAN",
+			"defaultValue": false
+		}
+	}, {
+		"key": "imglink",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}]
 }
