@@ -24,18 +24,10 @@ public enum Project4MessageEvents {
 
 	Project4MessageEvents(){}
 
-	private int PINGS = 0;
-
 	private final Gson GSON = new Gson();
 	private final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 	private final int SC_OK = 200;
 	private final int SC_BAD_REQUEST = 400;
-	private final String EXGFX = "exgfx";
-	private final String FILENAME = "filename";
-	private final String DESCRIPTION = "description";
-	private final String TYPE = "type";
-	private final String COMPLETED = "completed";
-	private final String IMG_LINK = "imglink";
 	// URL of the tunnel connection to the Eventer service
 	private final String PROJECT4_PATH = "http://mcvm064.cs.usfca.edu:7070/api";
 //	private final String PROJECT4_PATH = "http://127.0.0.1:9000/api";

@@ -22,17 +22,12 @@ public enum MessageEvent {
 
 	private final Gson GSON = new Gson();
 	private final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
-	private final int SC_OK = 200;
-	private final int SC_BAD_REQUEST = 400;
 	private final String EXGFX = "exgfx";
 	private final String FILENAME = "filename";
 	private final String DESCRIPTION = "description";
 	private final String TYPE = "type";
 	private final String COMPLETED = "completed";
 	private final String IMG_LINK = "imglink";
-	// URL of the tunnel connection to the Eventer service
-	private final String PROJECT4_PATH = "http://mcvm064.cs.usfca.edu:7070/api";
-//	private final String PROJECT4_PATH = "http://127.0.0.1:9000/api";
 	private final Logger LOGGER = LogManager.getLogger();
 
 	/**
@@ -45,6 +40,7 @@ public enum MessageEvent {
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
 			String message = messageEvent.getMessageContent();
+			//TODO: regex for commands?
 			String[] messageArgs = message.split(" {2}");
 			String errorMessage = "An error has occurred.";
 			try {
@@ -126,10 +122,10 @@ public enum MessageEvent {
 
 	/**
 	 * Performs insert of exgfx to database
-	 * @param messageEvent;
-	 * @param pghandler;
-	 * @param messageArgs;
-	 * @param errorMessage;
+	 * @param messageEvent - MessageCreateListener, gets the message's channelxs
+	 * @param pghandler - handler for SQL queries
+	 * @param messageArgs - the parts of a command message
+	 * @param errorMessage - error message
 	 * @throws SQLException;
 	 */
 	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String[] messageArgs, String errorMessage) throws SQLException{
