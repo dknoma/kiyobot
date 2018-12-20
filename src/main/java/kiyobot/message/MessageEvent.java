@@ -153,6 +153,37 @@ public enum MessageEvent {
 	}
 
 	/**
+	 * Performs insert of exgfx to database
+	 * @param messageEvent - MessageCreateListener, gets the message's channels
+	 * @param pghandler - handler for SQL queries
+	 * @param message - the command message
+	 * @throws SQLException;
+	 */
+	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String message) throws SQLException{
+//		if(messageArgs.length != 6) {
+//			messageEvent.getChannel().sendTextMessage(errorMessage);
+//			return;
+//		}
+//		try {
+//			int hexadecimal = Integer.parseInt(messageArgs[1], 16);
+//			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
+//			String exgfxFilename = String.format("ExGFX%s", hexString);
+//			// Can make Class to handle all exgfx related methods
+//			ColumnObject[] columns = new ColumnObject[5];
+//			columns[0] = new ColumnObject<>(FILENAME, exgfxFilename);
+//			columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
+//			columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
+//			columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
+//			columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
+//			pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
+//			messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+//		} catch(NumberFormatException nfe) {
+//			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
+//			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+//		}
+	}
+
+	/**
 	 * Turns a json string from db output into a readable string for the bot to output
 	 * @param obj;
 	 * @return bot message
