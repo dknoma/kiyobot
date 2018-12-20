@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.SQLException;
+import java.util.regex.Matcher;
 
 public enum MessageEvent {
 
@@ -156,14 +157,11 @@ public enum MessageEvent {
 	 * Performs insert of exgfx to database
 	 * @param messageEvent - MessageCreateListener, gets the message's channels
 	 * @param pghandler - handler for SQL queries
-	 * @param message - the command message
+	 * @param matcher - Matcher that contains the group members of the input pattern
 	 * @throws SQLException;
 	 */
-	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String message) throws SQLException{
-//		if(messageArgs.length != 6) {
-//			messageEvent.getChannel().sendTextMessage(errorMessage);
-//			return;
-//		}
+	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, Matcher matcher) throws SQLException {
+		// String regex = "!addexgfx (\\p{XDigit}+?) (\"(\\w*?|\\s*?)*\") ((\\w*?|\\s*?)+) (\\w+?) ((\\w*?|\\W*?)+)";
 //		try {
 //			int hexadecimal = Integer.parseInt(messageArgs[1], 16);
 //			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
