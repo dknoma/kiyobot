@@ -64,83 +64,13 @@ public enum MessageEvent {
 				PINGS++;
 			} else if(Pattern.compile("!hewwo").matcher(message).matches()) {
 				messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
+			} else if(Pattern.compile("!commands").matcher(message).matches()) {
+				getCommands(messageEvent);
+			} else {
+				if(message.startsWith("!")) {
+					messageEvent.getChannel().sendTextMessage(MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg());
+				}
 			}
-//			String[] messageArgs = message.split(" {2}");
-//			String errorMessage = "An error has occurred.";
-//			try {
-//				switch(messageArgs[0]) {
-//					// Random commads
-//					case "!ping":
-//						if(PINGS < 3) {
-//							messageEvent.getChannel().sendTextMessage("Pong!");
-//						} else if(PINGS >= 5) {
-//							messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
-//						} else {
-//							messageEvent.getChannel().sendTextMessage("...");
-//						}
-//						PINGS++;
-//						break;
-//					case "!hewwo":
-//						PINGS = 0;
-//						messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
-//						break;
-//					// Database commands
-//					case "!addexgfx":
-//						PINGS = 0;
-//						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-//						//!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>
-//						addExgfx(messageEvent, pghandler, messageArgs, errorMessage);
-//						break;
-//					case "!getexgfx":
-//						PINGS = 0;
-//						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-//						//!getexgfx  <filename>
-//						if(messageArgs.length != 2) {
-//							messageEvent.getChannel().sendTextMessage(errorMessage);
-//							break;
-//						}
-//						try {
-//							int hexadecimal = Integer.parseInt(messageArgs[1], 16);
-//							String hexString = Integer.toHexString(hexadecimal).toUpperCase();
-//							String exgfxFilename = String.format("ExGFX%s", hexString);
-//							LOGGER.debug("exgfx: {}", exgfxFilename);
-//							JsonObject obj = GSON.fromJson(dbManager.resultsToString(pghandler, "*", EXGFX, FILENAME, exgfxFilename), JsonObject.class);
-//							LOGGER.debug("obj: {}", obj);
-//							String botOutput = getExGFXInfo(obj, exgfxFilename);
-//							messageEvent.getChannel().sendTextMessage(botOutput);
-//						} catch(NumberFormatException nfe) {
-//							LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
-//							messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
-//						}
-//						break;
-//					case "!getallexgfx":
-//						PINGS = 0;
-//						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-//						//!getallexgfx
-//						if(messageArgs.length != 1) {
-//							messageEvent.getChannel().sendTextMessage(errorMessage);
-//							break;
-//						}
-//						JsonArray jsonArray = GSON.fromJson(dbManager.getList(pghandler, "*", EXGFX), JsonArray.class);
-//						LOGGER.debug("array: {}", jsonArray);
-//						getAllExGFX(jsonArray, messageEvent);
-//						break;
-//					// Basic commads
-//					case "!commands":
-//						getCommands(messageEvent);
-//						break;
-//					default:
-//						if(messageArgs[0].startsWith("!")) {
-//							errorMessage = MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg();
-//							messageEvent.getChannel().sendTextMessage(errorMessage);
-//						}
-//						break;
-//				}
-//			} catch(ArrayIndexOutOfBoundsException aiobe) {
-//				messageEvent.getChannel().sendTextMessage(errorMessage);
-//			} catch (SQLException e) {
-//				messageEvent.getChannel().sendTextMessage(String.format("SQL error: %1$s", e.getMessage()));
-//			}
 		});
 	}
 
@@ -270,19 +200,7 @@ public enum MessageEvent {
 				"\t- Use this command to get back the information on an ExGFX file from the database.\n" +
 				"\t- The file number must be in hexadecimal format.\n" +
 				"\n!getallexgfx\n" +
-				"\t- Use this command to get back the information on all ExGFX files from the database.\n" +
-				"**Eventer: An Event Ticket Service**\n" +
-				"------------------------------------\n" +
-				"!createevent  <userid>  <eventname>  <max_tickets>\n" +
-				"\t- Creates an event in the event service.\n" +
-				"!getevent  <eventid>\n\t- Gets a specific event from the event service.\n" +
-				"!getevents\n\t- Gets all events from the event service.\n" +
-				"!createuser  <username>\n\t- Creates a user in the user service.\n" +
-				"!getuser  <userid>\n\t- Gets a specific user from the user service.\n" +
-				"!purchasetickets  <eventid>  <userid>  <number_to_purchase>\n" +
-				"\t- Purchase a number of tickets to a specific event for a user from the Eventer service.\n" +
-				"!transfertickets  <eventid>  <userid>  <targetuser>  <number_to_purchase>\n" +
-				"\t- Transfer a number of tickets to a specific event from a user to another user from the Eventer service.\n"
+				"\t- Use this command to get back the information on all ExGFX files from the database.\n"
 		);
 	}
 }
