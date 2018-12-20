@@ -58,11 +58,14 @@ public class BasicMessageBot {
 
 		Map<String, SQLModel> models = builder.getCopyOfModels();
 		JDBCHandler pghandler = new PostgresHandler(models);
+		JDBCEnum jdbc = JDBCEnum.INSTANCE;
+		jdbc.addJDBCHandler("exgfx", pghandler, builder.getCopyOfModels());
+		JDBCHandler pgHandler = jdbc.getJDBCHandler();
 		// Connects the PostgreSQLhandler to the Postgres database
-		pghandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
+		pgHandler.setConnection(sqlparser.getDb(), sqlparser.getHost(), sqlparser.getPort(),
 				sqlparser.getUsername(), sqlparser.getPassword());
 		try {
-			pghandler.createTables();
+			pgHandler.createTables();
 		} catch (SQLException e) {
 			LOGGER.fatal("SQL Exception {},\n{}", e.getMessage(), e.getCause());
 		}

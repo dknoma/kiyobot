@@ -5,6 +5,7 @@ import diskiyord.api.DiskiyordApi;
 import diskiyord.event.error.MessageArgumentError;
 import diskiyord.event.message.MessageCreateListener;
 import jql.sql.jdbc.ColumnObject;
+import jql.sql.jdbc.JDBCEnum;
 import jql.sql.jdbc.JDBCHandler;
 import jql.sql.jdbc.SQLManager;
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.sql.SQLException;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public enum MessageEvent {
 
@@ -29,6 +31,9 @@ public enum MessageEvent {
 	private final String TYPE = "type";
 	private final String COMPLETED = "completed";
 	private final String IMG_LINK = "imglink";
+	private final String ADD_EXGFX_REGEX = "!addexgfx (\\p{XDigit}+?) (\".*\") (\".+\") (\\w+?) (.+)";
+	private final String GET_EXGFX_REGEX = "!getexgfx (\\p{XDigit}+?)";
+	private final String GET_ALL_EXGFX_REGEX = "!getallexgfx";
 	private final Logger LOGGER = LogManager.getLogger();
 
 	/**
@@ -37,178 +42,215 @@ public enum MessageEvent {
 	 * @param pghandler - JDBCHandler to handle all SQL queries
 	 */
 	public void listenOnMessage(DiskiyordApi api, JDBCHandler pghandler) {
-		SQLManager dbManager = SQLManager.INSTANCE;
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
 			String message = messageEvent.getMessageContent();
-			//TODO: regex for commands?
-			String[] messageArgs = message.split(" {2}");
-			String errorMessage = "An error has occurred.";
-			try {
-				switch(messageArgs[0]) {
-					// Random commads
-					case "!ping":
-						if(PINGS < 3) {
-							messageEvent.getChannel().sendTextMessage("Pong!");
-						} else if(PINGS >= 5) {
-							messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
-						} else {
-							messageEvent.getChannel().sendTextMessage("...");
-						}
-						PINGS++;
-						break;
-					case "!hewwo":
-						PINGS = 0;
-						messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
-						break;
-					// Database commands
-					case "!addexgfx":
-						PINGS = 0;
-						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-						//!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>
-						addExgfx(messageEvent, pghandler, messageArgs, errorMessage);
-						break;
-					case "!getexgfx":
-						PINGS = 0;
-						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-						//!getexgfx  <filename>
-						if(messageArgs.length != 2) {
-							messageEvent.getChannel().sendTextMessage(errorMessage);
-							break;
-						}
-						try {
-							int hexadecimal = Integer.parseInt(messageArgs[1], 16);
-							String hexString = Integer.toHexString(hexadecimal).toUpperCase();
-							String exgfxFilename = String.format("ExGFX%s", hexString);
-							LOGGER.debug("exgfx: {}", exgfxFilename);
-							JsonObject obj = GSON.fromJson(dbManager.resultsToString(pghandler, "*", EXGFX, FILENAME, exgfxFilename), JsonObject.class);
-							LOGGER.debug("obj: {}", obj);
-							String botOutput = getExGFXInfo(obj, exgfxFilename);
-							messageEvent.getChannel().sendTextMessage(botOutput);
-						} catch(NumberFormatException nfe) {
-							LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
-							messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
-						}
-						break;
-					case "!getallexgfx":
-						PINGS = 0;
-						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
-						//!getallexgfx
-						if(messageArgs.length != 1) {
-							messageEvent.getChannel().sendTextMessage(errorMessage);
-							break;
-						}
-						JsonArray jsonArray = GSON.fromJson(dbManager.getList(pghandler, "*", EXGFX), JsonArray.class);
-						LOGGER.debug("array: {}", jsonArray);
-						getAllExGFX(jsonArray, messageEvent);
-						break;
-					// Basic commads
-					case "!commands":
-						getCommands(messageEvent);
-						break;
-					default:
-						if(messageArgs[0].startsWith("!")) {
-							errorMessage = MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg();
-							messageEvent.getChannel().sendTextMessage(errorMessage);
-						}
-						break;
+			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
+			Matcher matcher;
+			if((matcher = Pattern.compile(ADD_EXGFX_REGEX).matcher(message)).matches()) {
+				addExgfx(messageEvent, matcher);
+			} else if((matcher = Pattern.compile(GET_EXGFX_REGEX).matcher(message)).matches()) {
+				getExGFXInfo(messageEvent, matcher, handler);
+			} else if(Pattern.compile(GET_ALL_EXGFX_REGEX).matcher(message).matches()) {
+				getAllExGFX(messageEvent);
+			} else if(Pattern.compile("!ping").matcher(message).matches()) {
+				if(PINGS < 3) {
+					messageEvent.getChannel().sendTextMessage("Pong!");
+				} else if(PINGS >= 5) {
+					messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
+				} else {
+					messageEvent.getChannel().sendTextMessage("...");
 				}
-			} catch(ArrayIndexOutOfBoundsException aiobe) {
-				messageEvent.getChannel().sendTextMessage(errorMessage);
-			} catch (SQLException e) {
-				messageEvent.getChannel().sendTextMessage(String.format("SQL error: %1$s", e.getMessage()));
+				PINGS++;
+			} else if(Pattern.compile("!hewwo").matcher(message).matches()) {
+				messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
 			}
+//			String[] messageArgs = message.split(" {2}");
+//			String errorMessage = "An error has occurred.";
+//			try {
+//				switch(messageArgs[0]) {
+//					// Random commads
+//					case "!ping":
+//						if(PINGS < 3) {
+//							messageEvent.getChannel().sendTextMessage("Pong!");
+//						} else if(PINGS >= 5) {
+//							messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
+//						} else {
+//							messageEvent.getChannel().sendTextMessage("...");
+//						}
+//						PINGS++;
+//						break;
+//					case "!hewwo":
+//						PINGS = 0;
+//						messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
+//						break;
+//					// Database commands
+//					case "!addexgfx":
+//						PINGS = 0;
+//						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
+//						//!addexgfx  <filename>  <description>  <type>  <completed>  <imglink>
+//						addExgfx(messageEvent, pghandler, messageArgs, errorMessage);
+//						break;
+//					case "!getexgfx":
+//						PINGS = 0;
+//						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
+//						//!getexgfx  <filename>
+//						if(messageArgs.length != 2) {
+//							messageEvent.getChannel().sendTextMessage(errorMessage);
+//							break;
+//						}
+//						try {
+//							int hexadecimal = Integer.parseInt(messageArgs[1], 16);
+//							String hexString = Integer.toHexString(hexadecimal).toUpperCase();
+//							String exgfxFilename = String.format("ExGFX%s", hexString);
+//							LOGGER.debug("exgfx: {}", exgfxFilename);
+//							JsonObject obj = GSON.fromJson(dbManager.resultsToString(pghandler, "*", EXGFX, FILENAME, exgfxFilename), JsonObject.class);
+//							LOGGER.debug("obj: {}", obj);
+//							String botOutput = getExGFXInfo(obj, exgfxFilename);
+//							messageEvent.getChannel().sendTextMessage(botOutput);
+//						} catch(NumberFormatException nfe) {
+//							LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
+//							messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+//						}
+//						break;
+//					case "!getallexgfx":
+//						PINGS = 0;
+//						errorMessage = MessageArgumentError.NOT_ENOUGH_ARGUMENTS.getErrorMsg();
+//						//!getallexgfx
+//						if(messageArgs.length != 1) {
+//							messageEvent.getChannel().sendTextMessage(errorMessage);
+//							break;
+//						}
+//						JsonArray jsonArray = GSON.fromJson(dbManager.getList(pghandler, "*", EXGFX), JsonArray.class);
+//						LOGGER.debug("array: {}", jsonArray);
+//						getAllExGFX(jsonArray, messageEvent);
+//						break;
+//					// Basic commads
+//					case "!commands":
+//						getCommands(messageEvent);
+//						break;
+//					default:
+//						if(messageArgs[0].startsWith("!")) {
+//							errorMessage = MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg();
+//							messageEvent.getChannel().sendTextMessage(errorMessage);
+//						}
+//						break;
+//				}
+//			} catch(ArrayIndexOutOfBoundsException aiobe) {
+//				messageEvent.getChannel().sendTextMessage(errorMessage);
+//			} catch (SQLException e) {
+//				messageEvent.getChannel().sendTextMessage(String.format("SQL error: %1$s", e.getMessage()));
+//			}
 		});
 	}
 
 	/**
 	 * Performs insert of exgfx to database
-	 * @param messageEvent - MessageCreateListener, gets the message's channelxs
-	 * @param pghandler - handler for SQL queries
-	 * @param messageArgs - the parts of a command message
-	 * @param errorMessage - error message
-	 * @throws SQLException;
+	 * @param messageEvent - MessageCreateListener, gets the message's channels
+	 * @param matcher - Matcher that contains the group members of the input pattern
 	 */
-	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, String[] messageArgs, String errorMessage) throws SQLException{
-		if(messageArgs.length != 6) {
-			messageEvent.getChannel().sendTextMessage(errorMessage);
-			return;
-		}
+	private void addExgfx(MessageCreateListener messageEvent, Matcher matcher) {
 		try {
-			int hexadecimal = Integer.parseInt(messageArgs[1], 16);
+			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
+			SQLManager dbManager = SQLManager.INSTANCE;
+			int hexadecimal = Integer.parseInt(matcher.group(1), 16);
 			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
 			String exgfxFilename = String.format("ExGFX%s", hexString);
-			// Can make Class to handle all exgfx related methods
+			String description = matcher.group(2);
+			String type = matcher.group(3);
+			// If filename exists, send error message and return
+			if(exgfxExists(handler, exgfxFilename)) {
+				messageEvent.getChannel().sendTextMessage(String.format("Filename %s already exists in database.", exgfxFilename));
+				return;
+			}
+			// Create columns to insert into the table
 			ColumnObject[] columns = new ColumnObject[5];
 			columns[0] = new ColumnObject<>(FILENAME, exgfxFilename);
-			columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
-			columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
-			columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
-			columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
-			pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
+			columns[1] = new ColumnObject<>(DESCRIPTION, description.substring(1, description.length() - 1));
+			columns[2] = new ColumnObject<>(TYPE, type.substring(1, type.length() - 1));
+			columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(matcher.group(4)));
+			columns[4] = new ColumnObject<>(IMG_LINK, matcher.group(5));
+			dbManager.insertIntoTable(handler, EXGFX, columns);
 			messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
 		} catch(NumberFormatException nfe) {
 			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
 			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+		} catch(SQLException e) {
+			LOGGER.error("SQL error occured when trying to add ExGFX: {},\n{}", e.getMessage(), e.getCause());
+			messageEvent.getChannel().sendTextMessage("Unable to add ExGFX file: " + e.getMessage());
 		}
 	}
 
 	/**
-	 * Performs insert of exgfx to database
-	 * @param messageEvent - MessageCreateListener, gets the message's channels
-	 * @param pghandler - handler for SQL queries
-	 * @param matcher - Matcher that contains the group members of the input pattern
+	 * Finds the userid of the given username
+	 *
+	 * @param handler;
+	 * @param fileName;
+	 * @return userid
 	 * @throws SQLException;
 	 */
-	private void addExgfx(MessageCreateListener messageEvent, JDBCHandler pghandler, Matcher matcher) throws SQLException {
-		// String regex = "!addexgfx (\\p{XDigit}+?) (\"(\\w*?|\\s*?)*\") ((\\w*?|\\s*?)+) (\\w+?) ((\\w*?|\\W*?)+)";
-//		try {
-//			int hexadecimal = Integer.parseInt(messageArgs[1], 16);
-//			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
-//			String exgfxFilename = String.format("ExGFX%s", hexString);
-//			// Can make Class to handle all exgfx related methods
-//			ColumnObject[] columns = new ColumnObject[5];
-//			columns[0] = new ColumnObject<>(FILENAME, exgfxFilename);
-//			columns[1] = new ColumnObject<>(DESCRIPTION, messageArgs[2]);
-//			columns[2] = new ColumnObject<>(TYPE, messageArgs[3]);
-//			columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(messageArgs[4]));
-//			columns[4] = new ColumnObject<>(IMG_LINK, messageArgs[5]);
-//			pghandler.executeUpdate(pghandler.insert(EXGFX, columns));
-//			messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
-//		} catch(NumberFormatException nfe) {
-//			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
-//			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
-//		}
+	private boolean exgfxExists(JDBCHandler handler, String fileName) throws SQLException {
+		SQLManager dbManager = SQLManager.INSTANCE;
+		// Don't have to get last result as this service needs unique filenames
+		String result = dbManager.resultsToString(handler, "*", EXGFX, "filename", fileName);
+		JsonObject obj = GSON.fromJson(result, JsonObject.class);
+		return obj.has("filename") && obj.get("filename").getAsString().equals(fileName);
 	}
 
 	/**
 	 * Turns a json string from db output into a readable string for the bot to output
-	 * @param obj;
-	 * @return bot message
+	 * @param messageEvent - MessageCreateListener, gets the message's channels
+	 * @param matcher - Matcher that contains the group members of the input pattern
 	 */
-	private String getExGFXInfo(JsonObject obj, String fileNumber) {
-		if(obj == null || obj.isJsonNull() || obj.toString().equals("{}")) {
-			return String.format("File %s does not exist :(", fileNumber);
-		} else {
-			return String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
-					obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
+	private void getExGFXInfo(MessageCreateListener messageEvent, Matcher matcher, JDBCHandler handler) {
+		try {
+			SQLManager dbManager = SQLManager.INSTANCE;
+			String file = matcher.group(1);
+			int hexadecimal = Integer.parseInt(file, 16);
+			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
+			String exgfxFilename = String.format("ExGFX%s", hexString);
+			LOGGER.debug("exgfx: {}", exgfxFilename);
+			String json = dbManager.resultsToString(handler, "*", EXGFX, FILENAME, exgfxFilename);
+			LOGGER.debug("json: {}", json);
+			JsonObject obj = GSON.fromJson(json, JsonObject.class);
+			LOGGER.debug("obj: {}", obj);
+			String botOutput;
+			if(obj == null || obj.isJsonNull() || obj.toString().equals("{}")) {
+				botOutput = String.format("File %s does not exist :(", file);
+			} else {
+				botOutput = String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+						obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
+			}
+			messageEvent.getChannel().sendTextMessage(botOutput);
+		} catch(NumberFormatException nfe) {
+			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
+			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+		} catch(SQLException e) {
+			LOGGER.error("SQL error occured when trying to find ExGFX: {},\n{}", e.getMessage(), e.getCause());
+			messageEvent.getChannel().sendTextMessage("Unable to find ExGFX file: " + e.getMessage());
 		}
 	}
 
 	/**
 	 * Turns a json string from db output into a readable string for the bot to output
-	 * @param array;
 	 */
-	private void getAllExGFX(JsonArray array, MessageCreateListener messageEvent) {
+	private void getAllExGFX(MessageCreateListener messageEvent) {
 		SQLManager dbManager = SQLManager.INSTANCE;
-		if(array == null || array.isJsonNull() || dbManager.isListEmpty(array.toString())) {
-			messageEvent.getChannel().sendTextMessage("Files do not exist :(");
-		} else {
-			for(int i = 0; i < array.size(); i++) {
-				JsonObject obj = array.get(i).getAsJsonObject();
-				messageEvent.getChannel().sendTextMessage(String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
-						obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK)));
+		JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
+		try {
+			JsonArray jsonArray = GSON.fromJson(dbManager.getList(handler, "*", EXGFX), JsonArray.class);
+			if (jsonArray == null || jsonArray.isJsonNull() || dbManager.isListEmpty(jsonArray.toString())) {
+				messageEvent.getChannel().sendTextMessage("Files do not exist :(");
+			} else {
+				for (int i = 0; i < jsonArray.size(); i++) {
+					JsonObject obj = jsonArray.get(i).getAsJsonObject();
+					messageEvent.getChannel().sendTextMessage(String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+							obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK)));
+				}
 			}
+		} catch(SQLException e) {
+			LOGGER.error("SQL error occured when trying to find all ExGFX files: {},\n{}", e.getMessage(), e.getCause());
+			messageEvent.getChannel().sendTextMessage("Unable to find ExGFX files: " + e.getMessage());
 		}
 	}
 
