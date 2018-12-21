@@ -39,19 +39,24 @@ public enum MessageEvent {
 	/**
 	 * Adds message listener to the api, which allows the bot to listen to Discord messages
 	 * @param api - Diskiyord API class
-	 * @param pghandler - JDBCHandler to handle all SQL queries
 	 */
-	public void listenOnMessage(DiskiyordApi api, JDBCHandler pghandler) {
+	public void listenOnMessage(DiskiyordApi api) {
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
+			// Gets the message from the channel
 			String message = messageEvent.getMessageContent();
+			// Gets the JDBCHandler singleton
 			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
+			// Check if message matches command regex
 			Matcher matcher;
 			if((matcher = Pattern.compile(ADD_EXGFX_REGEX).matcher(message)).matches()) {
+				// !addexgfx
 				addExgfx(messageEvent, matcher);
 			} else if((matcher = Pattern.compile(GET_EXGFX_REGEX).matcher(message)).matches()) {
+				// !getexgfx
 				getExGFXInfo(messageEvent, matcher, handler);
 			} else if(Pattern.compile(GET_ALL_EXGFX_REGEX).matcher(message).matches()) {
+				// !getallexgfx
 				getAllExGFX(messageEvent);
 			} else if(Pattern.compile("!ping").matcher(message).matches()) {
 				if(PINGS < 3) {
@@ -100,11 +105,12 @@ public enum MessageEvent {
 			columns[2] = new ColumnObject<>(TYPE, type.substring(1, type.length() - 1));
 			columns[3] = new ColumnObject<>(COMPLETED, Boolean.parseBoolean(matcher.group(4)));
 			columns[4] = new ColumnObject<>(IMG_LINK, matcher.group(5));
+			// Insert columns into the table
 			dbManager.insertIntoTable(handler, EXGFX, columns);
 			messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
 		} catch(NumberFormatException nfe) {
 			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
-			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal format. (0-9,a-f/A-F)");
 		} catch(SQLException e) {
 			LOGGER.error("SQL error occured when trying to add ExGFX: {},\n{}", e.getMessage(), e.getCause());
 			messageEvent.getChannel().sendTextMessage("Unable to add ExGFX file: " + e.getMessage());

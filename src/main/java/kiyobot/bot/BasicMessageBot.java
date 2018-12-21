@@ -78,6 +78,6 @@ public class BasicMessageBot {
 		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
 		// Adds a message listener
 		MessageEvent messageEvent = MessageEvent.INSTANCE;
-		messageEvent.listenOnMessage(api, pghandler);
+		messageEvent.listenOnMessage(api);
 	}
 }
