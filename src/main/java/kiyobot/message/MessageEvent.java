@@ -49,30 +49,31 @@ public enum MessageEvent {
 			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
 			// Check if message matches command regex
 			Matcher matcher;
-			if((matcher = Pattern.compile(ADD_EXGFX_REGEX).matcher(message)).matches()) {
-				// !addexgfx
-				addExgfx(messageEvent, matcher);
-			} else if((matcher = Pattern.compile(GET_EXGFX_REGEX).matcher(message)).matches()) {
-				// !getexgfx
-				getExGFXInfo(messageEvent, matcher, handler);
-			} else if(Pattern.compile(GET_ALL_EXGFX_REGEX).matcher(message).matches()) {
-				// !getallexgfx
-				getAllExGFX(messageEvent);
-			} else if(Pattern.compile("!ping").matcher(message).matches()) {
-				if(PINGS < 3) {
-					messageEvent.getChannel().sendTextMessage("Pong!");
-				} else if(PINGS >= 5) {
-					messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
+			// Only check messages that start with !
+			if(message.startsWith("!")) {
+				if ((matcher = Pattern.compile(ADD_EXGFX_REGEX).matcher(message)).matches()) {
+					// !addexgfx
+					addExgfx(messageEvent, matcher);
+				} else if ((matcher = Pattern.compile(GET_EXGFX_REGEX).matcher(message)).matches()) {
+					// !getexgfx
+					getExGFXInfo(messageEvent, matcher, handler);
+				} else if (Pattern.compile(GET_ALL_EXGFX_REGEX).matcher(message).matches()) {
+					// !getallexgfx
+					getAllExGFX(messageEvent);
+				} else if (Pattern.compile("!ping").matcher(message).matches()) {
+					if (PINGS < 3) {
+						messageEvent.getChannel().sendTextMessage("Pong!");
+					} else if (PINGS >= 5) {
+						messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
+					} else {
+						messageEvent.getChannel().sendTextMessage("...");
+					}
+					PINGS++;
+				} else if (Pattern.compile("!hewwo").matcher(message).matches()) {
+					messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
+				} else if (Pattern.compile("!commands").matcher(message).matches()) {
+					getCommands(messageEvent);
 				} else {
-					messageEvent.getChannel().sendTextMessage("...");
-				}
-				PINGS++;
-			} else if(Pattern.compile("!hewwo").matcher(message).matches()) {
-				messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
-			} else if(Pattern.compile("!commands").matcher(message).matches()) {
-				getCommands(messageEvent);
-			} else {
-				if(message.startsWith("!")) {
 					messageEvent.getChannel().sendTextMessage(MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg());
 				}
 			}
@@ -199,10 +200,10 @@ public enum MessageEvent {
 				"!ping\n\t- A generic ping message. Please don't overuse.\n" +
 				"!hewwo\n\t- What's this?\n" +
 				"**ExGFX Commands**\n------------------\n" +
-				"!addexgfx  <filenumber>  <description>  <type>  <completed>  <imglink>\n" +
+				"!addexgfx <filenumber> \"<description>\" \"<type>\" <completed> <imglink>\n" +
 				"\t- Use this command to add information on an ExGFX file to the database.\n" +
 				"\t- The file number must be in hexadecimal format.\n" +
-				"\n!getexgfx  <filenumber>\n" +
+				"\n!getexgfx <filenumber>\n" +
 				"\t- Use this command to get back the information on an ExGFX file from the database.\n" +
 				"\t- The file number must be in hexadecimal format.\n" +
 				"\n!getallexgfx\n" +
