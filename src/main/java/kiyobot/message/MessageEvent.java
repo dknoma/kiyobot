@@ -89,6 +89,7 @@ public enum MessageEvent {
 		try {
 			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
 			SQLManager dbManager = SQLManager.INSTANCE;
+			// Regex already checks for hexadecimal... can remove
 			int hexadecimal = Integer.parseInt(matcher.group(1), 16);
 			String hexString = Integer.toHexString(hexadecimal).toUpperCase();
 			String exgfxFilename = String.format("ExGFX%s", hexString);
