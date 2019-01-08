@@ -1,0 +1,52 @@
+{
+	"name": "level",
+	"autoIncrement": true,
+	"columns": [{
+		"key": "levelnumber",
+		"attributes": {
+			"type": "STRING",
+			"length": 3,
+			"lengthIsVar": true,
+			"isUnique": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "levelname",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "description",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "realm",
+		"attributes": {
+			"type": "STRING",
+			"length": 40,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "completed",
+		"attributes": {
+			"type": "BOOLEAN",
+			"defaultValue": false
+		}
+	}, {
+		"key": "imglink",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}]
+}
