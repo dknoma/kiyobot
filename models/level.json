@@ -26,6 +26,22 @@
 			"lengthIsVar": true,
 			"allowNull": false
 		}
+	},  {
+		"key": "map16",
+		"attributes": {
+			"type": "STRING",
+			"length": 200,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "author",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
 	}, {
 		"key": "realm",
 		"attributes": {

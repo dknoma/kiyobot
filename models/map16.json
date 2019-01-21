@@ -1,0 +1,30 @@
+{
+	"name": "map16",
+	"autoIncrement": true,
+	"columns": [{
+		"key": "pagenumber",
+		"attributes": {
+			"type": "STRING",
+			"length": 3,
+			"lengthIsVar": true,
+			"isUnique": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "description",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}, {
+		"key": "imglink",
+		"attributes": {
+			"type": "STRING",
+			"length": 100,
+			"lengthIsVar": true,
+			"allowNull": false
+		}
+	}]
+}
