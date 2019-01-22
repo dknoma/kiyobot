@@ -1,15 +1,14 @@
 package kiyobot.bot;
 
 import kiyobot.message.MessageEvent;
-import diskiyord.api.DiskiyordApi;
-import diskiyord.api.DiskiyordApiBuilder;
-import diskiyord.util.JsonConfigArgParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import jql.sql.jdbc.*;
 import jql.sql.model.SQLModel;
 import jql.sql.util.JsonSqlConfigParser;
 import jql.sql.util.SQLModelBuilder;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.DiscordApiBuilder;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -75,7 +74,8 @@ public class BasicMessageBot {
 		parser.parseConfig();
 		// Used if need to have bot output to this specific channel
 //		String botStuffChannelId = parser.getBotStuff();
-		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
+		DiscordApi api = new DiscordApiBuilder().setToken(parser.getAuthTok()).login().join();
+//		DiskiyordApi api = DiskiyordApiBuilder.buildApi(parser.getAuthTok());
 		// Adds a message listener
 		MessageEvent messageEvent = MessageEvent.INSTANCE;
 		messageEvent.listenOnMessage(api);

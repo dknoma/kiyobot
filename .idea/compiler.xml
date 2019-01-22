@@ -7,10 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="kiyobot" />
+        <module name="Kiyobot" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="kiyobot" target="1.8" />
+      <module name="Kiyobot" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

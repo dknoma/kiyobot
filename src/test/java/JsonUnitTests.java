@@ -1,7 +1,7 @@
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import diskiyord.util.JsonPacket;
+import kiyobot.util.JsonPacket;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
