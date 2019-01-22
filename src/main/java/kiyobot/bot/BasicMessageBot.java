@@ -1,12 +1,15 @@
 package kiyobot.bot;
 
-import kiyobot.message.MessageEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import jql.sql.jdbc.*;
+import jql.sql.jdbc.JDBCEnum;
+import jql.sql.jdbc.JDBCHandler;
+import jql.sql.jdbc.PostgresHandler;
 import jql.sql.model.SQLModel;
 import jql.sql.util.JsonSqlConfigParser;
 import jql.sql.util.SQLModelBuilder;
+import kiyobot.message.MessageEvent;
+import kiyobot.util.JsonConfigArgParser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 
