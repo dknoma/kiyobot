@@ -1,15 +1,15 @@
 package kiyobot.message;
 
 import com.google.gson.*;
-import diskiyord.api.DiskiyordApi;
 import diskiyord.event.error.MessageArgumentError;
-import diskiyord.event.message.MessageCreateListener;
 import jql.sql.jdbc.ColumnObject;
 import jql.sql.jdbc.JDBCEnum;
 import jql.sql.jdbc.JDBCHandler;
 import jql.sql.jdbc.SQLManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.event.message.MessageCreateEvent;
 
 import java.sql.SQLException;
 import java.util.regex.Matcher;
@@ -40,11 +40,12 @@ public enum MessageEvent {
 	 * Adds message listener to the api, which allows the bot to listen to Discord messages
 	 * @param api - Diskiyord API class
 	 */
-	public void listenOnMessage(DiskiyordApi api) {
+	public void listenOnMessage(DiscordApi api) {
 		// Message listener
 		api.addMessageCreateListener(messageEvent -> {
 			// Gets the message from the channel
 			String message = messageEvent.getMessageContent();
+			LOGGER.info("Got message.");
 			// Gets the JDBCHandler singleton
 			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
 			// Check if message matches command regex
@@ -62,19 +63,19 @@ public enum MessageEvent {
 					getAllExGFX(messageEvent);
 				} else if (Pattern.compile("!ping").matcher(message).matches()) {
 					if (PINGS < 3) {
-						messageEvent.getChannel().sendTextMessage("Pong!");
+						messageEvent.getChannel().sendMessage("Pong!");
 					} else if (PINGS >= 5) {
-						messageEvent.getChannel().sendTextMessage("https://i.imgur.com/gOJdCJS.gif");
+						messageEvent.getChannel().sendMessage("https://i.imgur.com/gOJdCJS.gif");
 					} else {
-						messageEvent.getChannel().sendTextMessage("...");
+						messageEvent.getChannel().sendMessage("...");
 					}
 					PINGS++;
 				} else if (Pattern.compile("!hewwo").matcher(message).matches()) {
-					messageEvent.getChannel().sendTextMessage("*notices command* OwO what's this?");
+					messageEvent.getChannel().sendMessage("*notices command* OwO what's this?");
 				} else if (Pattern.compile("!commands").matcher(message).matches()) {
 					getCommands(messageEvent);
 				} else {
-					messageEvent.getChannel().sendTextMessage(MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg());
+					messageEvent.getChannel().sendMessage(MessageArgumentError.UNKNOWN_COMMAND.getErrorMsg());
 				}
 			}
 		});
@@ -85,7 +86,7 @@ public enum MessageEvent {
 	 * @param messageEvent - MessageCreateListener, gets the message's channels
 	 * @param matcher - Matcher that contains the group members of the input pattern
 	 */
-	private void addExgfx(MessageCreateListener messageEvent, Matcher matcher) {
+	private void addExgfx(MessageCreateEvent messageEvent, Matcher matcher) {
 		try {
 			JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
 			SQLManager dbManager = SQLManager.INSTANCE;
@@ -97,7 +98,7 @@ public enum MessageEvent {
 			String type = matcher.group(3);
 			// If filename exists, send error message and return
 			if(exgfxExists(handler, exgfxFilename)) {
-				messageEvent.getChannel().sendTextMessage(String.format("Filename %s already exists in database.", exgfxFilename));
+				messageEvent.getChannel().sendMessage(String.format("Filename %s already exists in database.", exgfxFilename));
 				return;
 			}
 			// Create columns to insert into the table
@@ -109,13 +110,13 @@ public enum MessageEvent {
 			columns[4] = new ColumnObject<>(IMG_LINK, matcher.group(5));
 			// Insert columns into the table
 			dbManager.insertIntoTable(handler, EXGFX, columns);
-			messageEvent.getChannel().sendTextMessage("Data successfully added to the database!");
+			messageEvent.getChannel().sendMessage("Data successfully added to the database!");
 		} catch(NumberFormatException nfe) {
 			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
-			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal format. (0-9,a-f/A-F)");
+			messageEvent.getChannel().sendMessage("File number was not in hexadecimal format. (0-9,a-f/A-F)");
 		} catch(SQLException e) {
 			LOGGER.error("SQL error occured when trying to add ExGFX: {},\n{}", e.getMessage(), e.getCause());
-			messageEvent.getChannel().sendTextMessage("Unable to add ExGFX file: " + e.getMessage());
+			messageEvent.getChannel().sendMessage("Unable to add ExGFX file: " + e.getMessage());
 		}
 	}
 
@@ -140,7 +141,7 @@ public enum MessageEvent {
 	 * @param messageEvent - MessageCreateListener, gets the message's channels
 	 * @param matcher - Matcher that contains the group members of the input pattern
 	 */
-	private void getExGFXInfo(MessageCreateListener messageEvent, Matcher matcher, JDBCHandler handler) {
+	private void getExGFXInfo(MessageCreateEvent messageEvent, Matcher matcher, JDBCHandler handler) {
 		try {
 			SQLManager dbManager = SQLManager.INSTANCE;
 			String file = matcher.group(1);
@@ -159,36 +160,36 @@ public enum MessageEvent {
 				botOutput = String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
 						obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK));
 			}
-			messageEvent.getChannel().sendTextMessage(botOutput);
+			messageEvent.getChannel().sendMessage(botOutput);
 		} catch(NumberFormatException nfe) {
 			LOGGER.warn("File number was not in hexadecimal. {},\n{}", nfe.getMessage(), nfe.getCause());
-			messageEvent.getChannel().sendTextMessage("File number was not in hexadecimal.");
+			messageEvent.getChannel().sendMessage("File number was not in hexadecimal.");
 		} catch(SQLException e) {
 			LOGGER.error("SQL error occured when trying to find ExGFX: {},\n{}", e.getMessage(), e.getCause());
-			messageEvent.getChannel().sendTextMessage("Unable to find ExGFX file: " + e.getMessage());
+			messageEvent.getChannel().sendMessage("Unable to find ExGFX file: " + e.getMessage());
 		}
 	}
 
 	/**
 	 * Turns a json string from db output into a readable string for the bot to output
 	 */
-	private void getAllExGFX(MessageCreateListener messageEvent) {
+	private void getAllExGFX(MessageCreateEvent messageEvent) {
 		SQLManager dbManager = SQLManager.INSTANCE;
 		JDBCHandler handler = JDBCEnum.INSTANCE.getJDBCHandler();
 		try {
 			JsonArray jsonArray = GSON.fromJson(dbManager.getList(handler, "*", EXGFX), JsonArray.class);
 			if (jsonArray == null || jsonArray.isJsonNull() || dbManager.isListEmpty(jsonArray.toString())) {
-				messageEvent.getChannel().sendTextMessage("Files do not exist :(");
+				messageEvent.getChannel().sendMessage("Files do not exist :(");
 			} else {
 				for (int i = 0; i < jsonArray.size(); i++) {
 					JsonObject obj = jsonArray.get(i).getAsJsonObject();
-					messageEvent.getChannel().sendTextMessage(String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
+					messageEvent.getChannel().sendMessage(String.format("File: %1$s\nDescription: %2$s\nType: %3$s\nCompleted: %4$s\nImage Link: %5$s",
 							obj.get(FILENAME), obj.get(DESCRIPTION), obj.get(TYPE), obj.get(COMPLETED), obj.get(IMG_LINK)));
 				}
 			}
 		} catch(SQLException e) {
 			LOGGER.error("SQL error occured when trying to find all ExGFX files: {},\n{}", e.getMessage(), e.getCause());
-			messageEvent.getChannel().sendTextMessage("Unable to find ExGFX files: " + e.getMessage());
+			messageEvent.getChannel().sendMessage("Unable to find ExGFX files: " + e.getMessage());
 		}
 	}
 
@@ -196,8 +197,8 @@ public enum MessageEvent {
 	 * Sends unkown command message to the channel
 	 * @param messageEvent;
 	 */
-	private void getCommands(MessageCreateListener messageEvent) {
-		messageEvent.getChannel().sendTextMessage("**General Bot Commands**\n------------------------\n" +
+	private void getCommands(MessageCreateEvent messageEvent) {
+		messageEvent.getChannel().sendMessage("**General Bot Commands**\n------------------------\n" +
 				"!ping\n\t- A generic ping message. Please don't overuse.\n" +
 				"!hewwo\n\t- What's this?\n" +
 				"**ExGFX Commands**\n------------------\n" +
