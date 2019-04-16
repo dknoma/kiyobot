@@ -144,6 +144,8 @@ public class MessageBot {
 ## Diskiyord
 > Java Discord API
 
+NOTE April 16, 2019: The location of the Diskiyord code is now located over at https://github.com/dknoma/diskiyord. This current verison of Kiyobot is using a 3rd party implementation of a Java Discord bot API. To see the old implementation see the previous commits starting at January 21, 2019: https://github.com/dknoma/kiyobot/tree/6d8c8200f7a5c0b38f8061ddf453dfd9e1af3aa5.
+
 Diskiyord is a custom JAVA API that allows communication between Discord's API and a Java program. This was developed specifically for Kiyobot so it has limited functionality. Even though it's basic, other users can still use this library to make other basic messaging bots.
 The library connects to Discord's gateway to obtain the websocket connection. This websocket connection allows kiyobot authentication and communication between the program and Discord's API.
 
