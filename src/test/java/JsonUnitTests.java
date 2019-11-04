@@ -14,19 +14,22 @@ public class JsonUnitTests {
 	@Test
 	public void testJsonPacketPutsToString() {
 		String jsonHardcode = "{\"b\":true,\"s\":\"string stuff\",\"i\":10,\"data\":{\"f\":false}}";
-		System.out.println(new JsonPacket(jsonHardcode).toString());
+		System.out.printf("original:        %s", new JsonPacket(jsonHardcode).toString());
 		LOGGER.info("jsonHardcode: {}", jsonHardcode);
 
-		JsonPacket jsonPacket = new JsonPacket();
-		jsonPacket.put("b", true);
-		jsonPacket.put("s", "string stuff");
-		jsonPacket.put("i", 10);
-		JsonPacket data = new JsonPacket();
-		data.put("f", false);
-		jsonPacket.put("data", data);
+		JsonPacket data = JsonPacket.newBuilder()
+				.put("f", false)
+				.build();
+		JsonPacket jsonPacket = JsonPacket.newBuilder()
+				.put("b", true)
+				.put("s", "string stuff")
+				.put("i", 10)
+				.put("data", data)
+				.build();
 
 		String packet = jsonPacket.toString();
-		LOGGER.info("packet:       {}", packet);
+		LOGGER.info("packet:          {}", packet);
+		System.out.printf("packet:          %s\n", packet);
 
 		String message = "No match.";
 		boolean match = true;

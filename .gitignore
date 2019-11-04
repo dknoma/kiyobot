@@ -1,3 +1,10 @@
 /config
 /log
 /target/
+
+.idea
+.settings
+gson-2.8.5.jar
+
+.classpath
+.project

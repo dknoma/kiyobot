@@ -1,5 +1,8 @@
 package kiyobot.message;
 
+import kiyobot.util.ObjectContainer;
+import kiyobot.util.gateway.GatewayEvent;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

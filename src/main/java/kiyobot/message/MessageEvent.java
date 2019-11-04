@@ -1,7 +1,6 @@
 package kiyobot.message;
 
 import com.google.gson.*;
-import diskiyord.event.error.MessageArgumentError;
 import jql.sql.jdbc.ColumnObject;
 import jql.sql.jdbc.JDBCEnum;
 import jql.sql.jdbc.JDBCHandler;
